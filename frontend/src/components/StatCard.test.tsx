@@ -8,4 +8,9 @@ describe('StatCard', () => {
     expect(screen.getByText('Win Rate')).toBeInTheDocument()
     expect(screen.getByText('75.0%')).toBeInTheDocument()
   })
+
+  it('renders sub when provided', () => {
+    render(<StatCard label="Win Rate" value="75.0%" sub="Last 10 games" />)
+    expect(screen.getByText('Last 10 games')).toBeInTheDocument()
+  })
 })

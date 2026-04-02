@@ -19,4 +19,5 @@ describe('PartnershipTable', () => {
     render(<MemoryRouter><PartnershipTable partnerships={partnerships} playerNames={playerNames} /></MemoryRouter>)
     expect(screen.getByText('5')).toBeInTheDocument()
   })
+
 })
