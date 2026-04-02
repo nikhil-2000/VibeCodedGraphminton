@@ -98,3 +98,11 @@ def test_patch_cannot_remove_canonical_alias(client: TestClient):
     created = client.post("/players", json={"canonical_name": "CM", "is_sub": False, "aliases": []}).json()
     response = client.patch(f"/players/{created['id']}", json={"remove_aliases": ["CM"]})
     assert response.status_code == 400
+
+
+def test_patch_cannot_change_canonical_name(client: TestClient):
+    created = client.post("/players", json={"canonical_name": "Original", "is_sub": False, "aliases": []}).json()
+    response = client.patch(f"/players/{created['id']}", json={"canonical_name": "Changed"})
+    # canonical_name is not a recognised field — should be ignored, name stays the same
+    assert response.status_code == 200
+    assert response.json()["canonical_name"] == "Original"

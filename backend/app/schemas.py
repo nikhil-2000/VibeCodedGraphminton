@@ -9,7 +9,6 @@ class PlayerCreate(BaseModel):
 
 
 class PlayerUpdate(BaseModel):
-    canonical_name: Optional[str] = None
     is_sub: Optional[bool] = None
     add_aliases: list[str] = []
     remove_aliases: list[str] = []

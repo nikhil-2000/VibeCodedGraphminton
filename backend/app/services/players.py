@@ -42,8 +42,6 @@ def get_player(db: Session, player_id: int) -> Player:
 def update_player(db: Session, player_id: int, data: PlayerUpdate) -> Player:
     player = get_player(db, player_id)  # raises KeyError if not found
 
-    if data.canonical_name is not None:
-        player.canonical_name = data.canonical_name
     if data.is_sub is not None:
         player.is_sub = data.is_sub
 
