@@ -24,7 +24,17 @@ export const createPlayer = (data: PlayerCreate) =>
     body: JSON.stringify(data),
   })
 
+export const updatePlayer = (id: number, data: { is_sub?: boolean; add_aliases?: string[]; remove_aliases?: string[] }) =>
+  apiFetch<Player>(`/players/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+
 export const deletePlayer = (id: number): Promise<void> =>
   fetch(`/players/${id}`, { method: 'DELETE' }).then((res) => {
-    if (!res.ok) return res.json().then((b) => { throw new Error(b.detail ?? `HTTP ${res.status}`) })
+    if (!res.ok)
+      return res.json()
+        .then((b) => { throw new Error(b.detail ?? `HTTP ${res.status}`) })
+        .catch((e) => { throw e instanceof Error ? e : new Error(`HTTP ${res.status}`) })
   })

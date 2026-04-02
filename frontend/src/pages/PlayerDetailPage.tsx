@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getPlayer, getPlayerStats, getPlayerPartnerships, getPlayers, deletePlayer } from '../api/players'
+import { getPlayer, getPlayerStats, getPlayerPartnerships, getPlayers, deletePlayer, updatePlayer } from '../api/players'
 import StatCard from '../components/StatCard'
 import PartnershipTable from '../components/PartnershipTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -19,6 +19,7 @@ export default function PlayerDetailPage() {
   const [partnerships, setPartnerships] = useState<PlayerPartnership[]>([])
   const [playerNames, setPlayerNames] = useState<Record<number, string>>({})
   const [error, setError] = useState<string | null>(null)
+  const [togglingSubb, setTogglingSubb] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -38,6 +39,14 @@ export default function PlayerDetailPage() {
       })
       .catch((e: Error) => setError(e.message))
   }, [playerId])
+
+  const handleToggleSub = () => {
+    if (!player || togglingSubb) return
+    setTogglingSubb(true)
+    updatePlayer(playerId, { is_sub: !player.is_sub })
+      .then((updated) => setPlayer(updated))
+      .finally(() => setTogglingSubb(false))
+  }
 
   const handleDelete = () => {
     setDeleting(true)
@@ -62,6 +71,17 @@ export default function PlayerDetailPage() {
       </div>
       <div className="mb-1 flex items-center gap-3">
         <h1 className="text-2xl font-bold">{player.canonical_name}</h1>
+        <button
+          onClick={handleToggleSub}
+          disabled={togglingSubb}
+          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+            player.is_sub
+              ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+          }`}
+        >
+          {player.is_sub ? 'Sub' : 'Regular'}
+        </button>
         <Button variant="destructive" size="sm" onClick={() => { setDeleteError(null); setDeleteOpen(true) }}>
           Delete
         </Button>
