@@ -47,7 +47,6 @@ def update_player(player_id: int, data: PlayerUpdate, db: Session = Depends(get_
 @router.get("/{player_id}/stats")
 def get_player_stats(player_id: int, db: Session = Depends(get_db)):
     try:
-        player_service.get_player(db, player_id)  # 404 if not found
+        return stats_service.get_player_stats(db, player_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
-    return stats_service.get_player_stats(db, player_id)

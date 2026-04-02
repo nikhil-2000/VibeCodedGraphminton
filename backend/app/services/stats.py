@@ -4,6 +4,8 @@ from ..models import Player, Game, GamePlayer
 
 
 def get_player_stats(db: Session, player_id: int) -> dict:
+    if not db.get(Player, player_id):
+        raise KeyError(f"Player {player_id} not found")
     won_case = case(
         ((GamePlayer.team == "A") & (Game.team_a_score > Game.team_b_score), 1),
         ((GamePlayer.team == "B") & (Game.team_b_score > Game.team_a_score), 1),

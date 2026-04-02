@@ -15,22 +15,6 @@ def _ingest(client: TestClient, csv: str):
 import pytest
 
 @pytest.fixture
-def two_player_game(client: TestClient):
-    """One game: A+B beat X+Y 21-9."""
-    _create_player(client, "PlayerA")
-    _create_player(client, "PlayerB")
-    _create_player(client, "PlayerX")
-    _create_player(client, "PlayerY")
-    _ingest(client,
-        "Date,GameNo,A,B,PtsAB,X,Y,PtsXY\n"
-        "08-04-2024,1,PlayerA,PlayerB,21,PlayerX,PlayerY,9\n"
-    )
-    return {
-        "a": client.get("/players").json()[0]["id"],  # not reliable — use name lookup
-    }
-
-
-@pytest.fixture
 def game_fixture(client: TestClient):
     """One game: A+B beat X+Y 21-9. Returns player IDs by key."""
     a = _create_player(client, "PlayerA")
@@ -81,9 +65,8 @@ def test_leaderboard_sort_by_avg_points(client: TestClient, game_fixture):
     response = client.get("/stats/leaderboard?sort_by=avg_points")
     assert response.status_code == 200
     entries = response.json()
-    a_entry = next(e for e in entries if e["canonical_name"] == "PlayerA")
-    x_entry = next(e for e in entries if e["canonical_name"] == "PlayerX")
-    assert a_entry["avg_points"] > x_entry["avg_points"]
+    names = [e["canonical_name"] for e in entries]
+    assert names.index("PlayerA") < names.index("PlayerX")
 
 
 def test_leaderboard_default_sort(client: TestClient, game_fixture):
