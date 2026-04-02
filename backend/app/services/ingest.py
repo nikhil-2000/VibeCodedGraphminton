@@ -88,7 +88,6 @@ def parse_csv_rows(lines: list[str], week_number: int) -> tuple[list[RawGameRow]
     return rows, errors
 
 
-import os
 from sqlalchemy.orm import Session
 from ..models import PlayerAlias, Game, GamePlayer
 
@@ -101,17 +100,14 @@ def resolve_aliases(db: Session) -> dict[str, int]:
 
 def ingest_csv_file(
     db: Session,
-    filepath: str,
+    lines: list[str],
     week_number: int,
     alias_map: dict[str, int],
 ) -> tuple[int, list[str]]:
-    """Parse and validate one CSV file. Returns (games_loaded, errors).
+    """Parse and validate CSV lines. Returns (games_loaded, errors).
 
     If there are any errors, nothing is written to the DB.
     """
-    with open(filepath) as f:
-        lines = f.readlines()
-
     rows, parse_errors = parse_csv_rows(lines, week_number)
     if parse_errors:
         return 0, parse_errors
