@@ -6,7 +6,6 @@ from datetime import date, datetime
 class RawGameRow:
     row_number: int
     played_on: date
-    week_number: int
     game_number: int
     name_a: str
     name_b: str
@@ -42,7 +41,7 @@ def validate_game_row(row: RawGameRow) -> list[str]:
     return errors
 
 
-def parse_csv_rows(lines: list[str], week_number: int) -> tuple[list[RawGameRow], list[str]]:
+def parse_csv_rows(lines: list[str]) -> tuple[list[RawGameRow], list[str]]:
     """Parse CSV lines (including optional header) into RawGameRow objects.
 
     Returns (rows, parse_errors). Validation errors are separate — call
@@ -75,7 +74,6 @@ def parse_csv_rows(lines: list[str], week_number: int) -> tuple[list[RawGameRow]
         rows.append(RawGameRow(
             row_number=i,
             played_on=played_on,
-            week_number=week_number,
             game_number=game_number,
             name_a=parts[2],
             name_b=parts[3],
@@ -101,16 +99,19 @@ def resolve_aliases(db: Session) -> dict[str, int]:
 def ingest_csv_file(
     db: Session,
     lines: list[str],
-    week_number: int,
     alias_map: dict[str, int],
 ) -> tuple[int, list[str]]:
     """Parse and validate CSV lines. Returns (games_loaded, errors).
 
     If there are any errors, nothing is written to the DB.
     """
-    rows, parse_errors = parse_csv_rows(lines, week_number)
+    rows, parse_errors = parse_csv_rows(lines)
     if parse_errors:
         return 0, parse_errors
+
+    dates = {row.played_on for row in rows}
+    if len(dates) > 1:
+        return 0, [f"All rows must share the same date, found: {', '.join(str(d) for d in sorted(dates))}"]
 
     all_errors: list[str] = []
 
@@ -126,7 +127,7 @@ def ingest_csv_file(
     loaded = 0
     for row in rows:
         existing = db.query(Game).filter(
-            Game.week_number == row.week_number,
+            Game.played_on == row.played_on,
             Game.game_number == row.game_number,
         ).first()
         if existing:
@@ -134,7 +135,6 @@ def ingest_csv_file(
 
         game = Game(
             played_on=row.played_on,
-            week_number=row.week_number,
             game_number=row.game_number,
             team_a_score=row.team_a_score,
             team_b_score=row.team_b_score,

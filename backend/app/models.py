@@ -32,7 +32,6 @@ class Game(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     played_on: Mapped[date] = mapped_column(nullable=False)
-    week_number: Mapped[int] = mapped_column(nullable=False)
     game_number: Mapped[int] = mapped_column(nullable=False)
     team_a_score: Mapped[int] = mapped_column(nullable=False)
     team_b_score: Mapped[int] = mapped_column(nullable=False)
@@ -40,7 +39,7 @@ class Game(Base):
     game_players: Mapped[list["GamePlayer"]] = relationship(back_populates="game")
 
     __table_args__ = (
-        UniqueConstraint("week_number", "game_number", name="uq_week_game"),
+        UniqueConstraint("played_on", "game_number", name="uq_date_game"),
     )
 
 
