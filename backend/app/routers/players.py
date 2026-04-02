@@ -2,7 +2,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..schemas import PlayerCreate, PlayerUpdate, PlayerResponse
+from ..schemas import PlayerCreate, PlayerUpdate, PlayerResponse, PlayerStatsResponse
 from ..services import players as player_service
 from ..services import stats as stats_service
 
@@ -44,7 +44,7 @@ def update_player(player_id: int, data: PlayerUpdate, db: Session = Depends(get_
         raise HTTPException(status_code=400, detail=str(exc))
 
 
-@router.get("/{player_id}/stats")
+@router.get("/{player_id}/stats", response_model=PlayerStatsResponse)
 def get_player_stats(player_id: int, db: Session = Depends(get_db)):
     try:
         return stats_service.get_player_stats(db, player_id)

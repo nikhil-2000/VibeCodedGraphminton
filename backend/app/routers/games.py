@@ -3,11 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..services import games as games_service
+from ..schemas import GameResponse, GameDetailResponse
 
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", response_model=list[GameResponse])
 def list_games(
     week: Optional[int] = None,
     player_id: Optional[int] = None,
@@ -33,7 +34,7 @@ def list_games(
     return games_service.get_games(db, week=week, player_id=player_id, team_ids=team_ids, vs_ids=vs_ids)
 
 
-@router.get("/{game_id}")
+@router.get("/{game_id}", response_model=GameDetailResponse)
 def get_game(game_id: int, db: Session = Depends(get_db)):
     try:
         return games_service.get_game_detail(db, game_id)
