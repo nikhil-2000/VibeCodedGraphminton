@@ -36,3 +36,10 @@ def test_create_sub_player(client):
     })
     assert response.status_code == 201
     assert response.json()["is_sub"] is True
+
+
+def test_create_player_duplicate_canonical_name_rejected(client):
+    client.post("/players", json={"canonical_name": "Alice", "is_sub": False, "aliases": []})
+    response = client.post("/players", json={"canonical_name": "Alice", "is_sub": False, "aliases": []})
+    assert response.status_code == 400
+    assert "already exists" in response.json()["detail"]
