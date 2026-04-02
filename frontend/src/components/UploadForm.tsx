@@ -10,12 +10,12 @@ interface Props {
 export default function UploadForm({ onSuccess }: Props) {
   const [files, setFiles] = useState<File[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<string[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    setErrors([])
     setLoading(true)
     try {
       const contents = await Promise.all(files.map((f) => f.text()))
@@ -24,7 +24,7 @@ export default function UploadForm({ onSuccess }: Props) {
       setFiles([])
       if (inputRef.current) inputRef.current.value = ''
     } catch (err) {
-      setError((err as Error).message)
+      setErrors((err as Error).message.split('\n'))
     } finally {
       setLoading(false)
     }
@@ -50,7 +50,11 @@ export default function UploadForm({ onSuccess }: Props) {
         )}
       </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {errors.length > 0 && (
+        <ul className="space-y-1 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+          {errors.map((e, i) => <li key={i}>{e}</li>)}
+        </ul>
+      )}
 
       <Button type="submit" disabled={files.length === 0 || loading}>
         {loading ? 'Uploading…' : 'Upload'}

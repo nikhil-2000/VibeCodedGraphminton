@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { Player, PlayerStats, PlayerPartnership } from '../types'
+import type { Player, PlayerCreate, PlayerStats, PlayerPartnership } from '../types'
 
 export const getPlayers = (isSub?: boolean) => {
   const params = new URLSearchParams()
@@ -16,3 +16,10 @@ export const getPlayerStats = (id: number) =>
 
 export const getPlayerPartnerships = (id: number) =>
   apiFetch<PlayerPartnership[]>(`/stats/partnerships/${id}`)
+
+export const createPlayer = (data: PlayerCreate) =>
+  apiFetch<Player>('/players', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })

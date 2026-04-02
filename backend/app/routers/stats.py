@@ -7,11 +7,20 @@ from ..schemas import (
     LeaderboardEntry,
     PartnershipResponse,
     PlayerPartnershipResponse,
+    PlayerStatsResponse,
     HeadToHeadResponse,
     MatchupResponse,
 )
 
 router = APIRouter()
+
+
+@router.get("/player/{player_id}", response_model=PlayerStatsResponse)
+def player_stats(player_id: int, db: Session = Depends(get_db)):
+    try:
+        return stats_service.get_player_stats(db, player_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get("/leaderboard", response_model=list[LeaderboardEntry])

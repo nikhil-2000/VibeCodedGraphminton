@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function PartnershipTable({ partnerships, playerNames }: Props) {
-  const sorted = [...partnerships].sort((a, b) => b.games_together - a.games_together)
+  const sorted = [...partnerships].sort((a, b) => b.win_rate - a.win_rate)
   return (
     <Table>
       <TableHeader>
