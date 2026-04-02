@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Nav from './components/Nav'
 import LeaderboardPage from './pages/LeaderboardPage'
+import PlayersPage from './pages/PlayersPage'
+import PlayerDetailPage from './pages/PlayerDetailPage'
 
 export default function App() {
   return (
@@ -10,8 +12,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/leaderboard" replace />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
-          <Route path="/players" element={<div>Players coming soon</div>} />
-          <Route path="/players/:id" element={<div>Player detail coming soon</div>} />
+          <Route path="/players" element={<PlayersPage />} />
+          <Route path="/players/:id" element={<PlayerDetailPage />} />
           <Route path="/games" element={<div>Games coming soon</div>} />
           <Route path="/graph" element={<div>Graph coming soon</div>} />
           <Route path="/anomalies" element={<div>Anomalies coming soon</div>} />
