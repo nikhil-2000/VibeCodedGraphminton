@@ -73,3 +73,62 @@ def test_leaderboard_default_sort(client: TestClient, game_fixture):
     response = client.get("/stats/leaderboard")
     assert response.status_code == 200
     assert len(response.json()) >= 4
+
+
+@pytest.fixture
+def two_games(client: TestClient):
+    """Game 1: Alpha+Beta beat Xray+Yankee 21-9. Game 2: Alpha+Xray beat Beta+Yankee 21-15."""
+    a = _create_player(client, "Alpha")
+    b = _create_player(client, "Beta")
+    x = _create_player(client, "Xray")
+    y = _create_player(client, "Yankee")
+    _ingest(client,
+        "Date,GameNo,A,B,PtsAB,X,Y,PtsXY\n"
+        "08-04-2024,1,Alpha,Beta,21,Xray,Yankee,9\n"
+        "08-04-2024,2,Alpha,Xray,21,Beta,Yankee,15\n"
+    )
+    return {"a": a, "b": b, "x": x, "y": y}
+
+
+def test_all_partnerships(client: TestClient, two_games):
+    response = client.get("/stats/partnerships")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) >= 2  # Alpha+Beta and Alpha+Xray
+
+
+def test_partnerships_for_player(client: TestClient, two_games):
+    pid = two_games["a"]
+    response = client.get(f"/stats/partnerships/{pid}")
+    assert response.status_code == 200
+    data = response.json()
+    partner_ids = [p["partner_id"] for p in data]
+    assert two_games["b"] in partner_ids
+    assert two_games["x"] in partner_ids
+
+
+def test_specific_partnership(client: TestClient, two_games):
+    a, b = two_games["a"], two_games["b"]
+    response = client.get(f"/stats/partnerships/{a}/{b}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["games_together"] == 1
+    assert data["wins"] == 1
+
+
+def test_head_to_head(client: TestClient, two_games):
+    a, b = two_games["a"], two_games["b"]
+    response = client.get(f"/stats/head-to-head/{a}/{b}")
+    assert response.status_code == 200
+    data = response.json()
+    # Game 2: Alpha+Xray vs Beta+Yankee — Alpha and Beta faced each other
+    assert data["player_a_wins"] + data["player_b_wins"] == 1
+
+
+def test_matchup(client: TestClient, two_games):
+    a, b, x, y = two_games["a"], two_games["b"], two_games["x"], two_games["y"]
+    response = client.get(f"/stats/matchup/{a},{b}/vs/{x},{y}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["pair_a_wins"] == 1
+    assert data["pair_b_wins"] == 0
