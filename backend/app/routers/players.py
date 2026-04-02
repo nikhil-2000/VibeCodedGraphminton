@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..schemas import PlayerCreate, PlayerUpdate, PlayerResponse
 from ..services import players as player_service
+from ..services import stats as stats_service
 
 router = APIRouter()
 
@@ -41,3 +42,12 @@ def update_player(player_id: int, data: PlayerUpdate, db: Session = Depends(get_
         raise HTTPException(status_code=404, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/{player_id}/stats")
+def get_player_stats(player_id: int, db: Session = Depends(get_db)):
+    try:
+        player_service.get_player(db, player_id)  # 404 if not found
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return stats_service.get_player_stats(db, player_id)
