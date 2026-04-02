@@ -1,7 +1,15 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import GraphCanvas from './GraphCanvas'
 import type { Partnership, Player } from '../types'
+
+beforeAll(() => {
+  global.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+})
 
 vi.mock('react-force-graph-2d', () => ({
   default: ({ graphData }: { graphData: { nodes: unknown[]; links: unknown[] } }) => (
