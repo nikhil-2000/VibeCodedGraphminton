@@ -3,6 +3,7 @@ import Nav from './components/Nav'
 import LeaderboardPage from './pages/LeaderboardPage'
 import PlayersPage from './pages/PlayersPage'
 import PlayerDetailPage from './pages/PlayerDetailPage'
+import UploadPage from './pages/UploadPage'
 
 export default function App() {
   return (
@@ -17,7 +18,7 @@ export default function App() {
           <Route path="/games" element={<div>Games coming soon</div>} />
           <Route path="/graph" element={<div>Graph coming soon</div>} />
           <Route path="/anomalies" element={<div>Anomalies coming soon</div>} />
-          <Route path="/upload" element={<div>Upload coming soon</div>} />
+          <Route path="/upload" element={<UploadPage />} />
         </Routes>
       </main>
     </div>
