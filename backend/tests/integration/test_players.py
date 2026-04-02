@@ -128,7 +128,8 @@ def test_delete_player_with_games_rejected(client: TestClient):
     p3 = client.post("/players", json={"canonical_name": "Del C", "is_sub": False, "aliases": ["DelC"]}).json()
     p4 = client.post("/players", json={"canonical_name": "Del D", "is_sub": False, "aliases": ["DelD"]}).json()
     csv = "01-01-2025,1,DelA,DelB,21,DelC,DelD,9\n"
-    client.post("/ingest/scores", json={"files": [csv]})
+    ingest_resp = client.post("/ingest/scores", json={"files": [csv]})
+    assert ingest_resp.status_code == 200, ingest_resp.json()
     response = client.delete(f"/players/{p1['id']}")
     assert response.status_code == 409
     assert "games" in response.json()["detail"].lower()
