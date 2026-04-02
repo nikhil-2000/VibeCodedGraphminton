@@ -11,3 +11,4 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Graph-minton API", lifespan=lifespan)
+

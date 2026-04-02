@@ -54,3 +54,7 @@ class GamePlayer(Base):
 
     game = relationship("Game", back_populates="game_players")
     player = relationship("Player", back_populates="game_players")
+
+    __table_args__ = (
+        UniqueConstraint("game_id", "player_id", name="uq_game_player"),
+    )

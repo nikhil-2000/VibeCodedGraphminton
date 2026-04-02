@@ -3,7 +3,7 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
 os.environ.setdefault(
     "DATABASE_URL",
@@ -28,8 +28,7 @@ def test_engine():
 def db(test_engine):
     connection = test_engine.connect()
     transaction = connection.begin()
-    TestingSession = sessionmaker(bind=connection)
-    session = TestingSession()
+    session = Session(bind=connection, join_transaction_mode="create_savepoint")
     yield session
     session.close()
     transaction.rollback()

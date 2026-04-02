@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m venv /Users/nikhil.patel/Documents/personal/VibeCodedGraphminton/backend/.venv)",
+      "Bash(/Users/nikhil.patel/Documents/personal/VibeCodedGraphminton/backend/.venv/bin/pip install:*)",
+      "Bash(.venv/bin/python -m pytest tests/test_players.py::test_models_import -v)"
+    ]
+  }
+}
