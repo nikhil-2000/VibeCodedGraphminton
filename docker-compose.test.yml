@@ -1,0 +1,8 @@
+services:
+  db:
+    environment:
+      POSTGRES_DB: graphminton_test
+
+  backend:
+    environment:
+      DATABASE_URL: postgresql://graphminton:graphminton@db:5432/graphminton_test
