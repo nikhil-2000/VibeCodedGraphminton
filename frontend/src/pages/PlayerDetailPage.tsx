@@ -1,20 +1,27 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { getPlayer, getPlayerStats, getPlayerPartnerships, getPlayers } from '../api/players'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { getPlayer, getPlayerStats, getPlayerPartnerships, getPlayers, deletePlayer } from '../api/players'
 import StatCard from '../components/StatCard'
 import PartnershipTable from '../components/PartnershipTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import type { Player, PlayerStats, PlayerPartnership } from '../types'
 
 export default function PlayerDetailPage() {
   const { id } = useParams<{ id: string }>()
   const playerId = Number(id)
 
+  const navigate = useNavigate()
+
   const [player, setPlayer] = useState<Player | null>(null)
   const [stats, setStats] = useState<PlayerStats | null>(null)
   const [partnerships, setPartnerships] = useState<PlayerPartnership[]>([])
   const [playerNames, setPlayerNames] = useState<Record<number, string>>({})
   const [error, setError] = useState<string | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -32,6 +39,17 @@ export default function PlayerDetailPage() {
       .catch((e: Error) => setError(e.message))
   }, [playerId])
 
+  const handleDelete = () => {
+    setDeleting(true)
+    setDeleteError(null)
+    deletePlayer(playerId)
+      .then(() => navigate('/players'))
+      .catch((e: Error) => {
+        setDeleteError(e.message)
+        setDeleting(false)
+      })
+  }
+
   if (error) return <p className="text-destructive">{error}</p>
   if (!player || !stats) return <p className="text-muted-foreground">Loading…</p>
 
@@ -42,7 +60,12 @@ export default function PlayerDetailPage() {
         {' / '}
         {player.canonical_name}
       </div>
-      <h1 className="mb-1 text-2xl font-bold">{player.canonical_name}</h1>
+      <div className="mb-1 flex items-center gap-3">
+        <h1 className="text-2xl font-bold">{player.canonical_name}</h1>
+        <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+          Delete
+        </Button>
+      </div>
       {player.aliases.length > 0 && (
         <p className="mb-6 text-sm text-muted-foreground">
           Also known as: {player.aliases.map((a) => a.alias).join(', ')}
@@ -67,6 +90,23 @@ export default function PlayerDetailPage() {
             : <PartnershipTable partnerships={partnerships} playerNames={playerNames} />}
         </CardContent>
       </Card>
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {player.canonical_name}?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This cannot be undone. Players with recorded games cannot be deleted.
+          </p>
+          {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? 'Deleting…' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

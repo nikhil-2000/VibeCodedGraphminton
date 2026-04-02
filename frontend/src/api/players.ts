@@ -23,3 +23,8 @@ export const createPlayer = (data: PlayerCreate) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
+
+export const deletePlayer = (id: number): Promise<void> =>
+  fetch(`/players/${id}`, { method: 'DELETE' }).then((res) => {
+    if (!res.ok) return res.json().then((b) => { throw new Error(b.detail ?? `HTTP ${res.status}`) })
+  })
