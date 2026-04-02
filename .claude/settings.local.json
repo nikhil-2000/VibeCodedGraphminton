@@ -3,7 +3,16 @@
     "allow": [
       "Bash(python3 -m venv /Users/nikhil.patel/Documents/personal/VibeCodedGraphminton/backend/.venv)",
       "Bash(/Users/nikhil.patel/Documents/personal/VibeCodedGraphminton/backend/.venv/bin/pip install:*)",
-      "Bash(.venv/bin/python -m pytest tests/test_players.py::test_models_import -v)"
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker-compose:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(pytest:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(.venv/bin/python -m pytest:*)",
+      "Bash(DATABASE_URL=* .venv/bin/python -m pytest:*)"
     ]
   }
 }

@@ -22,7 +22,10 @@ def all_partnerships(db: Session = Depends(get_db)):
 
 @router.get("/partnerships/{player_id}")
 def partnerships_for_player(player_id: int, db: Session = Depends(get_db)):
-    return stats_service.get_partnership_for_player(db, player_id)
+    try:
+        return stats_service.get_partnership_for_player(db, player_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get("/partnerships/{player_a_id}/{player_b_id}")

@@ -97,6 +97,10 @@ def test_all_partnerships(client: TestClient, two_games):
     assert len(data) >= 2  # Alpha+Beta and Alpha+Xray
 
 
+def test_partnerships_for_unknown_player(client: TestClient):
+    assert client.get("/stats/partnerships/99999").status_code == 404
+
+
 def test_partnerships_for_player(client: TestClient, two_games):
     pid = two_games["a"]
     response = client.get(f"/stats/partnerships/{pid}")
@@ -121,8 +125,9 @@ def test_head_to_head(client: TestClient, two_games):
     response = client.get(f"/stats/head-to-head/{a}/{b}")
     assert response.status_code == 200
     data = response.json()
-    # Game 2: Alpha+Xray vs Beta+Yankee — Alpha and Beta faced each other
-    assert data["player_a_wins"] + data["player_b_wins"] == 1
+    # Game 2: Alpha+Xray (team A, 21) beat Beta+Yankee (team B, 15) — Alpha wins
+    assert data["player_a_wins"] == 1
+    assert data["player_b_wins"] == 0
 
 
 def test_matchup(client: TestClient, two_games):
