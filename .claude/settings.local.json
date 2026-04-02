@@ -12,7 +12,12 @@
       "Bash(pytest:*)",
       "Bash(python -m pytest:*)",
       "Bash(.venv/bin/python -m pytest:*)",
-      "Bash(DATABASE_URL=* .venv/bin/python -m pytest:*)"
+      "Bash(DATABASE_URL=* .venv/bin/python -m pytest:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(printf '\\\\n')",
+      "Bash(npx shadcn@latest init --defaults)",
+      "Bash(npm test:*)"
     ]
   }
 }
