@@ -5,6 +5,8 @@ import PlayersPage from './pages/PlayersPage'
 import PlayerDetailPage from './pages/PlayerDetailPage'
 import GamesPage from './pages/GamesPage'
 import UploadPage from './pages/UploadPage'
+import GraphPage from './pages/GraphPage'
+import AnomaliesPage from './pages/AnomaliesPage'
 
 export default function App() {
   return (
@@ -17,8 +19,8 @@ export default function App() {
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/players/:id" element={<PlayerDetailPage />} />
           <Route path="/games" element={<GamesPage />} />
-          <Route path="/graph" element={<div>Graph coming soon</div>} />
-          <Route path="/anomalies" element={<div>Anomalies coming soon</div>} />
+          <Route path="/graph" element={<GraphPage />} />
+          <Route path="/anomalies" element={<AnomaliesPage />} />
           <Route path="/upload" element={<UploadPage />} />
         </Routes>
       </main>
