@@ -33,7 +33,8 @@ export interface paths {
         get: operations["get_player_players__player_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Player */
+        delete: operations["delete_player_players__player_id__delete"];
         options?: never;
         head?: never;
         /** Update Player */
@@ -68,6 +69,23 @@ export interface paths {
         put?: never;
         /** Ingest Scores */
         post: operations["ingest_scores_ingest_scores_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stats/player/{player_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Player Stats */
+        get: operations["player_stats_stats_player__player_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -474,8 +492,6 @@ export interface components {
         };
         /** PlayerUpdate */
         PlayerUpdate: {
-            /** Canonical Name */
-            canonical_name?: string | null;
             /** Is Sub */
             is_sub?: boolean | null;
             /**
@@ -606,6 +622,35 @@ export interface operations {
             };
         };
     };
+    delete_player_players__player_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                player_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_player_players__player_id__patch: {
         parameters: {
             query?: never;
@@ -692,6 +737,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IngestResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    player_stats_stats_player__player_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                player_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayerStatsResponse"];
                 };
             };
             /** @description Validation Error */
