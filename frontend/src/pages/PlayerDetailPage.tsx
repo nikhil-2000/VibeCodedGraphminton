@@ -62,7 +62,7 @@ export default function PlayerDetailPage() {
       </div>
       <div className="mb-1 flex items-center gap-3">
         <h1 className="text-2xl font-bold">{player.canonical_name}</h1>
-        <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+        <Button variant="destructive" size="sm" onClick={() => { setDeleteError(null); setDeleteOpen(true) }}>
           Delete
         </Button>
       </div>
@@ -90,7 +90,7 @@ export default function PlayerDetailPage() {
             : <PartnershipTable partnerships={partnerships} playerNames={playerNames} />}
         </CardContent>
       </Card>
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+      <Dialog open={deleteOpen} onOpenChange={(open) => { if (!deleting) setDeleteOpen(open) }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete {player.canonical_name}?</DialogTitle>
