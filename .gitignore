@@ -35,4 +35,7 @@ Thumbs.db
 alembic/versions/*.pyc
 
 # CLAUDE Plugins
-.superpowers/                                                                                                                                                                                                                               
+.superpowers/
+
+# Generated
+openapi.json                                                                                                                                                                                                                               
