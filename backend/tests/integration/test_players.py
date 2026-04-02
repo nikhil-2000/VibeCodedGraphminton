@@ -1,12 +1,7 @@
-def test_models_import():
-    from app.models import Player, PlayerAlias, Game, GamePlayer
-    assert Player.__tablename__ == "players"
-    assert PlayerAlias.__tablename__ == "player_aliases"
-    assert Game.__tablename__ == "games"
-    assert GamePlayer.__tablename__ == "game_players"
+from fastapi.testclient import TestClient
 
 
-def test_create_player(client):
+def test_create_player(client: TestClient):
     response = client.post("/players", json={
         "canonical_name": "Nikhil P",
         "is_sub": False,
@@ -21,14 +16,14 @@ def test_create_player(client):
     assert "Nik" in alias_values
 
 
-def test_create_player_duplicate_alias_rejected(client):
+def test_create_player_duplicate_alias_rejected(client: TestClient):
     client.post("/players", json={"canonical_name": "Player A", "is_sub": False, "aliases": ["Ace"]})
     response = client.post("/players", json={"canonical_name": "Player B", "is_sub": False, "aliases": ["Ace"]})
     assert response.status_code == 400
     assert "alias" in response.json()["detail"].lower()
 
 
-def test_create_sub_player(client):
+def test_create_sub_player(client: TestClient):
     response = client.post("/players", json={
         "canonical_name": "Dave",
         "is_sub": True,
@@ -38,14 +33,14 @@ def test_create_sub_player(client):
     assert response.json()["is_sub"] is True
 
 
-def test_create_player_duplicate_canonical_name_rejected(client):
+def test_create_player_duplicate_canonical_name_rejected(client: TestClient):
     client.post("/players", json={"canonical_name": "Alice", "is_sub": False, "aliases": []})
     response = client.post("/players", json={"canonical_name": "Alice", "is_sub": False, "aliases": []})
     assert response.status_code == 400
     assert "already exists" in response.json()["detail"]
 
 
-def test_list_players(client):
+def test_list_players(client: TestClient):
     client.post("/players", json={"canonical_name": "Bhavin", "is_sub": False, "aliases": []})
     client.post("/players", json={"canonical_name": "Chan", "is_sub": True, "aliases": []})
     response = client.get("/players")
@@ -55,7 +50,7 @@ def test_list_players(client):
     assert "Chan" in names
 
 
-def test_list_players_filter_by_is_sub(client):
+def test_list_players_filter_by_is_sub(client: TestClient):
     client.post("/players", json={"canonical_name": "Regular", "is_sub": False, "aliases": []})
     client.post("/players", json={"canonical_name": "Sub", "is_sub": True, "aliases": []})
     response = client.get("/players?is_sub=true")
@@ -63,26 +58,26 @@ def test_list_players_filter_by_is_sub(client):
     assert all(p["is_sub"] for p in response.json())
 
 
-def test_get_player_by_id(client):
+def test_get_player_by_id(client: TestClient):
     created = client.post("/players", json={"canonical_name": "Jayesh", "is_sub": False, "aliases": ["Jay"]}).json()
     response = client.get(f"/players/{created['id']}")
     assert response.status_code == 200
     assert response.json()["canonical_name"] == "Jayesh"
 
 
-def test_get_player_not_found(client):
+def test_get_player_not_found(client: TestClient):
     response = client.get("/players/99999")
     assert response.status_code == 404
 
 
-def test_patch_player_promote_sub(client):
+def test_patch_player_promote_sub(client: TestClient):
     created = client.post("/players", json={"canonical_name": "TempSub", "is_sub": True, "aliases": []}).json()
     response = client.patch(f"/players/{created['id']}", json={"is_sub": False})
     assert response.status_code == 200
     assert response.json()["is_sub"] is False
 
 
-def test_patch_player_add_aliases(client):
+def test_patch_player_add_aliases(client: TestClient):
     created = client.post("/players", json={"canonical_name": "Rajesh", "is_sub": False, "aliases": []}).json()
     response = client.patch(f"/players/{created['id']}", json={"add_aliases": ["Raj", "RJ"]})
     assert response.status_code == 200
@@ -91,7 +86,7 @@ def test_patch_player_add_aliases(client):
     assert "RJ" in aliases
 
 
-def test_patch_player_remove_aliases(client):
+def test_patch_player_remove_aliases(client: TestClient):
     created = client.post("/players", json={"canonical_name": "Nalin", "is_sub": False, "aliases": ["Nal"]}).json()
     response = client.patch(f"/players/{created['id']}", json={"remove_aliases": ["Nal"]})
     assert response.status_code == 200
@@ -99,7 +94,7 @@ def test_patch_player_remove_aliases(client):
     assert "Nal" not in aliases
 
 
-def test_patch_cannot_remove_canonical_alias(client):
+def test_patch_cannot_remove_canonical_alias(client: TestClient):
     created = client.post("/players", json={"canonical_name": "CM", "is_sub": False, "aliases": []}).json()
     response = client.patch(f"/players/{created['id']}", json={"remove_aliases": ["CM"]})
     assert response.status_code == 400

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from .database import engine, Base
-from . import models  # noqa: F401 — registers models with Base
+from . import models  # type: ignore # noqa: F401 — registers models with Base
 from .routers import players
 
 

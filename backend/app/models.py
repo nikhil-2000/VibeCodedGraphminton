@@ -1,43 +1,43 @@
-from sqlalchemy import (
-    Column, Integer, String, Boolean, Date,
-    ForeignKey, UniqueConstraint,
-)
-from sqlalchemy.orm import relationship
+from datetime import date
+from sqlalchemy import String, ForeignKey, UniqueConstraint
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from .database import Base
 
 
 class Player(Base):
     __tablename__ = "players"
 
-    id = Column(Integer, primary_key=True, index=True)
-    canonical_name = Column(String, unique=True, nullable=False, index=True)
-    is_sub = Column(Boolean, default=False, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    canonical_name: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    is_sub: Mapped[bool] = mapped_column(default=False, nullable=False)
 
-    aliases = relationship("PlayerAlias", back_populates="player", cascade="all, delete-orphan")
-    game_players = relationship("GamePlayer", back_populates="player")
+    aliases: Mapped[list["PlayerAlias"]] = relationship(
+        back_populates="player", cascade="all, delete-orphan"
+    )
+    game_players: Mapped[list["GamePlayer"]] = relationship(back_populates="player")
 
 
 class PlayerAlias(Base):
     __tablename__ = "player_aliases"
 
-    id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("players.id"), nullable=False)
-    alias = Column(String, unique=True, nullable=False, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False)
+    alias: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
 
-    player = relationship("Player", back_populates="aliases")
+    player: Mapped["Player"] = relationship(back_populates="aliases")
 
 
 class Game(Base):
     __tablename__ = "games"
 
-    id = Column(Integer, primary_key=True, index=True)
-    played_on = Column(Date, nullable=False)
-    week_number = Column(Integer, nullable=False)
-    game_number = Column(Integer, nullable=False)
-    team_a_score = Column(Integer, nullable=False)
-    team_b_score = Column(Integer, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    played_on: Mapped[date] = mapped_column(nullable=False)
+    week_number: Mapped[int] = mapped_column(nullable=False)
+    game_number: Mapped[int] = mapped_column(nullable=False)
+    team_a_score: Mapped[int] = mapped_column(nullable=False)
+    team_b_score: Mapped[int] = mapped_column(nullable=False)
 
-    game_players = relationship("GamePlayer", back_populates="game")
+    game_players: Mapped[list["GamePlayer"]] = relationship(back_populates="game")
 
     __table_args__ = (
         UniqueConstraint("week_number", "game_number", name="uq_week_game"),
@@ -47,13 +47,13 @@ class Game(Base):
 class GamePlayer(Base):
     __tablename__ = "game_players"
 
-    id = Column(Integer, primary_key=True, index=True)
-    game_id = Column(Integer, ForeignKey("games.id"), nullable=False)
-    player_id = Column(Integer, ForeignKey("players.id"), nullable=False)
-    team = Column(String(1), nullable=False)  # 'A' or 'B'
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), nullable=False)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False)
+    team: Mapped[str] = mapped_column(String(1), nullable=False)  # 'A' or 'B'
 
-    game = relationship("Game", back_populates="game_players")
-    player = relationship("Player", back_populates="game_players")
+    game: Mapped["Game"] = relationship(back_populates="game_players")
+    player: Mapped["Player"] = relationship(back_populates="game_players")
 
     __table_args__ = (
         UniqueConstraint("game_id", "player_id", name="uq_game_player"),

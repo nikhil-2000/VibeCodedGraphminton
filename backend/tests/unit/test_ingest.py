@@ -1,4 +1,3 @@
-# backend/tests/test_ingest.py
 from datetime import date
 from app.services.ingest import RawGameRow, validate_game_row, parse_csv_rows
 
