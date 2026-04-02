@@ -87,3 +87,28 @@ def test_parse_csv_rows_bad_date():
     lines = ["Date,GameNo,A,B,PtsAB,X,Y,PtsXY", "not-a-date,1,A,B,21,C,D,9"]
     rows, errors = parse_csv_rows(lines, week_number=1)
     assert len(errors) == 1
+    assert "parse error" in errors[0].lower()
+
+
+def test_cross_team_duplicate_player_is_invalid():
+    row = RawGameRow(
+        row_number=3, played_on=date(2024, 4, 8),
+        week_number=1, game_number=1,
+        name_a="Bhavin", name_b="Chets", team_a_score=21,
+        name_x="Bhavin", name_y="Jayesh", team_b_score=9,
+    )
+    errors = validate_game_row(row)
+    assert len(errors) == 1
+    assert "duplicate" in errors[0].lower()
+
+
+def test_duplicate_player_case_insensitive():
+    row = RawGameRow(
+        row_number=4, played_on=date(2024, 4, 8),
+        week_number=1, game_number=1,
+        name_a="Bhavin", name_b="Chets", team_a_score=21,
+        name_x="bhavin", name_y="Jayesh", team_b_score=9,
+    )
+    errors = validate_game_row(row)
+    assert len(errors) == 1
+    assert "duplicate" in errors[0].lower()
