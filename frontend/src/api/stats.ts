@@ -1,8 +1,10 @@
 import { apiFetch } from './client'
 import type { LeaderboardEntry, Partnership, HeadToHead } from '../types'
 
-export const getLeaderboard = (sortBy: 'win_rate' | 'avg_points' = 'win_rate') =>
-  apiFetch<LeaderboardEntry[]>(`/stats/leaderboard?sort_by=${sortBy}`)
+export const getLeaderboard = (sortBy: 'win_rate' | 'avg_points' = 'win_rate') => {
+  const params = new URLSearchParams({ sort_by: sortBy })
+  return apiFetch<LeaderboardEntry[]>(`/stats/leaderboard?${params.toString()}`)
+}
 
 export const getAllPartnerships = () =>
   apiFetch<Partnership[]>('/stats/partnerships')
