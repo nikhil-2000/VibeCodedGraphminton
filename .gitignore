@@ -33,3 +33,6 @@ Thumbs.db
 
 # Alembic
 alembic/versions/*.pyc
+
+# CLAUDE Plugins
+.superpowers/                                                                                                                                                                                                                               

@@ -6,3 +6,4 @@ services:
   backend:
     environment:
       DATABASE_URL: postgresql://graphminton:graphminton@db:5432/graphminton_test
+    command: pytest tests/ -v
