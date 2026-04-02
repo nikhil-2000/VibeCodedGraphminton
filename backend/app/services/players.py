@@ -73,6 +73,6 @@ def delete_player(db: Session, player_id: int) -> None:
     player = get_player(db, player_id)  # raises KeyError if not found
     has_games = db.query(GamePlayer).filter(GamePlayer.player_id == player_id).first()
     if has_games:
-        raise ValueError(f"Player {player_id} has games and cannot be deleted")
+        raise ValueError(f"'{player.canonical_name}' has recorded games and cannot be deleted")
     db.delete(player)
     db.flush()
