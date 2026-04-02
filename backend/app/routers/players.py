@@ -2,7 +2,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..schemas import PlayerCreate, PlayerResponse
+from ..schemas import PlayerCreate, PlayerUpdate, PlayerResponse
 from ..services import players as player_service
 
 router = APIRouter()
@@ -29,3 +29,15 @@ def get_player(player_id: int, db: Session = Depends(get_db)):
         return player_service.get_player(db, player_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.patch("/{player_id}", response_model=PlayerResponse)
+def update_player(player_id: int, data: PlayerUpdate, db: Session = Depends(get_db)):
+    try:
+        player = player_service.update_player(db, player_id, data)
+        db.commit()
+        return player
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))

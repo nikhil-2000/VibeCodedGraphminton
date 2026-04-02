@@ -73,3 +73,33 @@ def test_get_player_by_id(client):
 def test_get_player_not_found(client):
     response = client.get("/players/99999")
     assert response.status_code == 404
+
+
+def test_patch_player_promote_sub(client):
+    created = client.post("/players", json={"canonical_name": "TempSub", "is_sub": True, "aliases": []}).json()
+    response = client.patch(f"/players/{created['id']}", json={"is_sub": False})
+    assert response.status_code == 200
+    assert response.json()["is_sub"] is False
+
+
+def test_patch_player_add_aliases(client):
+    created = client.post("/players", json={"canonical_name": "Rajesh", "is_sub": False, "aliases": []}).json()
+    response = client.patch(f"/players/{created['id']}", json={"add_aliases": ["Raj", "RJ"]})
+    assert response.status_code == 200
+    aliases = [a["alias"] for a in response.json()["aliases"]]
+    assert "Raj" in aliases
+    assert "RJ" in aliases
+
+
+def test_patch_player_remove_aliases(client):
+    created = client.post("/players", json={"canonical_name": "Nalin", "is_sub": False, "aliases": ["Nal"]}).json()
+    response = client.patch(f"/players/{created['id']}", json={"remove_aliases": ["Nal"]})
+    assert response.status_code == 200
+    aliases = [a["alias"] for a in response.json()["aliases"]]
+    assert "Nal" not in aliases
+
+
+def test_patch_cannot_remove_canonical_alias(client):
+    created = client.post("/players", json={"canonical_name": "CM", "is_sub": False, "aliases": []}).json()
+    response = client.patch(f"/players/{created['id']}", json={"remove_aliases": ["CM"]})
+    assert response.status_code == 400
