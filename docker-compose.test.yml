@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: graphminton_test
+      POSTGRES_USER: graphminton
+      POSTGRES_PASSWORD: graphminton
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://graphminton:graphminton@db:5432/graphminton_test
+    depends_on:
+      - db
+    command: pytest tests/test_players.py -v

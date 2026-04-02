@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+.env
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docker
+*.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Alembic
+alembic/versions/*.pyc
+
+# CLAUDE Plugins
+.superpowers/                                                                                                                                                                                                                               

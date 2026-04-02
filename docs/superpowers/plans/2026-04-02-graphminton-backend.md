@@ -1806,9 +1806,8 @@ git commit -m "feat: partnership and head-to-head stats endpoints"
 - [ ] **Step 1: Write failing tests**
 
 ```python
-# backend/tests/test_games.py
+# backend/tests/integration/test_games.py
 import pytest
-import tempfile, os, unittest.mock as mock
 
 
 def _create_player(client, name):
@@ -1822,17 +1821,11 @@ def seeded_games(client):
     x = _create_player(client, "GX")
     y = _create_player(client, "GY")
 
-    csv = (
+    client.post("/ingest/scores", json={"files": [
         "Date,GameNo,A,B,PtsAB,X,Y,PtsXY\n"
         "08-04-2024,1,GA,GB,21,GX,GY,9\n"
         "08-04-2024,2,GA,GX,21,GB,GY,15\n"
-    )
-    tmp = tempfile.mkdtemp()
-    path = os.path.join(tmp, "Week52.csv")
-    with open(path, "w") as f:
-        f.write(csv)
-    with mock.patch("app.routers.ingest.DATA_DIR", tmp):
-        client.post("/ingest/scores", json={"filenames": ["Week52.csv"]})
+    ]})
     return {"a": a, "b": b, "x": x, "y": y}
 
 
@@ -1843,7 +1836,8 @@ def test_list_games(client, seeded_games):
 
 
 def test_filter_games_by_week(client, seeded_games):
-    response = client.get("/games?week=52")
+    # seeded data is the only session → session rank 1
+    response = client.get("/games?week=1")
     assert response.status_code == 200
     assert len(response.json()) == 2
 
@@ -1893,8 +1887,19 @@ Expected: all `FAILED`
 
 ```python
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import func, select
 from ..models import Game, GamePlayer, Player
+
+
+# Session rank subquery: ranks each distinct played_on date chronologically (1, 2, 3, …)
+_session_rank = (
+    select(
+        Game.played_on,
+        func.dense_rank().over(order_by=Game.played_on).label("session"),
+    )
+    .distinct()
+    .subquery()
+)
 
 
 def get_games(
@@ -1907,35 +1912,42 @@ def get_games(
     query = db.query(Game)
 
     if week is not None:
-        query = query.filter(Game.week_number == week)
-
-    if player_id is not None:
-        query = query.join(GamePlayer, GamePlayer.game_id == Game.id).filter(
-            GamePlayer.player_id == player_id
+        query = (
+            query
+            .join(_session_rank, _session_rank.c.played_on == Game.played_on)
+            .filter(_session_rank.c.session == week)
         )
 
+    # Attach session rank to each result
+    ranked = (
+        db.query(Game, _session_rank.c.session)
+        .join(_session_rank, _session_rank.c.played_on == Game.played_on)
+    )
+    if week is not None:
+        ranked = ranked.filter(_session_rank.c.session == week)
+    if player_id is not None:
+        ranked = ranked.join(GamePlayer, GamePlayer.game_id == Game.id).filter(
+            GamePlayer.player_id == player_id
+        )
     if team_ids is not None:
         from sqlalchemy.orm import aliased
         gp1 = aliased(GamePlayer)
         gp2 = aliased(GamePlayer)
-        query = (
-            query
+        ranked = (
+            ranked
             .join(gp1, (gp1.game_id == Game.id) & (gp1.player_id == team_ids[0]))
             .join(gp2, (gp2.game_id == Game.id) & (gp2.player_id == team_ids[1]) & (gp2.team == gp1.team))
         )
-
     if vs_ids is not None:
         from sqlalchemy.orm import aliased
         gp1 = aliased(GamePlayer)
         gp2 = aliased(GamePlayer)
-        query = (
-            query
+        ranked = (
+            ranked
             .join(gp1, (gp1.game_id == Game.id) & (gp1.player_id == vs_ids[0]))
             .join(gp2, (gp2.game_id == Game.id) & (gp2.player_id == vs_ids[1]) & (gp2.team != gp1.team))
         )
-
-    games = query.distinct().all()
-    return [_game_summary(g) for g in games]
+    return [_game_summary(g, session) for g, session in ranked.distinct().all()]
 
 
 def get_game_detail(db: Session, game_id: int) -> dict:
@@ -1964,11 +1976,11 @@ def get_game_detail(db: Session, game_id: int) -> dict:
     }
 
 
-def _game_summary(game: Game) -> dict:
+def _game_summary(game: Game, session: int | None = None) -> dict:
     return {
         "id": game.id,
         "played_on": str(game.played_on),
-        "week_number": game.week_number,
+        "session": session,
         "game_number": game.game_number,
         "team_a_score": game.team_a_score,
         "team_b_score": game.team_b_score,
