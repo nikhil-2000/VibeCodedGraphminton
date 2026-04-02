@@ -86,3 +86,75 @@ def parse_csv_rows(lines: list[str], week_number: int) -> tuple[list[RawGameRow]
         ))
 
     return rows, errors
+
+
+import os
+from sqlalchemy.orm import Session
+from ..models import PlayerAlias, Game, GamePlayer
+
+
+def resolve_aliases(db: Session) -> dict[str, int]:
+    """Return mapping of alias (lowercased) → player_id for all aliases in DB."""
+    rows = db.query(PlayerAlias.alias, PlayerAlias.player_id).all()
+    return {row.alias.lower(): row.player_id for row in rows}
+
+
+def ingest_csv_file(
+    db: Session,
+    filepath: str,
+    week_number: int,
+    alias_map: dict[str, int],
+) -> tuple[int, list[str]]:
+    """Parse and validate one CSV file. Returns (games_loaded, errors).
+
+    If there are any errors, nothing is written to the DB.
+    """
+    with open(filepath) as f:
+        lines = f.readlines()
+
+    rows, parse_errors = parse_csv_rows(lines, week_number)
+    if parse_errors:
+        return 0, parse_errors
+
+    all_errors: list[str] = []
+
+    for row in rows:
+        all_errors.extend(validate_game_row(row))
+        for name in [row.name_a, row.name_b, row.name_x, row.name_y]:
+            if name.lower() not in alias_map:
+                all_errors.append(f"Row {row.row_number}: unknown player '{name}'")
+
+    if all_errors:
+        return 0, all_errors
+
+    loaded = 0
+    for row in rows:
+        existing = db.query(Game).filter(
+            Game.week_number == row.week_number,
+            Game.game_number == row.game_number,
+        ).first()
+        if existing:
+            continue
+
+        game = Game(
+            played_on=row.played_on,
+            week_number=row.week_number,
+            game_number=row.game_number,
+            team_a_score=row.team_a_score,
+            team_b_score=row.team_b_score,
+        )
+        db.add(game)
+        db.flush()
+
+        for name, team in [
+            (row.name_a, "A"), (row.name_b, "A"),
+            (row.name_x, "B"), (row.name_y, "B"),
+        ]:
+            db.add(GamePlayer(
+                game_id=game.id,
+                player_id=alias_map[name.lower()],
+                team=team,
+            ))
+        loaded += 1
+
+    return loaded, []
