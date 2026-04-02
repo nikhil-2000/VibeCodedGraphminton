@@ -106,3 +106,29 @@ def test_patch_cannot_change_canonical_name(client: TestClient):
     # canonical_name is not a recognised field — should be ignored, name stays the same
     assert response.status_code == 200
     assert response.json()["canonical_name"] == "Original"
+
+
+def test_delete_player_no_games(client: TestClient):
+    created = client.post("/players", json={"canonical_name": "ToDelete", "is_sub": False, "aliases": []}).json()
+    response = client.delete(f"/players/{created['id']}")
+    assert response.status_code == 204
+    # confirm gone
+    assert client.get(f"/players/{created['id']}").status_code == 404
+
+
+def test_delete_player_not_found(client: TestClient):
+    response = client.delete("/players/99999")
+    assert response.status_code == 404
+
+
+def test_delete_player_with_games_rejected(client: TestClient):
+    # Create two players and ingest a game that references them
+    p1 = client.post("/players", json={"canonical_name": "Del A", "is_sub": False, "aliases": ["DelA"]}).json()
+    p2 = client.post("/players", json={"canonical_name": "Del B", "is_sub": False, "aliases": ["DelB"]}).json()
+    p3 = client.post("/players", json={"canonical_name": "Del C", "is_sub": False, "aliases": ["DelC"]}).json()
+    p4 = client.post("/players", json={"canonical_name": "Del D", "is_sub": False, "aliases": ["DelD"]}).json()
+    csv = "01-01-2025,1,DelA,DelB,21,DelC,DelD,9\n"
+    client.post("/ingest/scores", json={"files": [csv]})
+    response = client.delete(f"/players/{p1['id']}")
+    assert response.status_code == 409
+    assert "games" in response.json()["detail"].lower()

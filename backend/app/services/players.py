@@ -1,7 +1,7 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from ..models import Player, PlayerAlias
+from ..models import Player, PlayerAlias, GamePlayer
 from ..schemas import PlayerCreate, PlayerUpdate
 
 
@@ -67,3 +67,12 @@ def update_player(db: Session, player_id: int, data: PlayerUpdate) -> Player:
 
     db.refresh(player)
     return player
+
+
+def delete_player(db: Session, player_id: int) -> None:
+    player = get_player(db, player_id)  # raises KeyError if not found
+    has_games = db.query(GamePlayer).filter(GamePlayer.player_id == player_id).first()
+    if has_games:
+        raise ValueError(f"Player {player_id} has games and cannot be deleted")
+    db.delete(player)
+    db.flush()

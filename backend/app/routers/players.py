@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..schemas import PlayerCreate, PlayerUpdate, PlayerResponse, PlayerStatsResponse
@@ -50,3 +50,15 @@ def get_player_stats(player_id: int, db: Session = Depends(get_db)):
         return stats_service.get_player_stats(db, player_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.delete("/{player_id}", status_code=204)
+def delete_player(player_id: int, db: Session = Depends(get_db)):
+    try:
+        player_service.delete_player(db, player_id)
+        db.commit()
+        return Response(status_code=204)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
