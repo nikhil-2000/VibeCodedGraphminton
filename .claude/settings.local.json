@@ -19,7 +19,9 @@
       "Bash(npx shadcn@latest init --defaults)",
       "Bash(npm test:*)",
       "Bash(npx vitest:*)",
-      "Bash(npx shadcn@latest add dialog)"
+      "Bash(npx shadcn@latest add dialog)",
+      "Bash(DATABASE_URL=postgresql://graphminton:graphminton@localhost:5432/graphminton_test /Users/nikhil.patel/Documents/personal/VibeCodedGraphminton/backend/.venv/bin/python -m pytest:*)",
+      "Bash(/Users/nikhil.patel/Documents/personal/VibeCodedGraphminton/backend/.venv/bin/python backend/export_openapi.py)"
     ]
   }
 }
