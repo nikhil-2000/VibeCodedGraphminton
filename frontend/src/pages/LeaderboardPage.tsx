@@ -14,7 +14,6 @@ export default function LeaderboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setLoading(true)
     getLeaderboard(sortBy, selectedIds)
       .then(setEntries)
       .catch((e: Error) => setError(e.message))
@@ -43,9 +42,9 @@ export default function LeaderboardPage() {
         </div>
       </CardHeader>
       <CardContent>
-        {loading && <p className="text-muted-foreground">Loading…</p>}
+        {loading && entries.length === 0 && <p className="text-muted-foreground">Loading…</p>}
         {error && <p className="text-destructive">{error}</p>}
-        {!loading && !error && <LeaderboardTable entries={entries} />}
+        {!error && entries.length > 0 && <LeaderboardTable entries={entries} />}
       </CardContent>
     </Card>
   )

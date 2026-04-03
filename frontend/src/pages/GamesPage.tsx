@@ -12,7 +12,6 @@ export default function GamesPage() {
   const [error, setError] = useState<string | null>(null)
 
   const load = (w: string) => {
-    setLoading(true)
     getGames({ week: w ? Number(w) : undefined })
       .then(setGames)
       .catch((e: Error) => setError(e.message))
