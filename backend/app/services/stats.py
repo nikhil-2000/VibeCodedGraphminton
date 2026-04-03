@@ -4,9 +4,23 @@ from sqlalchemy import func, case
 from ..models import Player, Game, GamePlayer
 
 
-def get_player_stats(db: Session, player_id: int) -> dict[str, Any]:
+def _valid_game_ids(db: Session, player_ids: list[int] | None):
+    """Returns a subquery of game IDs where all 4 participants are in player_ids.
+    Returns None when player_ids is None or empty (no filter — all games counted)."""
+    if not player_ids:
+        return None
+    excluded = (
+        db.query(GamePlayer.game_id)
+        .filter(GamePlayer.player_id.notin_(player_ids))
+        .subquery()
+    )
+    return db.query(Game.id).filter(~Game.id.in_(excluded)).subquery()
+
+
+def get_player_stats(db: Session, player_id: int, player_ids: list[int] | None = None) -> dict[str, Any]:
     if not db.get(Player, player_id):
         raise KeyError(f"Player {player_id} not found")
+    valid_ids = _valid_game_ids(db, player_ids)
     won_case = case(
         ((GamePlayer.team == "A") & (Game.team_a_score > Game.team_b_score), 1),
         ((GamePlayer.team == "B") & (Game.team_b_score > Game.team_a_score), 1),
@@ -16,8 +30,7 @@ def get_player_stats(db: Session, player_id: int) -> dict[str, Any]:
         (GamePlayer.team == "A", Game.team_a_score),
         else_=Game.team_b_score,
     )
-
-    result = (
+    q = (
         db.query(
             func.count(GamePlayer.id).label("games_played"),
             func.sum(won_case).label("wins"),
@@ -25,8 +38,10 @@ def get_player_stats(db: Session, player_id: int) -> dict[str, Any]:
         )
         .join(Game, GamePlayer.game_id == Game.id)
         .filter(GamePlayer.player_id == player_id)
-        .one()
     )
+    if valid_ids is not None:
+        q = q.filter(Game.id.in_(valid_ids))
+    result = q.one()
 
     games_played = result.games_played or 0
     wins = int(result.wins or 0)
@@ -40,7 +55,8 @@ def get_player_stats(db: Session, player_id: int) -> dict[str, Any]:
     }
 
 
-def get_leaderboard(db: Session, sort_by: str = "win_rate") -> list[dict[str, Any]]:
+def get_leaderboard(db: Session, sort_by: str = "win_rate", player_ids: list[int] | None = None) -> list[dict[str, Any]]:
+    valid_ids = _valid_game_ids(db, player_ids)
     won_case = case(
         ((GamePlayer.team == "A") & (Game.team_a_score > Game.team_b_score), 1),
         ((GamePlayer.team == "B") & (Game.team_b_score > Game.team_a_score), 1),
@@ -50,8 +66,7 @@ def get_leaderboard(db: Session, sort_by: str = "win_rate") -> list[dict[str, An
         (GamePlayer.team == "A", Game.team_a_score),
         else_=Game.team_b_score,
     )
-
-    rows = (
+    q = (
         db.query(
             Player.id,
             Player.canonical_name,
@@ -62,8 +77,10 @@ def get_leaderboard(db: Session, sort_by: str = "win_rate") -> list[dict[str, An
         .join(GamePlayer, Player.id == GamePlayer.player_id)
         .join(Game, GamePlayer.game_id == Game.id)
         .group_by(Player.id, Player.canonical_name)
-        .all()
     )
+    if valid_ids is not None:
+        q = q.filter(Game.id.in_(valid_ids))
+    rows = q.all()
 
     entries: list[dict[str, Any]] = []
     for row in rows:
@@ -83,7 +100,8 @@ def get_leaderboard(db: Session, sort_by: str = "win_rate") -> list[dict[str, An
     return sorted(entries, key=lambda e: e[sort_key], reverse=True)
 
 
-def get_all_partnerships(db: Session, player_id: int | None = None) -> list[dict[str, Any]]:
+def get_all_partnerships(db: Session, player_id: int | None = None, player_ids: list[int] | None = None) -> list[dict[str, Any]]:
+    valid_ids = _valid_game_ids(db, player_ids)
     gp1 = aliased(GamePlayer)
     gp2 = aliased(GamePlayer)
 
@@ -107,6 +125,8 @@ def get_all_partnerships(db: Session, player_id: int | None = None) -> list[dict
 
     if player_id is not None:
         query = query.filter((gp1.player_id == player_id) | (gp2.player_id == player_id))
+    if valid_ids is not None:
+        query = query.filter(Game.id.in_(valid_ids))
 
     rows = query.all()
     results: list[dict[str, Any]] = []
@@ -124,10 +144,10 @@ def get_all_partnerships(db: Session, player_id: int | None = None) -> list[dict
     return results
 
 
-def get_partnership_for_player(db: Session, player_id: int) -> list[dict[str, Any]]:
+def get_partnership_for_player(db: Session, player_id: int, player_ids: list[int] | None = None) -> list[dict[str, Any]]:
     if not db.get(Player, player_id):
         raise KeyError(f"Player {player_id} not found")
-    rows = get_all_partnerships(db, player_id)
+    rows = get_all_partnerships(db, player_id, player_ids)
     result: list[dict[str, Any]] = []
     for r in rows:
         entry: dict[str, Any] = {
@@ -138,24 +158,27 @@ def get_partnership_for_player(db: Session, player_id: int) -> list[dict[str, An
     return result
 
 
-def get_specific_partnership(db: Session, player_a_id: int, player_b_id: int) -> dict[str, Any]:
+def get_specific_partnership(db: Session, player_a_id: int, player_b_id: int, player_ids: list[int] | None = None) -> dict[str, Any]:
     lo, hi = min(player_a_id, player_b_id), max(player_a_id, player_b_id)
-    for r in get_all_partnerships(db):
+    for r in get_all_partnerships(db, player_ids=player_ids):
         if r["player_a_id"] == lo and r["player_b_id"] == hi:
             return r
     return {"player_a_id": lo, "player_b_id": hi, "games_together": 0, "wins": 0, "losses": 0, "win_rate": 0.0}
 
 
-def get_head_to_head(db: Session, player_a_id: int, player_b_id: int) -> dict[str, Any]:
+def get_head_to_head(db: Session, player_a_id: int, player_b_id: int, player_ids: list[int] | None = None) -> dict[str, Any]:
+    valid_ids = _valid_game_ids(db, player_ids)
     gp_a = aliased(GamePlayer)
     gp_b = aliased(GamePlayer)
 
-    rows = (
+    q = (
         db.query(Game, gp_a.team.label("team_a"))
         .join(gp_a, (gp_a.game_id == Game.id) & (gp_a.player_id == player_a_id))
         .join(gp_b, (gp_b.game_id == Game.id) & (gp_b.player_id == player_b_id) & (gp_b.team != gp_a.team))
-        .all()
     )
+    if valid_ids is not None:
+        q = q.filter(Game.id.in_(valid_ids))
+    rows = q.all()
 
     a_wins = b_wins = 0
     for game, team_a in rows:
@@ -179,20 +202,23 @@ def get_head_to_head(db: Session, player_a_id: int, player_b_id: int) -> dict[st
     }
 
 
-def get_matchup(db: Session, pair_a: tuple[int, int], pair_b: tuple[int, int]) -> dict[str, Any]:
+def get_matchup(db: Session, pair_a: tuple[int, int], pair_b: tuple[int, int], player_ids: list[int] | None = None) -> dict[str, Any]:
+    valid_ids = _valid_game_ids(db, player_ids)
     gp_a1 = aliased(GamePlayer)
     gp_a2 = aliased(GamePlayer)
     gp_b1 = aliased(GamePlayer)
     gp_b2 = aliased(GamePlayer)
 
-    rows = (
+    q = (
         db.query(Game, gp_a1.team.label("pair_a_team"))
         .join(gp_a1, (gp_a1.game_id == Game.id) & (gp_a1.player_id == pair_a[0]))
         .join(gp_a2, (gp_a2.game_id == Game.id) & (gp_a2.player_id == pair_a[1]) & (gp_a2.team == gp_a1.team))
         .join(gp_b1, (gp_b1.game_id == Game.id) & (gp_b1.player_id == pair_b[0]) & (gp_b1.team != gp_a1.team))
         .join(gp_b2, (gp_b2.game_id == Game.id) & (gp_b2.player_id == pair_b[1]) & (gp_b2.team == gp_b1.team))
-        .all()
     )
+    if valid_ids is not None:
+        q = q.filter(Game.id.in_(valid_ids))
+    rows = q.all()
 
     a_wins = b_wins = 0
     for game, pair_a_team in rows:

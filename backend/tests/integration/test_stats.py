@@ -137,3 +137,49 @@ def test_matchup(client: TestClient, two_games):
     data = response.json()
     assert data["pair_a_wins"] == 1
     assert data["pair_b_wins"] == 0
+
+
+@pytest.fixture
+def mixed_fixture(client: TestClient):
+    """
+    Game 1 (regulars only): RegA+RegB beat RegX+RegY 21-9
+    Game 2 (includes sub):  RegA+SubS beat RegB+RegY 21-15
+    """
+    a = _create_player(client, "RegA")
+    b = _create_player(client, "RegB")
+    x = _create_player(client, "RegX")
+    y = _create_player(client, "RegY")
+    s = client.post("/players", json={"canonical_name": "SubS", "is_sub": True, "aliases": []}).json()["id"]
+    resp = client.post("/ingest/scores", json={"files": [
+        "08-04-2024,1,RegA,RegB,21,RegX,RegY,9\n"
+        "08-04-2024,2,RegA,SubS,21,RegB,RegY,15\n"
+    ]})
+    assert resp.status_code == 200, resp.json()
+    return {"a": a, "b": b, "x": x, "y": y, "s": s}
+
+
+def test_leaderboard_player_ids_filter(client: TestClient, mixed_fixture):
+    a, b, x, y, s = mixed_fixture["a"], mixed_fixture["b"], mixed_fixture["x"], mixed_fixture["y"], mixed_fixture["s"]
+    regular_ids = [a, b, x, y]
+    qs = "&".join(f"player_ids={i}" for i in regular_ids)
+
+    # Unfiltered: RegA has 2 games (played in both)
+    unfiltered = {e["player_id"]: e for e in client.get("/stats/leaderboard").json()}
+    assert unfiltered[a]["games_played"] == 2
+
+    # Filtered to regulars: RegA has 1 game, SubS absent
+    filtered = {e["player_id"]: e for e in client.get(f"/stats/leaderboard?{qs}").json()}
+    assert filtered[a]["games_played"] == 1
+    assert s not in filtered
+
+
+def test_player_stats_player_ids_filter(client: TestClient, mixed_fixture):
+    a, s = mixed_fixture["a"], mixed_fixture["s"]
+    regular_ids = [mixed_fixture["a"], mixed_fixture["b"], mixed_fixture["x"], mixed_fixture["y"]]
+    qs = "&".join(f"player_ids={i}" for i in regular_ids)
+
+    unfiltered = client.get(f"/stats/player/{a}").json()
+    assert unfiltered["games_played"] == 2
+
+    filtered = client.get(f"/stats/player/{a}?{qs}").json()
+    assert filtered["games_played"] == 1
