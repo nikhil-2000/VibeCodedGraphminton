@@ -1,26 +1,23 @@
 from typing import Any
 from sqlalchemy.orm import Session, aliased
-from sqlalchemy import func, case
+from sqlalchemy import func, case, select
+from sqlalchemy.sql import Select
 from ..models import Player, Game, GamePlayer
 
 
-def _valid_game_ids(db: Session, player_ids: list[int] | None):
-    """Returns a subquery of game IDs where all 4 participants are in player_ids.
+def _valid_game_ids(player_ids: list[int] | None) -> "Select[tuple[int]] | None":
+    """Returns a Select subquery of game IDs where all 4 participants are in player_ids.
     Returns None when player_ids is None or empty (no filter — all games counted)."""
     if not player_ids:
         return None
-    excluded = (
-        db.query(GamePlayer.game_id)
-        .filter(GamePlayer.player_id.notin_(player_ids))
-        .subquery()
-    )
-    return db.query(Game.id).filter(~Game.id.in_(excluded)).subquery()
+    excluded = select(GamePlayer.game_id).where(GamePlayer.player_id.notin_(player_ids))
+    return select(Game.id).where(~Game.id.in_(excluded))
 
 
 def get_player_stats(db: Session, player_id: int, player_ids: list[int] | None = None) -> dict[str, Any]:
     if not db.get(Player, player_id):
         raise KeyError(f"Player {player_id} not found")
-    valid_ids = _valid_game_ids(db, player_ids)
+    valid_ids = _valid_game_ids(player_ids)
     won_case = case(
         ((GamePlayer.team == "A") & (Game.team_a_score > Game.team_b_score), 1),
         ((GamePlayer.team == "B") & (Game.team_b_score > Game.team_a_score), 1),
@@ -56,7 +53,7 @@ def get_player_stats(db: Session, player_id: int, player_ids: list[int] | None =
 
 
 def get_leaderboard(db: Session, sort_by: str = "win_rate", player_ids: list[int] | None = None) -> list[dict[str, Any]]:
-    valid_ids = _valid_game_ids(db, player_ids)
+    valid_ids = _valid_game_ids(player_ids)
     won_case = case(
         ((GamePlayer.team == "A") & (Game.team_a_score > Game.team_b_score), 1),
         ((GamePlayer.team == "B") & (Game.team_b_score > Game.team_a_score), 1),
@@ -101,7 +98,7 @@ def get_leaderboard(db: Session, sort_by: str = "win_rate", player_ids: list[int
 
 
 def get_all_partnerships(db: Session, player_id: int | None = None, player_ids: list[int] | None = None) -> list[dict[str, Any]]:
-    valid_ids = _valid_game_ids(db, player_ids)
+    valid_ids = _valid_game_ids(player_ids)
     gp1 = aliased(GamePlayer)
     gp2 = aliased(GamePlayer)
 
@@ -167,7 +164,7 @@ def get_specific_partnership(db: Session, player_a_id: int, player_b_id: int, pl
 
 
 def get_head_to_head(db: Session, player_a_id: int, player_b_id: int, player_ids: list[int] | None = None) -> dict[str, Any]:
-    valid_ids = _valid_game_ids(db, player_ids)
+    valid_ids = _valid_game_ids(player_ids)
     gp_a = aliased(GamePlayer)
     gp_b = aliased(GamePlayer)
 
@@ -203,7 +200,7 @@ def get_head_to_head(db: Session, player_a_id: int, player_b_id: int, player_ids
 
 
 def get_matchup(db: Session, pair_a: tuple[int, int], pair_b: tuple[int, int], player_ids: list[int] | None = None) -> dict[str, Any]:
-    valid_ids = _valid_game_ids(db, player_ids)
+    valid_ids = _valid_game_ids(player_ids)
     gp_a1 = aliased(GamePlayer)
     gp_a2 = aliased(GamePlayer)
     gp_b1 = aliased(GamePlayer)
