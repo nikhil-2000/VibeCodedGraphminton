@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..schemas import PlayerCreate, PlayerUpdate, PlayerResponse, PlayerStatsResponse
@@ -45,9 +45,13 @@ def update_player(player_id: int, data: PlayerUpdate, db: Session = Depends(get_
 
 
 @router.get("/{player_id}/stats", response_model=PlayerStatsResponse)
-def get_player_stats(player_id: int, db: Session = Depends(get_db)):
+def get_player_stats(
+    player_id: int,
+    player_ids: list[int] = Query(default=[]),
+    db: Session = Depends(get_db),
+):
     try:
-        return stats_service.get_player_stats(db, player_id)
+        return stats_service.get_player_stats(db, player_id, player_ids or None)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 
