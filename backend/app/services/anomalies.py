@@ -4,20 +4,38 @@ from sqlalchemy import func
 from ..models import Game, GamePlayer
 
 
-MIN_GAMES_THRESHOLD = 3  # players with fewer games are excluded from underplayed results
+MIN_GAMES_THRESHOLD = 3
 
 
-def _get_player_game_counts(db: Session) -> dict[int, int]:
-    rows = (
-        db.query(GamePlayer.player_id, func.count().label("games"))
-        .group_by(GamePlayer.player_id)
+def _valid_game_id_set(db: Session, player_ids: list[int] | None) -> set[int] | None:
+    """Returns the set of game IDs where all participants are in player_ids.
+    Returns None when player_ids is None or empty (no filter)."""
+    if not player_ids:
+        return None
+    excluded = {
+        row.game_id
+        for row in db.query(GamePlayer.game_id)
+        .filter(GamePlayer.player_id.notin_(player_ids))
+        .distinct()
         .all()
-    )
+    }
+    all_ids = {row.id for row in db.query(Game.id).all()}
+    return all_ids - excluded
+
+
+def _get_player_game_counts(db: Session, valid_game_ids: set[int] | None = None) -> dict[int, int]:
+    q = db.query(GamePlayer.player_id, func.count().label("games")).group_by(GamePlayer.player_id)
+    if valid_game_ids is not None:
+        q = q.filter(GamePlayer.game_id.in_(valid_game_ids))
+    rows = q.all()
     return {row.player_id: row.games for row in rows}
 
 
-def _get_total_games(db: Session) -> int:
-    return db.query(func.count(Game.id)).scalar() or 0
+def _get_total_games(db: Session, valid_game_ids: set[int] | None = None) -> int:
+    q = db.query(func.count(Game.id))
+    if valid_game_ids is not None:
+        q = q.filter(Game.id.in_(valid_game_ids))
+    return q.scalar() or 0
 
 
 def _get_all_player_pairs(player_counts: dict[int, int]) -> list[tuple[int, int]]:
@@ -26,36 +44,32 @@ def _get_all_player_pairs(player_counts: dict[int, int]) -> list[tuple[int, int]
 
 
 def _expected_frequency(games_a: int, games_b: int, total: int, prob_given_same_game: float) -> float:
-    """
-    Expected co-occurrence assuming random pairing.
-
-    In a 4-player game there are 3 distinct ways to split into 2 teams:
-      - Partnership prob given same game  = 1/3
-      - Head-to-head prob given same game = 2/3
-    """
     if total == 0:
         return 0.0
     return (games_a / total) * (games_b / total) * total * prob_given_same_game
 
 
-def get_partnership_anomalies(db: Session, overplayed: bool, limit: int = 10) -> list[dict[str, Any]]:
+def get_partnership_anomalies(db: Session, overplayed: bool, limit: int = 10, player_ids: list[int] | None = None) -> list[dict[str, Any]]:
+    valid_game_ids = _valid_game_id_set(db, player_ids)
     gp1 = aliased(GamePlayer)
     gp2 = aliased(GamePlayer)
 
-    actual_counts = {
-        (min(r.a, r.b), max(r.a, r.b)): int(r.n)
-        for r in db.query(
+    q = (
+        db.query(
             gp1.player_id.label("a"),
             gp2.player_id.label("b"),
             func.count().label("n"),
         )
         .join(gp2, (gp1.game_id == gp2.game_id) & (gp1.team == gp2.team) & (gp1.player_id < gp2.player_id))
         .group_by(gp1.player_id, gp2.player_id)
-        .all()
-    }
+    )
+    if valid_game_ids is not None:
+        q = q.filter(gp1.game_id.in_(valid_game_ids))
 
-    player_counts = _get_player_game_counts(db)
-    total = _get_total_games(db)
+    actual_counts = {(min(r.a, r.b), max(r.a, r.b)): int(r.n) for r in q.all()}
+
+    player_counts = _get_player_game_counts(db, valid_game_ids)
+    total = _get_total_games(db, valid_game_ids)
     all_pairs = _get_all_player_pairs(player_counts)
 
     results: list[dict[str, Any]] = []
@@ -87,24 +101,27 @@ def get_partnership_anomalies(db: Session, overplayed: bool, limit: int = 10) ->
     return results[:limit]
 
 
-def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int = 10) -> list[dict[str, Any]]:
+def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int = 10, player_ids: list[int] | None = None) -> list[dict[str, Any]]:
+    valid_game_ids = _valid_game_id_set(db, player_ids)
     gp1 = aliased(GamePlayer)
     gp2 = aliased(GamePlayer)
 
-    actual_counts = {
-        (min(r.a, r.b), max(r.a, r.b)): int(r.n)
-        for r in db.query(
+    q = (
+        db.query(
             gp1.player_id.label("a"),
             gp2.player_id.label("b"),
             func.count().label("n"),
         )
         .join(gp2, (gp1.game_id == gp2.game_id) & (gp1.team != gp2.team) & (gp1.player_id < gp2.player_id))
         .group_by(gp1.player_id, gp2.player_id)
-        .all()
-    }
+    )
+    if valid_game_ids is not None:
+        q = q.filter(gp1.game_id.in_(valid_game_ids))
 
-    player_counts = _get_player_game_counts(db)
-    total = _get_total_games(db)
+    actual_counts = {(min(r.a, r.b), max(r.a, r.b)): int(r.n) for r in q.all()}
+
+    player_counts = _get_player_game_counts(db, valid_game_ids)
+    total = _get_total_games(db, valid_game_ids)
     all_pairs = _get_all_player_pairs(player_counts)
 
     results: list[dict[str, Any]] = []

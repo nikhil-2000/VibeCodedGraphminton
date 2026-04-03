@@ -70,3 +70,29 @@ def test_underplayed_head_to_head(client: TestClient, anomaly_seed):
     all_pairs = [{d["player_a_id"], d["player_b_id"]} for d in data]
     assert {anomaly_seed["a"], anomaly_seed["b"]} in all_pairs
     assert {anomaly_seed["c"], anomaly_seed["d"]} in all_pairs
+
+
+def test_partnership_anomalies_player_ids_filter(client: TestClient):
+    """Sub game partnerships should not appear when filtered to regulars."""
+    # Create 4 regulars and 1 sub
+    reg_ids = []
+    for name in ["AnoRegA", "AnoRegB", "AnoRegX", "AnoRegY"]:
+        reg_ids.append(client.post("/players", json={"canonical_name": name, "is_sub": False, "aliases": []}).json()["id"])
+    sub_id = client.post("/players", json={"canonical_name": "AnoSubS", "is_sub": True, "aliases": []}).json()["id"]
+
+    # Ingest 3 games: 2 regulars-only, 1 with sub
+    resp = client.post("/ingest/scores", json={"files": [
+        "09-04-2024,1,AnoRegA,AnoRegB,21,AnoRegX,AnoRegY,9\n"
+        "09-04-2024,2,AnoRegA,AnoRegB,21,AnoRegX,AnoRegY,15\n"
+        "09-04-2024,3,AnoRegA,AnoSubS,21,AnoRegX,AnoRegY,10\n"
+    ]})
+    assert resp.status_code == 200, resp.json()
+
+    qs = "&".join(f"player_ids={i}" for i in reg_ids)
+    response = client.get(f"/anomalies/partnerships/overplayed?{qs}")
+    assert response.status_code == 200
+    data = response.json()
+    # sub player should not appear in any anomaly entry
+    for entry in data:
+        assert entry["player_a_id"] != sub_id
+        assert entry["player_b_id"] != sub_id
