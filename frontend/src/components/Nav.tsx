@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { Sun, Moon } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
+import PlayerFilterPopover from './PlayerFilterPopover'
 
 const links = [
   { to: '/leaderboard', label: 'Leaderboard' },
@@ -33,13 +34,16 @@ export default function Nav() {
             {label}
           </NavLink>
         ))}
-        <button
-          onClick={toggle}
-          className="ml-auto rounded p-1.5 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <PlayerFilterPopover />
+          <button
+            onClick={toggle}
+            className="rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+        </div>
       </div>
     </nav>
   )
