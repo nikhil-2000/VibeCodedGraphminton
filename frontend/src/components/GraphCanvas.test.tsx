@@ -4,7 +4,7 @@ import GraphCanvas from './GraphCanvas'
 import type { Partnership, Player } from '../types'
 
 beforeAll(() => {
-  global.ResizeObserver = class {
+  globalThis.ResizeObserver = class {
     observe() {}
     unobserve() {}
     disconnect() {}

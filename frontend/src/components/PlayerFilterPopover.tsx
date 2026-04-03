@@ -19,10 +19,8 @@ export default function PlayerFilterPopover() {
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <button className="rounded border border-border px-2.5 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
-          {label}
-        </button>
+      <PopoverTrigger className="rounded border border-border px-2.5 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+        {label}
       </PopoverTrigger>
       <PopoverContent className="w-64 p-3" align="end">
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
