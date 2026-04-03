@@ -78,9 +78,9 @@ export default function PlayersPage() {
           </Button>
         </div>
       </div>
-      {loading && <p className="text-muted-foreground">Loading…</p>}
       {error && <p className="text-destructive">{error}</p>}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+      {loading && players.length === 0 && <p className="text-muted-foreground">Loading…</p>}
+      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 transition-opacity duration-150 ${loading ? 'opacity-50' : ''}`}>
         {players.map((p) => (
           <Link
             key={p.id}
