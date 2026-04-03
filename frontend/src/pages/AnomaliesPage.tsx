@@ -25,7 +25,6 @@ export default function AnomaliesPage() {
   }, [])
 
   useEffect(() => {
-    setLoading(true)
     const fetch = tab === 'partnerships' ? getPartnershipAnomalies : getHeadToHeadAnomalies
     fetch(direction, 20, selectedIds)
       .then(setEntries)
@@ -71,9 +70,9 @@ export default function AnomaliesPage() {
           : ' Negative = less frequent than random chance.'}
       </p>
 
-      {loading && <p className="text-muted-foreground">Loading…</p>}
+      {loading && entries.length === 0 && <p className="text-muted-foreground">Loading…</p>}
       {error && <p className="text-destructive">{error}</p>}
-      {!loading && !error && <AnomalyTable entries={entries} playerNames={playerNames} />}
+      {!error && entries.length > 0 && <AnomalyTable entries={entries} playerNames={playerNames} />}
     </div>
   )
 }
