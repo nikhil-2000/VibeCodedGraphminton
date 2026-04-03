@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { getPlayers } from '../api/players'
 import { getAllPartnerships } from '../api/stats'
+import { usePlayerFilter } from '../context/PlayerFilterContext'
 import GraphCanvas from '../components/GraphCanvas'
 import { Input } from '@/components/ui/input'
 import type { Player, Partnership } from '../types'
@@ -12,15 +12,18 @@ export default function GraphPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const { selectedIds, allPlayers: contextPlayers } = usePlayerFilter()
+
   useEffect(() => {
-    Promise.all([getPlayers(), getAllPartnerships()])
-      .then(([p, ps]) => {
-        setPlayers(p)
+    setLoading(true)
+    getAllPartnerships(selectedIds)
+      .then((ps) => {
+        setPlayers(contextPlayers.filter((p) => selectedIds.includes(p.id)))
         setPartnerships(ps)
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [])
+  }, [selectedIds, contextPlayers])
 
   const filtered = partnerships.filter((p) => p.games_together >= minGames)
 

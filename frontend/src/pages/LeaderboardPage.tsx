@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { getLeaderboard } from '../api/stats'
+import { usePlayerFilter } from '../context/PlayerFilterContext'
 import LeaderboardTable from '../components/LeaderboardTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import type { LeaderboardEntry } from '../types'
 
 export default function LeaderboardPage() {
+  const { selectedIds } = usePlayerFilter()
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [sortBy, setSortBy] = useState<'win_rate' | 'avg_points'>('win_rate')
   const [loading, setLoading] = useState(true)
@@ -13,11 +15,11 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     setLoading(true)
-    getLeaderboard(sortBy)
+    getLeaderboard(sortBy, selectedIds)
       .then(setEntries)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [sortBy])
+  }, [sortBy, selectedIds])
 
   return (
     <Card>

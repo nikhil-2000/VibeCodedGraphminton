@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getPlayer, getPlayerStats, getPlayerPartnerships, getPlayers, deletePlayer, updatePlayer } from '../api/players'
+import { usePlayerFilter } from '../context/PlayerFilterContext'
 import StatCard from '../components/StatCard'
 import PartnershipTable from '../components/PartnershipTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,6 +14,7 @@ export default function PlayerDetailPage() {
   const playerId = Number(id)
 
   const navigate = useNavigate()
+  const { selectedIds } = usePlayerFilter()
 
   const [player, setPlayer] = useState<Player | null>(null)
   const [stats, setStats] = useState<PlayerStats | null>(null)
@@ -27,8 +29,8 @@ export default function PlayerDetailPage() {
   useEffect(() => {
     Promise.all([
       getPlayer(playerId),
-      getPlayerStats(playerId),
-      getPlayerPartnerships(playerId),
+      getPlayerStats(playerId, selectedIds),
+      getPlayerPartnerships(playerId, selectedIds),
       getPlayers(),
     ])
       .then(([p, s, partners, allPlayers]) => {
@@ -38,7 +40,7 @@ export default function PlayerDetailPage() {
         setPlayerNames(Object.fromEntries(allPlayers.map((pl) => [pl.id, pl.canonical_name])))
       })
       .catch((e: Error) => setError(e.message))
-  }, [playerId])
+  }, [playerId, selectedIds])
 
   const handleToggleSub = () => {
     if (!player || togglingSubb) return

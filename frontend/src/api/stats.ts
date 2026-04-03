@@ -1,13 +1,21 @@
 import { apiFetch } from './client'
 import type { LeaderboardEntry, Partnership, HeadToHead } from '../types'
 
-export const getLeaderboard = (sortBy: 'win_rate' | 'avg_points' = 'win_rate') => {
-  const params = new URLSearchParams({ sort_by: sortBy })
-  return apiFetch<LeaderboardEntry[]>(`/stats/leaderboard?${params.toString()}`)
+const playerIdsQs = (playerIds?: number[]): string =>
+  playerIds?.length ? playerIds.map((id) => `player_ids=${id}`).join('&') : ''
+
+export const getLeaderboard = (sortBy: 'win_rate' | 'avg_points' = 'win_rate', playerIds?: number[]) => {
+  const base = new URLSearchParams({ sort_by: sortBy }).toString()
+  const filter = playerIdsQs(playerIds)
+  return apiFetch<LeaderboardEntry[]>(`/stats/leaderboard?${base}${filter ? '&' + filter : ''}`)
 }
 
-export const getAllPartnerships = () =>
-  apiFetch<Partnership[]>('/stats/partnerships')
+export const getAllPartnerships = (playerIds?: number[]) => {
+  const filter = playerIdsQs(playerIds)
+  return apiFetch<Partnership[]>(`/stats/partnerships${filter ? '?' + filter : ''}`)
+}
 
-export const getHeadToHead = (playerAId: number, playerBId: number) =>
-  apiFetch<HeadToHead>(`/stats/head-to-head/${playerAId}/${playerBId}`)
+export const getHeadToHead = (playerAId: number, playerBId: number, playerIds?: number[]) => {
+  const filter = playerIdsQs(playerIds)
+  return apiFetch<HeadToHead>(`/stats/head-to-head/${playerAId}/${playerBId}${filter ? '?' + filter : ''}`)
+}

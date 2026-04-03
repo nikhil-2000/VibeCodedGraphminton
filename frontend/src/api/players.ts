@@ -11,11 +11,15 @@ export const getPlayers = (isSub?: boolean) => {
 export const getPlayer = (id: number) =>
   apiFetch<Player>(`/players/${id}`)
 
-export const getPlayerStats = (id: number) =>
-  apiFetch<PlayerStats>(`/stats/player/${id}`)
+export const getPlayerStats = (id: number, playerIds?: number[]) => {
+  const filter = playerIds?.length ? '?' + playerIds.map((pid) => `player_ids=${pid}`).join('&') : ''
+  return apiFetch<PlayerStats>(`/stats/player/${id}${filter}`)
+}
 
-export const getPlayerPartnerships = (id: number) =>
-  apiFetch<PlayerPartnership[]>(`/stats/partnerships/${id}`)
+export const getPlayerPartnerships = (id: number, playerIds?: number[]) => {
+  const filter = playerIds?.length ? '?' + playerIds.map((pid) => `player_ids=${pid}`).join('&') : ''
+  return apiFetch<PlayerPartnership[]>(`/stats/partnerships/${id}${filter}`)
+}
 
 export const createPlayer = (data: PlayerCreate) =>
   apiFetch<Player>('/players', {
