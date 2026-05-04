@@ -41,14 +41,16 @@ This document covers the product design for Release 1 and Release 2.
 
 `team_size` is chosen per league at creation and must be one of the sport's `supported_team_sizes`.
 
-### User Roles
+### User Roles (Subscription Tiers)
 
-| Role | Description |
-|---|---|
-| Player | View standings, game history, own profile |
-| Admin | Everything Player sees + score entry, player management |
-| Player Pro | *(R2)* Advanced insights and filtering |
-| Commissioner | *(R2)* Manage multiple leagues |
+Roles are subscription tiers — not permissions granted by other users. A user's capabilities are determined by what they pay for.
+
+| Tier | Cost | Capabilities |
+|---|---|---|
+| Player | Free | Join leagues via invite, view standings, game history, own profile (read-only) |
+| Player Pro | Cheap | Everything Player + advanced filtering, head-to-head compare, player insights |
+| Admin | Mid | Manage a single league — score entry, player management, league overview reports, everything Player Pro sees for all players. Multiple admins per league allowed. |
+| SuperAdmin | Higher | *(R2)* Manage multiple leagues. Everything Admin sees across all their leagues. |
 
 ---
 
@@ -83,10 +85,11 @@ This document covers the product design for Release 1 and Release 2.
 
 ### Auth
 
-- Players self-register (email + password)
-- Admin generates a league invite link and shares it
-- Player clicks invite, registers or logs in, joins the league as Player role
-- Admin manually promotes users to Admin if needed
+- Users self-register with email and password
+- A user's capabilities are determined by their subscription tier
+- Admin creates a league and shares an invite link
+- Any Player or Player Pro can join a league via invite link
+- Multiple Admin-tier users can manage the same league
 
 ### Score Entry
 
@@ -115,7 +118,7 @@ This document covers the product design for Release 1 and Release 2.
 
 ### Out of Scope for R1
 
-- Player Pro and Commissioner tiers
+- Player Pro and SuperAdmin tiers
 - Player insights (rivals, bogeys, form, freebies)
 - Head-to-head compare
 - Pairs analysis
@@ -144,11 +147,11 @@ Gate the following features behind Player Pro:
 - Underrepresented pairings (players who rarely play together)
 - Available to all players
 
-### Commissioner Tier
+### SuperAdmin Tier
 
 - Manage multiple leagues from one account
-- Invite admins to leagues they manage
 - Top-level view across all their leagues
+- Invite other Admin-tier users to their leagues
 
 ### Standings Improvement
 

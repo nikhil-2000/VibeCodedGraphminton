@@ -21,14 +21,14 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ### Epic 2: Auth & Users
 
-> Users can register, log in, and join leagues via invite.
+> Users can register, log in, and join leagues via invite. Capabilities are determined by subscription tier.
 
 - As a new user, I can register with my email and password
 - As a returning user, I can log in and stay logged in across sessions
 - As a logged-in user, I can log out
-- As an admin, I can generate an invite link for my league
-- As a user, I can click an invite link, register or log in, and be added to the league as a Player
-- As an admin, I can promote a Player to Admin
+- As an Admin, I can generate an invite link for my league
+- As a Player or Player Pro, I can click an invite link and be added to the league
+- Multiple Admin-tier users can be associated with the same league
 
 ---
 
@@ -124,12 +124,13 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 12: Player Pro Tier
+### Epic 12: Subscription Tiers
 
-> Player Pro features are gated behind an upgraded tier.
+> Features are gated by subscription tier. Users upgrade their own account.
 
-- As an admin, I can grant Player Pro access to a player in my league
-- As a player, Player Pro features are visible but locked with an upgrade prompt if I'm on the free tier
+- As a Player, Player Pro features are visible but locked with an upgrade prompt
+- As a Player Pro, Admin features are visible but locked with an upgrade prompt
+- As a user, I can upgrade my subscription tier to unlock additional features
 
 ---
 
@@ -142,13 +143,13 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 14: Commissioner Tier
+### Epic 14: SuperAdmin Tier
 
-> A commissioner can manage multiple leagues from one account.
+> A SuperAdmin can manage multiple leagues from one account.
 
-- As a commissioner, I can see an overview of all leagues I manage
-- As a commissioner, I can create new leagues and assign admins to them
-- As a commissioner, I can invite admins to leagues I manage
+- As a SuperAdmin, I can see an overview of all leagues I manage
+- As a SuperAdmin, I can create multiple leagues
+- As a SuperAdmin, I can invite other Admin-tier users to my leagues
 
 ---
 
