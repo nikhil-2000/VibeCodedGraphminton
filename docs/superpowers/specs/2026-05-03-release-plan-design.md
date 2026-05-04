@@ -52,6 +52,30 @@ This document covers the product design for Release 1 and Release 2.
 
 ---
 
+## Infrastructure & Deployment
+
+### Hosting
+
+| Layer | Service | Notes |
+|---|---|---|
+| Database | Railway (PostgreSQL) | Managed, no ops overhead. Co-located with backend. |
+| Backend | Railway | Auto-deploys from git. Preview environments per PR. |
+| Frontend | Vercel | React PWA. Auto-deploys from git. Preview URLs per PR. |
+
+### CI/CD Pipeline (GitHub Actions)
+
+- **PR opened** → deploy preview environment for both frontend and backend. Each PR gets a live URL for click-through testing before merge.
+- **Merge to main** → deploy to production automatically.
+
+### Testing Strategy
+
+- **Backend:** Integration tests against a real test database. Test API endpoints directly — no mocking the DB. Mocks hide the bugs that matter most.
+- **Frontend:** Playwright tests for critical flows only (login, score entry, standings). Skip unit tests on components unless logic is complex.
+- **Type safety as first line of defence:** TypeScript on the frontend + Pydantic on the backend catches whole categories of bugs before tests run.
+- **Manual testing via PR previews:** Every PR gets a live environment — click through changes before merging.
+
+---
+
 ## Release 1 — "Get It On The Board"
 
 **Goal:** Admin can run the league. Players can see where they stand.
