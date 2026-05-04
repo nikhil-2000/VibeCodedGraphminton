@@ -2,6 +2,8 @@
 
 ## Overview
 
+> **Working title:** CourtIQ *(not finalised)*
+
 Graphminton is being rebuilt from scratch as a multi-sport racquet league platform. The goal is to turn casual racquet sessions into a competitive league experience, with tiered access for players, admins, and commissioners.
 
 This document covers the product design for Release 1 and Release 2.
