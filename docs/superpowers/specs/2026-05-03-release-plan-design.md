@@ -11,9 +11,10 @@ This document covers the product design for Release 1 and Release 2.
 ## Architecture
 
 - **Backend:** Python / FastAPI
-- **Database:** PostgreSQL — shared schema, `league_id` on every data table, sport config stored as a JSONB column
+- **Database:** PostgreSQL — shared schema, `league_id` on every data table
 - **Frontend:** React + Tailwind, mobile-first responsive web app (installable as PWA)
 - **Auth:** Self-registration, league invite links, roles scoped per league membership
+- **Sport config:** Defined in code (`sports/badminton.py`, `sports/squash.py`, etc.) — leagues reference a `sport_slug` string. Adding a sport requires a code change, not a DB migration. Each config declares: `supported_team_sizes`, `score_unit`, `target_score`, `win_by`, `score_cap`, `standings_metric`.
 - **Routes:** `/leagues/:id/...` — middleware validates caller belongs to that league
 
 ### Key Tables
@@ -21,11 +22,24 @@ This document covers the product design for Release 1 and Release 2.
 | Table | Scope | Notes |
 |---|---|---|
 | `users` | Global | Email, password, display name |
-| `leagues` | — | Name, sport config (JSONB) |
+| `leagues` | — | Name, sport_slug, team_size (1 or 2 — validated against sport config on creation) |
 | `league_memberships` | Per league | user_id + league_id + role |
 | `players` | Per league | Linked to a user |
 | `sessions` | Per league | A single day/evening of games |
-| `games` | Per session | 4 players + scores |
+| `games` | Per session | Players + scores (2 or 4 players depending on league team_size) |
+
+### Sport Config Reference
+
+| | Badminton | Squash | Table Tennis | Tennis |
+|---|---|---|---|---|
+| `supported_team_sizes` | [1, 2] | [1] | [1, 2] | [1, 2] |
+| `score_unit` | points | points | points | sets |
+| `target_score` | 21 | 11 | 11 | 2 |
+| `win_by` | 2 | 2 | 2 | 1 |
+| `score_cap` | 30 | — | — | — |
+| `standings_metric` | avg_points | avg_points | avg_points | win_rate |
+
+`team_size` is chosen per league at creation and must be one of the sport's `supported_team_sizes`.
 
 ### User Roles
 
@@ -117,7 +131,7 @@ Gate the following features behind Player Pro:
 
 ### Second Sport
 
-- Configure a second sport (e.g. squash or tennis) using the sport config JSONB field
+- Add a second sport config file (e.g. `sports/squash.py`)
 - Validates the sport-agnostic data model works in practice
 
 ### Player Merge Tool
