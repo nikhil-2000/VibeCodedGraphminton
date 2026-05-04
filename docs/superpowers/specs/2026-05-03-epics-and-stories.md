@@ -25,6 +25,7 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 - As a new user, I can register with my email and password
 - As a returning user, I can log in and stay logged in across sessions
+- As a logged-in user, I can log out
 - As an admin, I can generate an invite link for my league
 - As a user, I can click an invite link, register or log in, and be added to the league as a Player
 - As an admin, I can promote a Player to Admin

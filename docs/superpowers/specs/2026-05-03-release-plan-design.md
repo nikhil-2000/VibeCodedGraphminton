@@ -59,8 +59,9 @@ This document covers the product design for Release 1 and Release 2.
 | Layer | Service | Notes |
 |---|---|---|
 | Database | Railway (PostgreSQL) | Managed, no ops overhead. Co-located with backend. |
-| Backend | Railway | Auto-deploys from git. Preview environments per PR. |
-| Frontend | Vercel | React PWA. Auto-deploys from git. Preview URLs per PR. |
+| Backend | Railway (FastAPI) | Auto-deploys from git. Preview environments per PR. |
+| Frontend | Vercel (React PWA) | Auto-deploys from git. Preview URLs per PR. |
+| Auth | Built in FastAPI | Email/password only. JWT tokens, passlib for hashing, python-jose for tokens. |
 
 ### CI/CD Pipeline (GitHub Actions)
 
