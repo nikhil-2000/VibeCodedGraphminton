@@ -50,7 +50,7 @@ Roles are subscription tiers — not permissions granted by other users. A user'
 | Player | Free | Join leagues via invite, view standings, game history, own profile (read-only) |
 | Player Pro | Cheap | Everything Player + advanced filtering, head-to-head compare, player insights |
 | Admin | Mid | Manage a single league — score entry, player management, league overview reports, everything Player Pro sees for all players. Multiple admins per league allowed. |
-| SuperAdmin | Higher | *(R2)* Manage multiple leagues. Everything Admin sees across all their leagues. |
+| Commissioner | Higher | *(R2)* Manage multiple leagues. Everything Admin sees across all their leagues. |
 
 ---
 
@@ -118,7 +118,7 @@ Roles are subscription tiers — not permissions granted by other users. A user'
 
 ### Out of Scope for R1
 
-- Player Pro and SuperAdmin tiers
+- Player Pro and Commissioner tiers
 - Player insights (rivals, bogeys, form, freebies)
 - Head-to-head compare
 - Pairs analysis
@@ -147,7 +147,7 @@ Gate the following features behind Player Pro:
 - Underrepresented pairings (players who rarely play together)
 - Available to all players
 
-### SuperAdmin Tier
+### Commissioner Tier
 
 - Manage multiple leagues from one account
 - Top-level view across all their leagues

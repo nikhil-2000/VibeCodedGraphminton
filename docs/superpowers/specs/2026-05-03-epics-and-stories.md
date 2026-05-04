@@ -143,13 +143,13 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 14: SuperAdmin Tier
+### Epic 14: Commissioner Tier
 
-> A SuperAdmin can manage multiple leagues from one account.
+> A Commissioner can manage multiple leagues from one account.
 
-- As a SuperAdmin, I can see an overview of all leagues I manage
-- As a SuperAdmin, I can create multiple leagues
-- As a SuperAdmin, I can invite other Admin-tier users to my leagues
+- As a Commissioner, I can see an overview of all leagues I manage
+- As a Commissioner, I can create multiple leagues
+- As a Commissioner, I can invite other Admin-tier users to my leagues
 
 ---
 
