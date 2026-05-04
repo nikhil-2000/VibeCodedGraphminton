@@ -34,10 +34,13 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ### Epic 3: League Setup
 
-> An admin can create a league and configure its sport and format.
+> An admin can create a league, configure its sport and format, and manage its player roster.
 
 - As an admin, I can create a league with a name, sport, and team format (singles or doubles)
 - As a user, I can see all leagues I belong to after logging in
+- As an admin, I can mark any player in my league as a regular or a sub
+- As an admin, I can add a placeholder player (name only, no account) so I can record their games before they sign up
+- Placeholder players are fully usable in score entry — no account required
 
 ---
 
@@ -53,17 +56,28 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 5: Standings
+### Epic 5: Global Player Filter
+
+> Any view in the league can be scoped to a subset of players, with a quick toggle between regulars and subs.
+
+- As a player, I can toggle between "regulars only" and "all players" and have every view update accordingly
+- As a player, I can select a custom subset of players to focus on across all views
+- The active filter persists as I navigate between standings, game history, and player profiles
+- As an admin, the filter defaults to regulars only when a league has regulars defined
+
+---
+
+### Epic 6: Standings
 
 > Players can see where they rank in the league.
 
 - As a player, I can see the league standings ranked by average points per game
 - As a player, I can see each player's win rate alongside their average points
-- Players with fewer than a minimum number of games are excluded from standings
+- As a player, I can see the number of games each player has played in the standings
 
 ---
 
-### Epic 6: Game History
+### Epic 7: Game History
 
 > Players can browse all games played in the league.
 
@@ -72,7 +86,7 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 7: Player Profile
+### Epic 8: Player Profile
 
 > Players can see their personal record and how they perform with/against others.
 
