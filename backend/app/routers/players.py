@@ -48,10 +48,11 @@ def update_player(player_id: int, data: PlayerUpdate, db: Session = Depends(get_
 def get_player_stats(
     player_id: int,
     player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
     db: Session = Depends(get_db),
 ):
     try:
-        return stats_service.get_player_stats(db, player_id, player_ids or None)
+        return stats_service.get_player_stats(db, player_id, player_ids or None, season_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 

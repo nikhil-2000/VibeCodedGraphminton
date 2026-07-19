@@ -34,6 +34,7 @@ class PlayerCreate(BaseModel):
 
 
 class PlayerUpdate(BaseModel):
+    is_sub: Optional[bool] = None
     add_aliases: list[str] = []
     remove_aliases: list[str] = []
 

@@ -7,14 +7,20 @@ export const getPlayers = () =>
 export const getPlayer = (id: number) =>
   apiFetch<Player>(`/players/${id}`)
 
-export const getPlayerStats = (id: number, playerIds?: number[]) => {
-  const filter = playerIds?.length ? '?' + playerIds.map((pid) => `player_ids=${pid}`).join('&') : ''
-  return apiFetch<PlayerStats>(`/stats/player/${id}${filter}`)
+export const getPlayerStats = (id: number, playerIds?: number[], seasonId?: number | null) => {
+  const params = new URLSearchParams()
+  playerIds?.forEach((pid) => params.append('player_ids', String(pid)))
+  if (seasonId != null) params.set('season_id', String(seasonId))
+  const qs = params.toString()
+  return apiFetch<PlayerStats>(`/players/${id}/stats${qs ? `?${qs}` : ''}`)
 }
 
-export const getPlayerPartnerships = (id: number, playerIds?: number[]) => {
-  const filter = playerIds?.length ? '?' + playerIds.map((pid) => `player_ids=${pid}`).join('&') : ''
-  return apiFetch<PlayerPartnership[]>(`/stats/partnerships/${id}${filter}`)
+export const getPlayerPartnerships = (id: number, playerIds?: number[], seasonId?: number | null) => {
+  const params = new URLSearchParams()
+  playerIds?.forEach((pid) => params.append('player_ids', String(pid)))
+  if (seasonId != null) params.set('season_id', String(seasonId))
+  const qs = params.toString()
+  return apiFetch<PlayerPartnership[]>(`/stats/partnerships/${id}${qs ? `?${qs}` : ''}`)
 }
 
 export const createPlayer = (data: PlayerCreate) =>
@@ -24,7 +30,7 @@ export const createPlayer = (data: PlayerCreate) =>
     body: JSON.stringify(data),
   })
 
-export const updatePlayer = (id: number, data: { is_sub?: boolean; add_aliases?: string[]; remove_aliases?: string[] }) =>
+export const updatePlayer = (id: number, data: { is_sub?: boolean | null; add_aliases?: string[]; remove_aliases?: string[] }) =>
   apiFetch<Player>(`/players/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

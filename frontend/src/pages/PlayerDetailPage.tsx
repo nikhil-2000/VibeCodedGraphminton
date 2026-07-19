@@ -1,26 +1,29 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getPlayer, getPlayerStats, getPlayerPartnerships, getPlayers, deletePlayer, updatePlayer } from '../api/players'
+import { getPlayer, getPlayerStats, getPlayerPartnerships, deletePlayer, updatePlayer } from '../api/players'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
+import { useSeasonFilter } from '../context/SeasonFilterContext'
 import StatCard from '../components/StatCard'
 import PartnershipTable from '../components/PartnershipTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import type { Player, PlayerStats, PlayerPartnership } from '../types'
+import type { PlayerStats, PlayerPartnership } from '../types'
 
 export default function PlayerDetailPage() {
   const { id } = useParams<{ id: string }>()
   const playerId = Number(id)
 
   const navigate = useNavigate()
-  const { selectedIds } = usePlayerFilter()
+  const { selectedIds, allPlayers } = usePlayerFilter()
+  const { selectedSeasonId } = useSeasonFilter()
 
   const [player, setPlayer] = useState<Player | null>(null)
   const [stats, setStats] = useState<PlayerStats | null>(null)
   const [partnerships, setPartnerships] = useState<PlayerPartnership[]>([])
-  const [playerNames, setPlayerNames] = useState<Record<number, string>>({})
   const [error, setError] = useState<string | null>(null)
+
+  const playerNames = Object.fromEntries(allPlayers.map((p) => [p.id, p.canonical_name]))
   const [togglingSubb, setTogglingSubb] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -29,18 +32,16 @@ export default function PlayerDetailPage() {
   useEffect(() => {
     Promise.all([
       getPlayer(playerId),
-      getPlayerStats(playerId, selectedIds),
-      getPlayerPartnerships(playerId, selectedIds),
-      getPlayers(),
+      getPlayerStats(playerId, selectedIds, selectedSeasonId),
+      getPlayerPartnerships(playerId, selectedIds, selectedSeasonId),
     ])
-      .then(([p, s, partners, allPlayers]) => {
+      .then(([p, s, partners]) => {
         setPlayer(p)
         setStats(s)
         setPartnerships(partners)
-        setPlayerNames(Object.fromEntries(allPlayers.map((pl) => [pl.id, pl.canonical_name])))
       })
       .catch((e: Error) => setError(e.message))
-  }, [playerId, selectedIds])
+  }, [playerId, selectedIds, selectedSeasonId])
 
   const handleToggleSub = () => {
     if (!player || togglingSubb) return

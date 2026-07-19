@@ -37,7 +37,10 @@ def get_player(db: Session, player_id: int) -> Player:
 
 
 def update_player(db: Session, player_id: int, data: PlayerUpdate) -> Player:
-    player = get_player(db, player_id)  # raises KeyError if not found
+    player = get_player(db, player_id)
+
+    if data.is_sub is not None:
+        player.is_sub = data.is_sub
 
     for alias_str in data.remove_aliases:
         if alias_str == player.canonical_name:

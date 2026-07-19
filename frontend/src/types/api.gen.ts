@@ -532,6 +532,8 @@ export interface components {
         };
         /** PlayerUpdate */
         PlayerUpdate: {
+            /** Is Sub */
+            is_sub?: boolean | null;
             /**
              * Add Aliases
              * @default []
@@ -867,6 +869,7 @@ export interface operations {
         parameters: {
             query?: {
                 player_ids?: number[];
+                season_id?: number | null;
             };
             header?: never;
             path: {
