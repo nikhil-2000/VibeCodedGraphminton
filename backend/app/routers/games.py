@@ -8,7 +8,7 @@ from ..schemas import GameResponse, GameDetailResponse
 router = APIRouter()
 
 
-@router.get("", response_model=list[GameResponse])
+@router.get("", response_model=list[GameDetailResponse])
 def list_games(
     week: Optional[int] = None,
     player_id: Optional[int] = None,

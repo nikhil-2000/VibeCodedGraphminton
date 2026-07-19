@@ -57,28 +57,30 @@ def get_games(
             .join(gp2, (gp2.game_id == Game.id) & (gp2.player_id == vs_ids[1]) & (gp2.team != gp1.team))
         )
 
-    return [_game_summary(g, session) for g, session in ranked.distinct().all()]
+    return [_game_detail(db, g, session) for g, session in ranked.distinct().all()]
 
 
 def get_game_detail(db: Session, game_id: int) -> dict[str, Any]:
     game = db.get(Game, game_id)
     if not game:
         raise KeyError(f"Game {game_id} not found")
+    return _game_detail(db, game)
 
+
+def _game_detail(db: Session, game: Game, session: int | None = None) -> dict[str, Any]:
     team_a = (
         db.query(Player)
         .join(GamePlayer, GamePlayer.player_id == Player.id)
-        .filter(GamePlayer.game_id == game_id, GamePlayer.team == "A")
+        .filter(GamePlayer.game_id == game.id, GamePlayer.team == "A")
         .all()
     )
     team_b = (
         db.query(Player)
         .join(GamePlayer, GamePlayer.player_id == Player.id)
-        .filter(GamePlayer.game_id == game_id, GamePlayer.team == "B")
+        .filter(GamePlayer.game_id == game.id, GamePlayer.team == "B")
         .all()
     )
-
-    detail: dict[str, Any] = _game_summary(game)
+    detail: dict[str, Any] = _game_summary(game, session)
     detail["team_a"] = [{"id": p.id, "canonical_name": p.canonical_name} for p in team_a]
     detail["team_b"] = [{"id": p.id, "canonical_name": p.canonical_name} for p in team_b]
     return detail
