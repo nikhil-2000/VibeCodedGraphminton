@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..services import games as games_service
-from ..schemas import GameResponse, GameDetailResponse, DeleteSessionResponse
+from ..schemas import GameResponse, GameDetailResponse, DeleteSessionResponse, GamePrediction
 
 router = APIRouter()
 
@@ -33,6 +33,14 @@ def list_games(
             raise HTTPException(status_code=422, detail="vs must be two comma-separated player IDs")
 
     return games_service.get_games(db, week=week, player_id=player_id, team_ids=team_ids, vs_ids=vs_ids, season_id=season_id)
+
+
+@router.get("/{game_id}/prediction", response_model=GamePrediction)
+def get_game_prediction(game_id: int, db: Session = Depends(get_db)):
+    try:
+        return games_service.get_game_prediction(db, game_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get("/{game_id}", response_model=GameDetailResponse)

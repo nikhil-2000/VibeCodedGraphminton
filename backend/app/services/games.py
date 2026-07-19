@@ -1,6 +1,6 @@
 from typing import Any
 from sqlalchemy.orm import Session, aliased
-from sqlalchemy import func, select
+from sqlalchemy import func, select, case
 from ..models import Game, GamePlayer, Player
 
 
@@ -57,7 +57,30 @@ def get_games(
             .join(gp2, (gp2.game_id == Game.id) & (gp2.player_id == vs_ids[1]) & (gp2.team != gp1.team))
         )
 
-    return [_game_detail(db, g, session) for g, session in ranked.distinct().all()]
+    rows = ranked.distinct().all()
+    game_ids = [g.id for g, _ in rows]
+
+    # Batch-fetch team members for all returned games (avoids N+1)
+    gp_rows = (
+        db.query(GamePlayer.game_id, GamePlayer.player_id, GamePlayer.team, Player.canonical_name)
+        .join(Player, Player.id == GamePlayer.player_id)
+        .filter(GamePlayer.game_id.in_(game_ids))
+        .all()
+    )
+    teams: dict[int, dict[str, list]] = {}
+    for r in gp_rows:
+        if r.game_id not in teams:
+            teams[r.game_id] = {"A": [], "B": []}
+        teams[r.game_id][r.team].append({"id": r.player_id, "canonical_name": r.canonical_name})
+
+    result = []
+    for g, session in rows:
+        summary = _game_summary(g, session)
+        game_teams = teams.get(g.id, {"A": [], "B": []})
+        summary["team_a"] = game_teams["A"]
+        summary["team_b"] = game_teams["B"]
+        result.append(summary)
+    return result
 
 
 def delete_game(db: Session, game_id: int) -> None:
@@ -119,4 +142,80 @@ def _game_summary(game: Game, session: int | None = None) -> dict[str, Any]:
         "game_number": game.game_number,
         "team_a_score": game.team_a_score,
         "team_b_score": game.team_b_score,
+    }
+
+
+def get_game_prediction(db: Session, game_id: int) -> dict[str, Any]:
+    game = db.get(Game, game_id)
+    if not game:
+        raise KeyError(f"Game {game_id} not found")
+
+    a_ids = [r.player_id for r in db.query(GamePlayer.player_id).filter(
+        GamePlayer.game_id == game_id, GamePlayer.team == "A"
+    ).all()]
+    b_ids = [r.player_id for r in db.query(GamePlayer.player_id).filter(
+        GamePlayer.game_id == game_id, GamePlayer.team == "B"
+    ).all()]
+
+    def _avg_with_partner(pid: int, partner_id: int) -> float | None:
+        gpa = aliased(GamePlayer)
+        gpb = aliased(GamePlayer)
+        pts = case((gpa.team == "A", Game.team_a_score), else_=Game.team_b_score)
+        result = (
+            db.query(func.avg(pts))
+            .join(gpa, (gpa.game_id == Game.id) & (gpa.player_id == pid))
+            .join(gpb, (gpb.game_id == Game.id) & (gpb.player_id == partner_id) & (gpb.team == gpa.team))
+            .scalar()
+        )
+        return float(result) if result is not None else None
+
+    def _avg_vs_opponent(pid: int, opp_id: int) -> float | None:
+        gpa = aliased(GamePlayer)
+        gpo = aliased(GamePlayer)
+        pts = case((gpa.team == "A", Game.team_a_score), else_=Game.team_b_score)
+        result = (
+            db.query(func.avg(pts))
+            .join(gpa, (gpa.game_id == Game.id) & (gpa.player_id == pid))
+            .join(gpo, (gpo.game_id == Game.id) & (gpo.player_id == opp_id) & (gpo.team != gpa.team))
+            .scalar()
+        )
+        return float(result) if result is not None else None
+
+    def _overall_avg(pid: int) -> float:
+        pts = case((GamePlayer.team == "A", Game.team_a_score), else_=Game.team_b_score)
+        result = (
+            db.query(func.avg(pts))
+            .join(Game, GamePlayer.game_id == Game.id)
+            .filter(GamePlayer.player_id == pid)
+            .scalar()
+        )
+        return float(result or 0)
+
+    def _expected_for_player(pid: int, partner_id: int, opp1_id: int, opp2_id: int) -> float:
+        scores = [
+            _avg_with_partner(pid, partner_id),
+            _avg_vs_opponent(pid, opp1_id),
+            _avg_vs_opponent(pid, opp2_id),
+        ]
+        valid = [s for s in scores if s is not None]
+        return sum(valid) / len(valid) if valid else _overall_avg(pid)
+
+    exp_a = (
+        _expected_for_player(a_ids[0], a_ids[1], b_ids[0], b_ids[1])
+        + _expected_for_player(a_ids[1], a_ids[0], b_ids[0], b_ids[1])
+    ) / 2
+    exp_b = (
+        _expected_for_player(b_ids[0], b_ids[1], a_ids[0], a_ids[1])
+        + _expected_for_player(b_ids[1], b_ids[0], a_ids[0], a_ids[1])
+    ) / 2
+
+    actual_winner = "A" if game.team_a_score > game.team_b_score else "B"
+    expected_winner = "A" if exp_a >= exp_b else "B"
+
+    return {
+        "expected_score_a": round(exp_a, 1),
+        "expected_score_b": round(exp_b, 1),
+        "expected_winner": expected_winner,
+        "actual_winner": actual_winner,
+        "upset": expected_winner != actual_winner,
     }

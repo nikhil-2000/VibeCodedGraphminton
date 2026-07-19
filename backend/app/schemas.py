@@ -145,6 +145,16 @@ class DeleteSessionResponse(BaseModel):
     deleted: int
 
 
+# ── Game Prediction ────────────────────────────────────────────────────────
+
+class GamePrediction(BaseModel):
+    expected_score_a: float
+    expected_score_b: float
+    expected_winner: str  # "A" or "B"
+    actual_winner: str    # "A" or "B"
+    upset: bool
+
+
 # ── Ingest Games ───────────────────────────────────────────────────────────
 
 class GameRowIn(BaseModel):

@@ -103,3 +103,28 @@ def test_delete_session_no_games(client: TestClient):
 def test_delete_session_invalid_date(client: TestClient):
     resp = client.delete("/games/session/not-a-date")
     assert resp.status_code == 422
+
+
+# ── Prediction tests ────────────────────────────────────────────────────────
+
+def test_game_prediction_expected_fields(client: TestClient, seeded_games):
+    game_id = client.get("/games").json()[0]["id"]
+    resp = client.get(f"/games/{game_id}/prediction")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "expected_score_a" in data
+    assert "expected_score_b" in data
+    assert data["expected_winner"] in ("A", "B")
+    assert data["actual_winner"] in ("A", "B")
+    assert isinstance(data["upset"], bool)
+
+
+def test_game_prediction_actual_winner_matches_score(client: TestClient, seeded_games):
+    for g in client.get("/games").json():
+        pred = client.get(f"/games/{g['id']}/prediction").json()
+        expected = "A" if g["team_a_score"] > g["team_b_score"] else "B"
+        assert pred["actual_winner"] == expected
+
+
+def test_game_prediction_not_found(client: TestClient):
+    assert client.get("/games/99999/prediction").status_code == 404
