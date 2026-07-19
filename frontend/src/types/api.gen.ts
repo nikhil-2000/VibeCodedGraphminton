@@ -4,6 +4,41 @@
  */
 
 export interface paths {
+    "/seasons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Seasons */
+        get: operations["list_seasons_seasons_get"];
+        put?: never;
+        /** Create Season */
+        post: operations["create_season_seasons_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/seasons/{season_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Season */
+        get: operations["get_season_seasons__season_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/players": {
         parameters: {
             query?: never;
@@ -328,6 +363,8 @@ export interface components {
             played_on: string;
             /** Session */
             session: number | null;
+            /** Season Id */
+            season_id: number;
             /** Game Number */
             game_number: number;
             /** Team A Score */
@@ -354,6 +391,8 @@ export interface components {
             played_on: string;
             /** Session */
             session: number | null;
+            /** Season Id */
+            season_id: number;
             /** Game Number */
             game_number: number;
             /** Team A Score */
@@ -441,11 +480,6 @@ export interface components {
             /** Canonical Name */
             canonical_name: string;
             /**
-             * Is Sub
-             * @default false
-             */
-            is_sub: boolean;
-            /**
              * Aliases
              * @default []
              */
@@ -470,10 +504,20 @@ export interface components {
             id: number;
             /** Canonical Name */
             canonical_name: string;
-            /** Is Sub */
-            is_sub: boolean;
             /** Aliases */
             aliases: components["schemas"]["AliasResponse"][];
+            /**
+             * Season Roles
+             * @default []
+             */
+            season_roles: components["schemas"]["PlayerSeasonRoleResponse"][];
+        };
+        /** PlayerSeasonRoleResponse */
+        PlayerSeasonRoleResponse: {
+            /** Season Id */
+            season_id: number;
+            /** Is Sub */
+            is_sub: boolean;
         };
         /** PlayerStatsResponse */
         PlayerStatsResponse: {
@@ -492,8 +536,6 @@ export interface components {
         };
         /** PlayerUpdate */
         PlayerUpdate: {
-            /** Is Sub */
-            is_sub?: boolean | null;
             /**
              * Add Aliases
              * @default []
@@ -505,6 +547,32 @@ export interface components {
              */
             remove_aliases: string[];
         };
+        /** SeasonCreate */
+        SeasonCreate: {
+            /** Name */
+            name: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** End Date */
+            end_date?: string | null;
+        };
+        /** SeasonResponse */
+        SeasonResponse: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** End Date */
+            end_date: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -513,10 +581,6 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -527,11 +591,93 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_seasons_seasons_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeasonResponse"][];
+                };
+            };
+        };
+    };
+    create_season_seasons_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeasonCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeasonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_season_seasons__season_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                season_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeasonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_players_players_get: {
         parameters: {
-            query?: {
-                is_sub?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -545,15 +691,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlayerResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -688,7 +825,9 @@ export interface operations {
     };
     get_player_stats_players__player_id__stats_get: {
         parameters: {
-            query?: never;
+            query?: {
+                player_ids?: number[];
+            };
             header?: never;
             path: {
                 player_id: number;
@@ -752,7 +891,10 @@ export interface operations {
     };
     player_stats_stats_player__player_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                player_ids?: number[];
+                season_id?: number | null;
+            };
             header?: never;
             path: {
                 player_id: number;
@@ -785,6 +927,8 @@ export interface operations {
         parameters: {
             query?: {
                 sort_by?: "win_rate" | "avg_points";
+                player_ids?: number[];
+                season_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -814,7 +958,10 @@ export interface operations {
     };
     all_partnerships_stats_partnerships_get: {
         parameters: {
-            query?: never;
+            query?: {
+                player_ids?: number[];
+                season_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -830,11 +977,23 @@ export interface operations {
                     "application/json": components["schemas"]["PartnershipResponse"][];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     partnerships_for_player_stats_partnerships__player_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                player_ids?: number[];
+                season_id?: number | null;
+            };
             header?: never;
             path: {
                 player_id: number;
@@ -865,7 +1024,10 @@ export interface operations {
     };
     specific_partnership_stats_partnerships__player_a_id___player_b_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                player_ids?: number[];
+                season_id?: number | null;
+            };
             header?: never;
             path: {
                 player_a_id: number;
@@ -897,7 +1059,10 @@ export interface operations {
     };
     head_to_head_stats_head_to_head__player_a_id___player_b_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                player_ids?: number[];
+                season_id?: number | null;
+            };
             header?: never;
             path: {
                 player_a_id: number;
@@ -929,7 +1094,10 @@ export interface operations {
     };
     matchup_stats_matchup__pair_a_ids__vs__pair_b_ids__get: {
         parameters: {
-            query?: never;
+            query?: {
+                player_ids?: number[];
+                season_id?: number | null;
+            };
             header?: never;
             path: {
                 pair_a_ids: string;
@@ -966,6 +1134,7 @@ export interface operations {
                 player_id?: number | null;
                 team?: string | null;
                 vs?: string | null;
+                season_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -1028,6 +1197,8 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                player_ids?: number[];
+                season_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -1059,6 +1230,8 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                player_ids?: number[];
+                season_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -1090,6 +1263,8 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                player_ids?: number[];
+                season_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -1121,6 +1296,8 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                player_ids?: number[];
+                season_id?: number | null;
             };
             header?: never;
             path?: never;
