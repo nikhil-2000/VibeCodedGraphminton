@@ -12,12 +12,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/players': 'http://localhost:8000',
-      '/games': 'http://localhost:8000',
-      '/stats': 'http://localhost:8000',
-      '/anomalies': 'http://localhost:8000',
-      '/ingest': 'http://localhost:8000',
-      '/seasons': 'http://localhost:8000',
+      '/api': {
+        target: 'http://localhost:8000',
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
     },
   },
   test: {
