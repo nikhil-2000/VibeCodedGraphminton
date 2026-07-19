@@ -84,7 +84,37 @@ export default function AnomaliesPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">Anomalies</h1>
+      <h1 className="mb-4 text-2xl font-bold">Anomalies</h1>
+
+      <div className="mb-4">
+        <Select
+          value={focusedPlayerId !== null ? String(focusedPlayerId) : 'all'}
+          onValueChange={(v) => setFocusedPlayerId(v === 'all' ? null : Number(v))}
+        >
+          <SelectTrigger className="h-8 w-36 text-xs">
+            <span>
+              {focusedPlayerId === null
+                ? 'All players'
+                : (playerNames[focusedPlayerId] ?? 'Player')}
+            </span>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All players</SelectItem>
+            {Object.entries(playerNames)
+              .sort(([, a], [, b]) => a.localeCompare(b))
+              .map(([id, name]) => (
+                <SelectItem key={id} value={id}>{name}</SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <p className="mb-4 text-xs text-muted-foreground">
+        Deviation = actual − expected (based on random pairing probability).
+        {direction === 'overplayed'
+          ? ' Positive = more frequent than random chance.'
+          : ' Negative = less frequent than random chance.'}
+      </p>
 
       <div className="mb-4 flex gap-2">
         {(['partnerships', 'head-to-head'] as Tab[]).map((t) => (
@@ -110,35 +140,8 @@ export default function AnomaliesPage() {
               {d}
             </Button>
           ))}
-          <Select
-            value={focusedPlayerId !== null ? String(focusedPlayerId) : 'all'}
-            onValueChange={(v) => setFocusedPlayerId(v === 'all' ? null : Number(v))}
-          >
-            <SelectTrigger className="h-8 w-36 text-xs">
-              <span>
-                {focusedPlayerId === null
-                  ? 'All players'
-                  : (playerNames[focusedPlayerId] ?? 'Player')}
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All players</SelectItem>
-              {Object.entries(playerNames)
-                .sort(([, a], [, b]) => a.localeCompare(b))
-                .map(([id, name]) => (
-                  <SelectItem key={id} value={id}>{name}</SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
-
-      <p className="mb-4 text-xs text-muted-foreground">
-        Deviation = actual − expected (based on random pairing probability).
-        {direction === 'overplayed'
-          ? ' Positive = more frequent than random chance.'
-          : ' Negative = less frequent than random chance.'}
-      </p>
 
       {summary && focusedPlayerId !== null && (
         <div className="mb-4 rounded-lg border p-4 text-sm space-y-1">
