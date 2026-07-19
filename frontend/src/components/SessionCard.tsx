@@ -251,6 +251,7 @@ export default function SessionCard({ session, players, onPlayerCreated, onChang
             </Button>
             <Button
               size="sm"
+              data-upload-btn
               onClick={handleUpload}
               disabled={!isValid || uploading}
             >

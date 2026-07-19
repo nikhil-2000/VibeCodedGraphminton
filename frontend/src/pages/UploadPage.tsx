@@ -9,7 +9,7 @@ let nextId = 1
 const makeId = () => String(nextId++)
 
 function csvToSessionData(csvText: string): SessionData {
-  const { dateStr, games, parseErrors } = parseSessionCsv(csvText)
+  const { dateStr, games } = parseSessionCsv(csvText)
   const rows: SessionRow[] = games.map((g) => ({
     teamA: [null, null],
     teamARaw: g.teamARaw,
