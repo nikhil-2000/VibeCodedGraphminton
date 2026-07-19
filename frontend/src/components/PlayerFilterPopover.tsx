@@ -3,12 +3,10 @@ import { Button } from '@/components/ui/button'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 
 export default function PlayerFilterPopover() {
-  const { allPlayers, selectedIds, setSelectedIds, activePreset, setPreset } = usePlayerFilter()
+  const { allPlayers, selectedIds, setSelectedIds } = usePlayerFilter()
 
-  const label =
-    activePreset === 'everyone' ? 'Everyone' :
-    activePreset === 'regulars' ? 'Regulars' :
-    `${selectedIds.length} players`
+  const isAll = selectedIds.length === allPlayers.length
+  const label = isAll ? 'Everyone' : `${selectedIds.length} players`
 
   const togglePlayer = (id: number) => {
     const next = selectedIds.includes(id)
@@ -16,6 +14,8 @@ export default function PlayerFilterPopover() {
       : [...selectedIds, id]
     setSelectedIds(next)
   }
+
+  const selectAll = () => setSelectedIds(allPlayers.map((p) => p.id))
 
   return (
     <Popover>
@@ -29,16 +29,8 @@ export default function PlayerFilterPopover() {
         <div className="mb-3 flex gap-2">
           <Button
             size="sm"
-            variant={activePreset === 'regulars' ? 'default' : 'outline'}
-            onClick={() => setPreset('regulars')}
-            className="flex-1 text-xs"
-          >
-            Regulars only
-          </Button>
-          <Button
-            size="sm"
-            variant={activePreset === 'everyone' ? 'default' : 'outline'}
-            onClick={() => setPreset('everyone')}
+            variant={isAll ? 'default' : 'outline'}
+            onClick={selectAll}
             className="flex-1 text-xs"
           >
             Everyone
@@ -56,8 +48,7 @@ export default function PlayerFilterPopover() {
                 onChange={() => togglePlayer(p.id)}
                 className="h-3.5 w-3.5"
               />
-              <span className={p.is_sub ? 'text-muted-foreground' : ''}>{p.canonical_name}</span>
-              {p.is_sub && <span className="text-xs text-yellow-400">sub</span>}
+              <span>{p.canonical_name}</span>
             </label>
           ))}
         </div>
