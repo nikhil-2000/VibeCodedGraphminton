@@ -19,7 +19,7 @@
 - `backend/tests/integration/test_ingest_games.py` — new test file
 
 **Frontend — modify:**
-- `frontend/src/context/PlayerFilterContext.tsx` — add `refetchPlayers` function
+- `frontend/src/context/PlayerFilterContext.tsx` — already has `reloadPlayers`; no change needed (Task 2 dropped)
 - `frontend/src/api/ingest.ts` — add `ingestGames`, `validateGames`
 
 **Frontend — create:**
@@ -135,13 +135,10 @@ class IngestGamesResponse(BaseModel):
 
 - [ ] **Step 4: Add service functions**
 
-In `backend/app/services/ingest.py`, add after the existing imports at the top:
+> **NOTE (added 2026-07):** `date` is already imported in `ingest.py` — do NOT add a duplicate import. Use `date.fromisoformat(...)` directly.
+> `Game.season_id` is `NOT NULL` — `ingest_games` must resolve the season via `resolve_season_for_date` exactly as `ingest_csv_file` does, and return an error if no season covers the date.
 
-```python
-from datetime import date as date_type
-```
-
-Then append at the end of the file:
+Append at the end of `backend/app/services/ingest.py` (no new imports needed — `date`, `Session`, `Game`, `GamePlayer`, and `resolve_season_for_date` are already imported above):
 
 ```python
 def validate_game_row_ids(
@@ -211,9 +208,14 @@ def ingest_games(
         return 0, all_errors
 
     try:
-        played_on = date_type.fromisoformat(played_on_str)
+        played_on = date.fromisoformat(played_on_str)
     except ValueError:
         return 0, [f"Invalid date format: {played_on_str!r}, expected YYYY-MM-DD"]
+
+    # Season is required — Game.season_id is NOT NULL
+    season = resolve_season_for_date(db, played_on)
+    if not season:
+        return 0, [f"No season found covering date {played_on}. Create a season first."]
 
     loaded = 0
     for i, game in enumerate(games, start=1):
@@ -226,6 +228,7 @@ def ingest_games(
 
         g = Game(
             played_on=played_on,
+            season_id=season.id,
             game_number=i,
             team_a_score=game.score_a,
             team_b_score=game.score_b,
@@ -333,112 +336,9 @@ cd /Users/nikhil.patel/Documents/personal/VibeCodedGraphminton && git add backen
 
 ---
 
-### Task 2: Frontend context — add `refetchPlayers`
+### ~~Task 2: Frontend context — add `refetchPlayers`~~ DROPPED
 
-**Files:**
-- Modify: `frontend/src/context/PlayerFilterContext.tsx`
-
-- [ ] **Step 1: Read the current file**
-
-Read `frontend/src/context/PlayerFilterContext.tsx` before editing.
-
-- [ ] **Step 2: Add `refetchPlayers` to the context**
-
-Add `refetchPlayers: () => void` to the interface and implement it. Replace the full file contents:
-
-```typescript
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
-import { getPlayers } from '../api/players'
-import type { Player } from '../types'
-
-type Preset = 'everyone' | 'regulars' | 'custom'
-
-interface PlayerFilterContextValue {
-  allPlayers: Player[]
-  selectedIds: number[]
-  setSelectedIds: (ids: number[]) => void
-  activePreset: Preset
-  setPreset: (preset: 'everyone' | 'regulars') => void
-  refetchPlayers: () => void
-}
-
-const PlayerFilterContext = createContext<PlayerFilterContextValue | null>(null)
-
-export function PlayerFilterProvider({ children }: { children: ReactNode }) {
-  const [allPlayers, setAllPlayers] = useState<Player[]>([])
-  const [selectedIds, setSelectedIdsRaw] = useState<number[]>([])
-  const [activePreset, setActivePreset] = useState<Preset>('regulars')
-
-  const loadPlayers = useCallback((prevSelectedIds?: number[]) => {
-    getPlayers().then((players) => {
-      setAllPlayers(players)
-      setSelectedIdsRaw((prev) => {
-        const base = prevSelectedIds ?? prev
-        // Auto-add newly created regular players to the selection
-        const newRegularIds = players
-          .filter((p) => !p.is_sub && !base.includes(p.id))
-          .map((p) => p.id)
-        return [...base, ...newRegularIds]
-      })
-    })
-  }, [])
-
-  useEffect(() => {
-    getPlayers().then((players) => {
-      setAllPlayers(players)
-      setSelectedIdsRaw(players.filter((p) => !p.is_sub).map((p) => p.id))
-    })
-  }, [])
-
-  const setSelectedIds = (ids: number[]) => {
-    setSelectedIdsRaw(ids)
-    const allIds = allPlayers.map((p) => p.id)
-    const regularIds = allPlayers.filter((p) => !p.is_sub).map((p) => p.id)
-    const sorted = [...ids].sort((a, b) => a - b)
-    const isAll = sorted.join() === [...allIds].sort((a, b) => a - b).join()
-    const isRegulars = sorted.join() === [...regularIds].sort((a, b) => a - b).join()
-    setActivePreset(isAll ? 'everyone' : isRegulars ? 'regulars' : 'custom')
-  }
-
-  const setPreset = (preset: 'everyone' | 'regulars') => {
-    const ids = preset === 'everyone'
-      ? allPlayers.map((p) => p.id)
-      : allPlayers.filter((p) => !p.is_sub).map((p) => p.id)
-    setSelectedIdsRaw(ids)
-    setActivePreset(preset)
-  }
-
-  const refetchPlayers = useCallback(() => {
-    loadPlayers()
-  }, [loadPlayers])
-
-  return (
-    <PlayerFilterContext.Provider value={{ allPlayers, selectedIds, setSelectedIds, activePreset, setPreset, refetchPlayers }}>
-      {children}
-    </PlayerFilterContext.Provider>
-  )
-}
-
-export function usePlayerFilter() {
-  const ctx = useContext(PlayerFilterContext)
-  if (!ctx) throw new Error('usePlayerFilter must be used inside PlayerFilterProvider')
-  return ctx
-}
-```
-
-- [ ] **Step 3: Type-check**
-
-```bash
-cd /Users/nikhil.patel/Documents/personal/VibeCodedGraphminton/frontend && npm run type-check
-```
-
-Expected: no errors.
-
-- [ ] **Step 4: Commit**
-
-```bash
-cd /Users/nikhil.patel/Documents/personal/VibeCodedGraphminton && git add frontend/src/context/PlayerFilterContext.tsx && git commit -m "feat: add refetchPlayers to PlayerFilterContext"
-```
+> **NOTE (added 2026-07):** `PlayerFilterContext` already exposes `reloadPlayers: () => void`. This task is **dropped**. All later tasks must use `reloadPlayers` (not `refetchPlayers`) when referencing this function.
 
 ---
 
@@ -1086,7 +986,7 @@ function csvToSessionData(csvText: string): SessionData {
 }
 
 export default function UploadPage() {
-  const { allPlayers, refetchPlayers } = usePlayerFilter()
+  const { allPlayers, reloadPlayers } = usePlayerFilter()
   const [sessions, setSessions] = useState<SessionData[]>([])
   const [uploadAllError, setUploadAllError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -1194,7 +1094,7 @@ export default function UploadPage() {
             key={session.id}
             session={session}
             players={allPlayers}
-            onPlayerCreated={refetchPlayers}
+            onPlayerCreated={reloadPlayers}
             onChange={(updated) => updateSession(session.id, updated)}
             onRemove={() => removeSession(session.id)}
             onUploaded={() => handleUploaded(session.id)}
@@ -1260,7 +1160,7 @@ cd /Users/nikhil.patel/Documents/personal/VibeCodedGraphminton && git add fronte
 - ✅ Player cells are dropdowns — `PlayerSelect` component
 - ✅ Unknown CSV names shown in error state — `rawName` prop + `isError` styling
 - ✅ Inline player creation via popover — `PlayerSelect` creating sub-view
-- ✅ On player created: refetch players → update all selects — `refetchPlayers` from context
+- ✅ On player created: refetch players → update all selects — `reloadPlayers` from context (Task 2 dropped; already exists)
 - ✅ Backend validation via `POST /ingest/validate` — `handleValidate` in `SessionCard`
 - ✅ Upload button enabled only when validated — `isValid` check
 - ✅ Per-card upload, card greys out on success — `uploaded` state
