@@ -1,17 +1,40 @@
 from pydantic import BaseModel
 from typing import Optional
+from datetime import date
 
+
+# ── Seasons ────────────────────────────────────────────────────────────────
+
+class SeasonCreate(BaseModel):
+    name: str
+    start_date: date
+    end_date: Optional[date] = None
+
+
+class SeasonResponse(BaseModel):
+    id: int
+    name: str
+    start_date: date
+    end_date: Optional[date]
+    model_config = {"from_attributes": True}
+
+
+# ── Players ────────────────────────────────────────────────────────────────
 
 class PlayerCreate(BaseModel):
     canonical_name: str
-    is_sub: bool = False
     aliases: list[str] = []
 
 
 class PlayerUpdate(BaseModel):
-    is_sub: Optional[bool] = None
     add_aliases: list[str] = []
     remove_aliases: list[str] = []
+
+
+class PlayerSeasonRoleResponse(BaseModel):
+    season_id: int
+    is_sub: bool
+    model_config = {"from_attributes": True}
 
 
 class AliasResponse(BaseModel):
@@ -23,8 +46,8 @@ class AliasResponse(BaseModel):
 class PlayerResponse(BaseModel):
     id: int
     canonical_name: str
-    is_sub: bool
     aliases: list[AliasResponse]
+    season_roles: list[PlayerSeasonRoleResponse] = []
     model_config = {"from_attributes": True}
 
 
@@ -93,6 +116,7 @@ class GameResponse(BaseModel):
     id: int
     played_on: str
     session: int | None
+    season_id: int
     game_number: int
     team_a_score: int
     team_b_score: int
