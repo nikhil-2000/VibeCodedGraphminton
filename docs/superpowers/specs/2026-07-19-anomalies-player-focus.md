@@ -8,20 +8,18 @@ Let a user focus on a single player on the Anomalies page to see only that playe
 
 ## Backend
 
-### New service functions
+### Service changes
 
-Add two functions to `backend/app/services/anomalies.py`:
+Extend the existing `get_partnership_anomalies` and `get_head_to_head_anomalies` functions in `backend/app/services/anomalies.py` with two new optional params:
 
-```
-get_partnership_anomalies_for_player(db, player_id, overplayed, limit, player_ids, season_id)
-get_head_to_head_anomalies_for_player(db, player_id, overplayed, limit, player_ids, season_id)
-```
+- `focus_player_id: int | None = None` — when set, filters the computed results to rows where `player_a_id == focus_player_id or player_b_id == focus_player_id`
+- `limit: int | None = 10` — `None` means no cap (used when a player is focused)
 
-Each wraps the existing logic but adds a WHERE filter so only rows where `player_id` appears as one of the two players are returned. The `player_ids` pool filter and `season_id` filter continue to apply as-is.
+No new service functions needed — existing logic is fully reused.
 
 ### New endpoints
 
-Add four routes to `backend/app/routers/anomalies.py` — must be declared **before** the existing static routes to avoid route conflicts:
+Add four routes to `backend/app/routers/anomalies.py`:
 
 ```
 GET /anomalies/partnerships/overplayed/{player_id}
@@ -30,9 +28,9 @@ GET /anomalies/head-to-head/overplayed/{player_id}
 GET /anomalies/head-to-head/underplayed/{player_id}
 ```
 
-Same query params as existing routes (`limit`, `player_ids`, `season_id`). Same `list[AnomalyEntry]` response shape.
+These call the existing service functions with `focus_player_id=player_id` and `limit=None`. Query params: `player_ids`, `season_id` (no `limit`). Response: `list[AnomalyEntry]`.
 
-> **Route ordering:** static segments (`overplayed`, `underplayed`) must come before dynamic `{player_id}` routes. The existing routes are already static, so the new player-scoped routes should be added **after** them — FastAPI matches static first, so `/overplayed` won't conflict with `/{player_id}` as long as no player_id value equals "overplayed" or "underplayed" (they're integers, so this is fine).
+> **Route ordering:** new `/{player_id}` routes must be declared **after** the existing static `/overplayed` and `/underplayed` routes. FastAPI matches static segments first; since `player_id` is an integer, there is no conflict.
 
 ---
 
@@ -40,11 +38,11 @@ Same query params as existing routes (`limit`, `player_ids`, `season_id`). Same 
 
 ### `api/anomalies.ts`
 
-Add two new fetch functions:
+Add two new fetch functions (no `limit` param):
 
 ```
-getPartnershipAnomaliesForPlayer(playerId, type, limit, playerIds, seasonId)
-getHeadToHeadAnomaliesForPlayer(playerId, type, limit, playerIds, seasonId)
+getPartnershipAnomaliesForPlayer(playerId, type, playerIds, seasonId)
+getHeadToHeadAnomaliesForPlayer(playerId, type, playerIds, seasonId)
 ```
 
 Calls the new `/{type}/{player_id}` endpoints.
