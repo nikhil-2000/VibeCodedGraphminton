@@ -10,7 +10,7 @@ import { usePlayerFilter } from '../context/PlayerFilterContext'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
 import AnomalyTable from '../components/AnomalyTable'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import type { AnomalyEntry } from '../types'
 
 type Tab = 'partnerships' | 'head-to-head'
@@ -82,7 +82,11 @@ export default function AnomaliesPage() {
             onValueChange={(v) => setFocusedPlayerId(v === 'all' ? null : Number(v))}
           >
             <SelectTrigger className="h-8 w-36 text-xs">
-              <SelectValue placeholder="All players" />
+              <span>
+                {focusedPlayerId === null
+                  ? 'All players'
+                  : (playerNames[focusedPlayerId] ?? 'Player')}
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All players</SelectItem>
