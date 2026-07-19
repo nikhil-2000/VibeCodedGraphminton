@@ -69,3 +69,37 @@ def test_get_game_detail(client: TestClient, seeded_games):
 
 def test_get_game_not_found(client: TestClient):
     assert client.get("/games/99999").status_code == 404
+
+
+# ── Deletion tests ──────────────────────────────────────────────────────────
+
+def test_delete_game(client: TestClient, seeded_games):
+    games = client.get("/games").json()
+    game_id = games[0]["id"]
+    resp = client.delete(f"/games/{game_id}")
+    assert resp.status_code == 204
+    remaining = client.get("/games").json()
+    assert all(g["id"] != game_id for g in remaining)
+
+
+def test_delete_game_not_found(client: TestClient):
+    resp = client.delete("/games/999999")
+    assert resp.status_code == 404
+
+
+def test_delete_session(client: TestClient, seeded_games):
+    resp = client.delete("/games/session/2024-04-08")
+    assert resp.status_code == 200
+    assert resp.json()["deleted"] == 2
+    assert client.get("/games").json() == []
+
+
+def test_delete_session_no_games(client: TestClient):
+    resp = client.delete("/games/session/2000-01-01")
+    assert resp.status_code == 200
+    assert resp.json()["deleted"] == 0
+
+
+def test_delete_session_invalid_date(client: TestClient):
+    resp = client.delete("/games/session/not-a-date")
+    assert resp.status_code == 422

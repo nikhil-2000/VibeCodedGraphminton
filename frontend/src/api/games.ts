@@ -22,3 +22,9 @@ export const getGames = (filter: GamesFilter = {}) => {
 
 export const getGame = (id: number) =>
   apiFetch<GameDetail>(`/games/${id}`)
+
+export const deleteGame = (id: number) =>
+  apiFetch<void>(`/games/${id}`, { method: 'DELETE' })
+
+export const deleteSession = (playedOn: string) =>
+  apiFetch<{ deleted: number }>(`/games/session/${playedOn}`, { method: 'DELETE' })

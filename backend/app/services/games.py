@@ -60,6 +60,30 @@ def get_games(
     return [_game_detail(db, g, session) for g, session in ranked.distinct().all()]
 
 
+def delete_game(db: Session, game_id: int) -> None:
+    game = db.get(Game, game_id)
+    if not game:
+        raise KeyError(f"Game {game_id} not found")
+    db.query(GamePlayer).filter(GamePlayer.game_id == game_id).delete()
+    db.delete(game)
+    db.commit()
+
+
+def delete_session(db: Session, played_on_str: str) -> int:
+    from datetime import date
+    try:
+        played_on = date.fromisoformat(played_on_str)
+    except ValueError:
+        raise ValueError(f"Invalid date: {played_on_str!r}")
+    game_ids = [g.id for g in db.query(Game.id).filter(Game.played_on == played_on).all()]
+    if not game_ids:
+        return 0
+    db.query(GamePlayer).filter(GamePlayer.game_id.in_(game_ids)).delete(synchronize_session=False)
+    deleted = db.query(Game).filter(Game.played_on == played_on).delete(synchronize_session=False)
+    db.commit()
+    return deleted
+
+
 def get_game_detail(db: Session, game_id: int) -> dict[str, Any]:
     game = db.get(Game, game_id)
     if not game:

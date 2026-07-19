@@ -139,6 +139,12 @@ class AnomalyEntry(BaseModel):
     deviation: float
 
 
+# ── Game Deletion ──────────────────────────────────────────────────────────
+
+class DeleteSessionResponse(BaseModel):
+    deleted: int
+
+
 # ── Ingest Games ───────────────────────────────────────────────────────────
 
 class GameRowIn(BaseModel):

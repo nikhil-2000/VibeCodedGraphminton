@@ -1,16 +1,58 @@
+import { useState } from 'react'
 import type { GameDetail } from '../types'
 
 interface Props {
   game: GameDetail
+  onDelete?: (id: number) => void
 }
 
-export default function GameCard({ game }: Props) {
+export default function GameCard({ game, onDelete }: Props) {
   const aWon = game.team_a_score > game.team_b_score
+  const [confirming, setConfirming] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = () => {
+    if (!onDelete) return
+    setDeleting(true)
+    onDelete(game.id)
+  }
+
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="relative rounded-lg border border-border bg-card p-4">
+      {confirming && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg bg-card/95">
+          <p className="text-xs text-muted-foreground">Delete this game?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="rounded bg-destructive px-3 py-1 text-xs text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+            >
+              {deleting ? 'Deleting…' : 'Delete'}
+            </button>
+            <button
+              onClick={() => setConfirming(false)}
+              className="rounded border border-border px-3 py-1 text-xs hover:bg-muted"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
       <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
         <span>{game.played_on}</span>
-        <span>Game #{game.game_number}</span>
+        <div className="flex items-center gap-1.5">
+          <span>Game #{game.game_number}</span>
+          {onDelete && (
+            <button
+              onClick={() => setConfirming(true)}
+              className="flex h-4 w-4 items-center justify-center rounded text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive"
+              aria-label="Delete game"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
         <div className="space-y-0.5">
