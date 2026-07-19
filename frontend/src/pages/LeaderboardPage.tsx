@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getLeaderboard } from '../api/stats'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
+import { useSeasonFilter } from '../context/SeasonFilterContext'
 import LeaderboardTable from '../components/LeaderboardTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,17 +9,18 @@ import type { LeaderboardEntry } from '../types'
 
 export default function LeaderboardPage() {
   const { selectedIds } = usePlayerFilter()
+  const { selectedSeasonId } = useSeasonFilter()
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [sortBy, setSortBy] = useState<'win_rate' | 'avg_points'>('win_rate')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    getLeaderboard(sortBy, selectedIds)
+    getLeaderboard(sortBy, selectedIds, selectedSeasonId)
       .then(setEntries)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [sortBy, selectedIds])
+  }, [sortBy, selectedIds, selectedSeasonId])
 
   return (
     <Card>
