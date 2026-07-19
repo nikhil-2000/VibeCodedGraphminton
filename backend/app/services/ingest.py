@@ -161,3 +161,108 @@ def ingest_csv_file(
         loaded += 1
 
     return loaded, []
+
+
+def validate_game_row_ids(
+    row_number: int,
+    team_a: list[int],
+    score_a: int,
+    team_b: list[int],
+    score_b: int,
+    known_player_ids: set[int],
+) -> list[str]:
+    """Validate a single structured game row (player IDs already resolved).
+    Returns list of error strings; empty = valid."""
+    errors: list[str] = []
+
+    if len(team_a) != 2:
+        errors.append(f"Row {row_number}: team A must have exactly 2 players")
+    if len(team_b) != 2:
+        errors.append(f"Row {row_number}: team B must have exactly 2 players")
+
+    winning_score = max(score_a, score_b)
+    losing_score = min(score_a, score_b)
+    if winning_score < 21:
+        errors.append(f"Row {row_number}: winning score {winning_score} must be >= 21")
+    if winning_score - losing_score < 2:
+        errors.append(f"Row {row_number}: score margin must be >= 2")
+
+    all_ids = list(team_a) + list(team_b)
+    if len(set(all_ids)) < len(all_ids):
+        errors.append(f"Row {row_number}: duplicate player in same game")
+
+    for pid in all_ids:
+        if pid not in known_player_ids:
+            errors.append(f"Row {row_number}: unknown player ID {pid}")
+
+    return errors
+
+
+def validate_games(
+    db: Session,
+    played_on_str: str,
+    games: list,
+) -> list[dict]:
+    """Validate a list of GameRowIn objects. Returns list of {row, errors} dicts."""
+    from ..models import Player as PlayerModel
+    known_ids: set[int] = {row.id for row in db.query(PlayerModel.id).all()}
+    result = []
+    for i, game in enumerate(games, start=1):
+        errs = validate_game_row_ids(i, game.team_a, game.score_a, game.team_b, game.score_b, known_ids)
+        if errs:
+            result.append({"row": i, "errors": errs})
+    return result
+
+
+def ingest_games(
+    db: Session,
+    played_on_str: str,
+    games: list,
+) -> tuple[int, list[str]]:
+    """Persist a list of GameRowIn objects. Validates first; returns (games_loaded, errors)."""
+    from ..models import Player as PlayerModel
+    known_ids: set[int] = {row.id for row in db.query(PlayerModel.id).all()}
+
+    all_errors: list[str] = []
+    for i, game in enumerate(games, start=1):
+        all_errors.extend(validate_game_row_ids(i, game.team_a, game.score_a, game.team_b, game.score_b, known_ids))
+    if all_errors:
+        return 0, all_errors
+
+    try:
+        played_on = date.fromisoformat(played_on_str)
+    except ValueError:
+        return 0, [f"Invalid date format: {played_on_str!r}, expected YYYY-MM-DD"]
+
+    # Season is required — Game.season_id is NOT NULL
+    season = resolve_season_for_date(db, played_on)
+    if not season:
+        return 0, [f"No season found covering date {played_on}. Create a season first."]
+
+    loaded = 0
+    for i, game in enumerate(games, start=1):
+        existing = db.query(Game).filter(
+            Game.played_on == played_on,
+            Game.game_number == i,
+        ).first()
+        if existing:
+            continue
+
+        g = Game(
+            played_on=played_on,
+            season_id=season.id,
+            game_number=i,
+            team_a_score=game.score_a,
+            team_b_score=game.score_b,
+        )
+        db.add(g)
+        db.flush()
+
+        for pid, team in [
+            (game.team_a[0], "A"), (game.team_a[1], "A"),
+            (game.team_b[0], "B"), (game.team_b[1], "B"),
+        ]:
+            db.add(GamePlayer(game_id=g.id, player_id=pid, team=team))
+        loaded += 1
+
+    return loaded, []

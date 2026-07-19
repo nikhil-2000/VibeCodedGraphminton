@@ -137,3 +137,21 @@ class AnomalyEntry(BaseModel):
     actual: int
     expected: float
     deviation: float
+
+
+# ── Ingest Games ───────────────────────────────────────────────────────────
+
+class GameRowIn(BaseModel):
+    team_a: list[int]  # exactly 2 player IDs
+    score_a: int
+    team_b: list[int]  # exactly 2 player IDs
+    score_b: int
+
+
+class IngestGamesRequest(BaseModel):
+    played_on: str  # ISO date "YYYY-MM-DD"
+    games: list[GameRowIn]
+
+
+class IngestGamesResponse(BaseModel):
+    games_loaded: int

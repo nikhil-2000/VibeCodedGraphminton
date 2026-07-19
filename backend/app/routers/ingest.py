@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..services.ingest import resolve_aliases, ingest_csv_file
+from ..services.ingest import resolve_aliases, ingest_csv_file, validate_games, ingest_games
+from ..schemas import IngestGamesRequest, IngestGamesResponse
 
 router = APIRouter()
 
@@ -36,3 +37,27 @@ def ingest_scores(request: IngestRequest, db: Session = Depends(get_db)):
 
     db.commit()
     return IngestResponse(games_loaded=total_loaded, errors=[])
+
+
+@router.post("/games", response_model=IngestGamesResponse)
+def ingest_games_endpoint(request: IngestGamesRequest, db: Session = Depends(get_db)):
+    loaded, errors = ingest_games(db, request.played_on, request.games)
+    if errors:
+        raise HTTPException(status_code=422, detail=errors)
+    db.commit()
+    return IngestGamesResponse(games_loaded=loaded)
+
+
+class GameRowError(BaseModel):
+    row: int
+    errors: list[str]
+
+
+class ValidateGamesResponse(BaseModel):
+    errors: list[GameRowError]
+
+
+@router.post("/validate", response_model=ValidateGamesResponse)
+def validate_games_endpoint(request: IngestGamesRequest, db: Session = Depends(get_db)):
+    errors = validate_games(db, request.played_on, request.games)
+    return ValidateGamesResponse(errors=errors)
