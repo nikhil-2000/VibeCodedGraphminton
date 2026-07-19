@@ -384,23 +384,6 @@ export interface components {
             /** Canonical Name */
             canonical_name: string;
         };
-        /** GameResponse */
-        GameResponse: {
-            /** Id */
-            id: number;
-            /** Played On */
-            played_on: string;
-            /** Session */
-            session: number | null;
-            /** Season Id */
-            season_id: number;
-            /** Game Number */
-            game_number: number;
-            /** Team A Score */
-            team_a_score: number;
-            /** Team B Score */
-            team_b_score: number;
-        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1191,7 +1174,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GameResponse"][];
+                    "application/json": components["schemas"]["GameDetailResponse"][];
                 };
             };
             /** @description Validation Error */

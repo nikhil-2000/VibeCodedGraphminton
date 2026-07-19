@@ -17,7 +17,7 @@ export const getGames = (filter: GamesFilter = {}) => {
   if (filter.vs) params.set('vs', filter.vs)
   if (filter.season_id != null) params.set('season_id', String(filter.season_id))
   const qs = params.toString()
-  return apiFetch<Game[]>(`/games${qs ? `?${qs}` : ''}`)
+  return apiFetch<GameDetail[]>(`/games${qs ? `?${qs}` : ''}`)
 }
 
 export const getGame = (id: number) =>

@@ -3,12 +3,12 @@ import { getGames } from '../api/games'
 import GameCard from '../components/GameCard'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import type { Game } from '../types'
+import type { GameDetail } from '../types'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
 
 export default function GamesPage() {
   const { selectedSeasonId } = useSeasonFilter()
-  const [games, setGames] = useState<Game[]>([])
+  const [games, setGames] = useState<GameDetail[]>([])
   const [week, setWeek] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
