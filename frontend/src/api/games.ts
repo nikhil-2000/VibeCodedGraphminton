@@ -28,3 +28,14 @@ export const deleteGame = (id: number) =>
 
 export const deleteSession = (playedOn: string) =>
   apiFetch<{ deleted: number }>(`/games/session/${playedOn}`, { method: 'DELETE' })
+
+export interface GamePrediction {
+  expected_score_a: number
+  expected_score_b: number
+  expected_winner: 'A' | 'B'
+  actual_winner: 'A' | 'B'
+  upset: boolean
+}
+
+export const getGamePrediction = (id: number) =>
+  apiFetch<GamePrediction>(`/games/${id}/prediction`)
