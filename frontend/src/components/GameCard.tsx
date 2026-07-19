@@ -19,15 +19,6 @@ export default function GameCard({ game, onDelete }: Props) {
 
   return (
     <div className="relative rounded-lg border border-border bg-card p-4">
-      {onDelete && !confirming && (
-        <button
-          onClick={() => setConfirming(true)}
-          className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive"
-          aria-label="Delete game"
-        >
-          ×
-        </button>
-      )}
       {confirming && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg bg-card/95">
           <p className="text-xs text-muted-foreground">Delete this game?</p>
@@ -50,7 +41,18 @@ export default function GameCard({ game, onDelete }: Props) {
       )}
       <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
         <span>{game.played_on}</span>
-        <span>Game #{game.game_number}</span>
+        <div className="flex items-center gap-1.5">
+          <span>Game #{game.game_number}</span>
+          {onDelete && (
+            <button
+              onClick={() => setConfirming(true)}
+              className="flex h-4 w-4 items-center justify-center rounded text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive"
+              aria-label="Delete game"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
         <div className="space-y-0.5">
