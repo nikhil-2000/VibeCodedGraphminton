@@ -33,6 +33,7 @@ interface Props {
 
 export default function SessionCard({ session, players, onPlayerCreated, onChange, onRemove, onUploaded }: Props) {
   const [rowErrors, setRowErrors] = useState<Record<number, string[]>>({})
+  const [hasValidated, setHasValidated] = useState(false)
   const [validating, setValidating] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -42,6 +43,7 @@ export default function SessionCard({ session, players, onPlayerCreated, onChang
     const updated = session.rows.map((r, i) => i === idx ? { ...r, ...patch } : r)
     onChange({ ...session, rows: updated })
     setRowErrors({})
+    setHasValidated(false)
     setUploadError(null)
   }
 
@@ -51,6 +53,7 @@ export default function SessionCard({ session, players, onPlayerCreated, onChang
 
   // Build GameRowIn[] from rows that are fully resolved
   const toPayload = (): GameRowIn[] | null => {
+    if (session.rows.length === 0) return null
     const result: GameRowIn[] = []
     for (const row of session.rows) {
       if (row.teamA[0] === null || row.teamA[1] === null || row.teamB[0] === null || row.teamB[1] === null) return null
@@ -74,6 +77,7 @@ export default function SessionCard({ session, players, onPlayerCreated, onChang
       const map: Record<number, string[]> = {}
       for (const e of errors) map[e.row - 1] = e.errors
       setRowErrors(map)
+      setHasValidated(Object.keys(map).length === 0)
     } catch (e) {
       setUploadError((e as Error).message)
     } finally {
@@ -81,7 +85,7 @@ export default function SessionCard({ session, players, onPlayerCreated, onChang
     }
   }
 
-  const isValid = isFullyResolved && Object.keys(rowErrors).length === 0
+  const isValid = isFullyResolved && hasValidated && Object.keys(rowErrors).length === 0
 
   const handleUpload = async () => {
     const games = toPayload()
