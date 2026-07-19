@@ -24,7 +24,7 @@ export default function PlayerSelect({ value, rawName, onChange, players, onPlay
   const [saveError, setSaveError] = useState<string | null>(null)
 
   const selected = players.find((p) => p.id === value)
-  const isError = value === null
+  const isError = value === null && !!rawName
   const filtered = players.filter(
     (p) =>
       p.canonical_name.toLowerCase().includes(search.toLowerCase()) ||
