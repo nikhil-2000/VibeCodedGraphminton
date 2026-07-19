@@ -21,11 +21,15 @@ def get_games(
     player_id: int | None = None,
     team_ids: tuple[int, int] | None = None,
     vs_ids: tuple[int, int] | None = None,
+    season_id: int | None = None,
 ) -> list[dict[str, Any]]:
     ranked = (
         db.query(Game, _session_rank.c.session)
         .join(_session_rank, _session_rank.c.played_on == Game.played_on)
     )
+
+    if season_id is not None:
+        ranked = ranked.filter(Game.season_id == season_id)
 
     if week is not None:
         ranked = ranked.filter(_session_rank.c.session == week)
@@ -85,6 +89,7 @@ def _game_summary(game: Game, session: int | None = None) -> dict[str, Any]:
         "id": game.id,
         "played_on": str(game.played_on),
         "session": session,
+        "season_id": game.season_id,
         "game_number": game.game_number,
         "team_a_score": game.team_a_score,
         "team_b_score": game.team_b_score,

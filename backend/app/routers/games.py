@@ -14,6 +14,7 @@ def list_games(
     player_id: Optional[int] = None,
     team: Optional[str] = None,
     vs: Optional[str] = None,
+    season_id: Optional[int] = None,
     db: Session = Depends(get_db),
 ):
     team_ids = None
@@ -31,7 +32,7 @@ def list_games(
         except ValueError:
             raise HTTPException(status_code=422, detail="vs must be two comma-separated player IDs")
 
-    return games_service.get_games(db, week=week, player_id=player_id, team_ids=team_ids, vs_ids=vs_ids)
+    return games_service.get_games(db, week=week, player_id=player_id, team_ids=team_ids, vs_ids=vs_ids, season_id=season_id)
 
 
 @router.get("/{game_id}", response_model=GameDetailResponse)

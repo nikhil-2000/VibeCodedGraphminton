@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -11,33 +12,37 @@ router = APIRouter()
 def partnerships_overplayed(
     limit: int = 10,
     player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    return anomaly_service.get_partnership_anomalies(db, overplayed=True, limit=limit, player_ids=player_ids or None)
+    return anomaly_service.get_partnership_anomalies(db, overplayed=True, limit=limit, player_ids=player_ids or None, season_id=season_id)
 
 
 @router.get("/partnerships/underplayed", response_model=list[AnomalyEntry])
 def partnerships_underplayed(
     limit: int = 10,
     player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    return anomaly_service.get_partnership_anomalies(db, overplayed=False, limit=limit, player_ids=player_ids or None)
+    return anomaly_service.get_partnership_anomalies(db, overplayed=False, limit=limit, player_ids=player_ids or None, season_id=season_id)
 
 
 @router.get("/head-to-head/overplayed", response_model=list[AnomalyEntry])
 def head_to_head_overplayed(
     limit: int = 10,
     player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    return anomaly_service.get_head_to_head_anomalies(db, overplayed=True, limit=limit, player_ids=player_ids or None)
+    return anomaly_service.get_head_to_head_anomalies(db, overplayed=True, limit=limit, player_ids=player_ids or None, season_id=season_id)
 
 
 @router.get("/head-to-head/underplayed", response_model=list[AnomalyEntry])
 def head_to_head_underplayed(
     limit: int = 10,
     player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    return anomaly_service.get_head_to_head_anomalies(db, overplayed=False, limit=limit, player_ids=player_ids or None)
+    return anomaly_service.get_head_to_head_anomalies(db, overplayed=False, limit=limit, player_ids=player_ids or None, season_id=season_id)

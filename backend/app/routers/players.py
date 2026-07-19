@@ -20,8 +20,8 @@ def create_player(data: PlayerCreate, db: Session = Depends(get_db)):
 
 
 @router.get("", response_model=List[PlayerResponse])
-def list_players(is_sub: Optional[bool] = None, db: Session = Depends(get_db)):
-    return player_service.get_all_players(db, is_sub)
+def list_players(db: Session = Depends(get_db)):
+    return player_service.get_all_players(db)
 
 
 @router.get("/{player_id}", response_model=PlayerResponse)

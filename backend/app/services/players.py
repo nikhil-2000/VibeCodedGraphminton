@@ -6,7 +6,7 @@ from ..schemas import PlayerCreate, PlayerUpdate
 
 
 def create_player(db: Session, data: PlayerCreate) -> Player:
-    player = Player(canonical_name=data.canonical_name, is_sub=data.is_sub)
+    player = Player(canonical_name=data.canonical_name)
     db.add(player)
     try:
         db.flush()
@@ -25,11 +25,8 @@ def create_player(db: Session, data: PlayerCreate) -> Player:
     return player
 
 
-def get_all_players(db: Session, is_sub: Optional[bool] = None) -> List[Player]:
-    query = db.query(Player)
-    if is_sub is not None:
-        query = query.filter(Player.is_sub == is_sub)
-    return query.all()
+def get_all_players(db: Session) -> List[Player]:
+    return db.query(Player).all()
 
 
 def get_player(db: Session, player_id: int) -> Player:
@@ -41,9 +38,6 @@ def get_player(db: Session, player_id: int) -> Player:
 
 def update_player(db: Session, player_id: int, data: PlayerUpdate) -> Player:
     player = get_player(db, player_id)  # raises KeyError if not found
-
-    if data.is_sub is not None:
-        player.is_sub = data.is_sub
 
     for alias_str in data.remove_aliases:
         if alias_str == player.canonical_name:
