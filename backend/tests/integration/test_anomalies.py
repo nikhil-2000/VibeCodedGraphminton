@@ -72,6 +72,44 @@ def test_underplayed_head_to_head(client: TestClient, anomaly_seed):
     assert {anomaly_seed["c"], anomaly_seed["d"]} in all_pairs
 
 
+def test_partnership_focus_player(client: TestClient, anomaly_seed):
+    a = anomaly_seed["a"]
+    response = client.get(f"/anomalies/partnerships/overplayed/{a}")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) > 0
+    for row in data:
+        assert row["player_a_id"] == a or row["player_b_id"] == a
+
+
+def test_partnership_focus_player_returns_all_rows(client: TestClient, anomaly_seed):
+    a = anomaly_seed["a"]
+    response = client.get(f"/anomalies/partnerships/underplayed/{a}")
+    assert response.status_code == 200
+    data = response.json()
+    for row in data:
+        assert row["player_a_id"] == a or row["player_b_id"] == a
+
+
+def test_head_to_head_focus_player(client: TestClient, anomaly_seed):
+    a = anomaly_seed["a"]
+    response = client.get(f"/anomalies/head-to-head/overplayed/{a}")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) > 0
+    for row in data:
+        assert row["player_a_id"] == a or row["player_b_id"] == a
+
+
+def test_head_to_head_focus_player_underplayed(client: TestClient, anomaly_seed):
+    a = anomaly_seed["a"]
+    response = client.get(f"/anomalies/head-to-head/underplayed/{a}")
+    assert response.status_code == 200
+    data = response.json()
+    for row in data:
+        assert row["player_a_id"] == a or row["player_b_id"] == a
+
+
 def test_partnership_anomalies_player_ids_filter(client: TestClient):
     """Sub game partnerships should not appear when filtered to regulars."""
     # Create 4 regulars and 1 sub

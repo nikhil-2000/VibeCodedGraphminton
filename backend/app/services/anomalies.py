@@ -54,7 +54,7 @@ def _expected_frequency(games_a: int, games_b: int, total: int, prob_given_same_
     return (games_a / total) * (games_b / total) * total * prob_given_same_game
 
 
-def get_partnership_anomalies(db: Session, overplayed: bool, limit: int = 10, player_ids: list[int] | None = None, season_id: int | None = None) -> list[dict[str, Any]]:
+def get_partnership_anomalies(db: Session, overplayed: bool, limit: int | None = 10, player_ids: list[int] | None = None, season_id: int | None = None, focus_player_id: int | None = None) -> list[dict[str, Any]]:
     valid_game_ids = _valid_game_id_set(db, player_ids, season_id)
     gp1 = aliased(GamePlayer)
     gp2 = aliased(GamePlayer)
@@ -103,10 +103,12 @@ def get_partnership_anomalies(db: Session, overplayed: bool, limit: int = 10, pl
         })
 
     results.sort(key=lambda r: r["deviation"], reverse=overplayed)
-    return results[:limit]
+    if focus_player_id is not None:
+        results = [r for r in results if r["player_a_id"] == focus_player_id or r["player_b_id"] == focus_player_id]
+    return results if limit is None else results[:limit]
 
 
-def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int = 10, player_ids: list[int] | None = None, season_id: int | None = None) -> list[dict[str, Any]]:
+def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int | None = 10, player_ids: list[int] | None = None, season_id: int | None = None, focus_player_id: int | None = None) -> list[dict[str, Any]]:
     valid_game_ids = _valid_game_id_set(db, player_ids, season_id)
     gp1 = aliased(GamePlayer)
     gp2 = aliased(GamePlayer)
@@ -155,4 +157,6 @@ def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int = 10, p
         })
 
     results.sort(key=lambda r: r["deviation"], reverse=overplayed)
-    return results[:limit]
+    if focus_player_id is not None:
+        results = [r for r in results if r["player_a_id"] == focus_player_id or r["player_b_id"] == focus_player_id]
+    return results if limit is None else results[:limit]

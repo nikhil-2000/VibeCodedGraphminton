@@ -46,3 +46,59 @@ def head_to_head_underplayed(
     db: Session = Depends(get_db),
 ):
     return anomaly_service.get_head_to_head_anomalies(db, overplayed=False, limit=limit, player_ids=player_ids or None, season_id=season_id)
+
+
+@router.get("/partnerships/overplayed/{player_id}", response_model=list[AnomalyEntry])
+def partnerships_overplayed_for_player(
+    player_id: int,
+    player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    return anomaly_service.get_partnership_anomalies(
+        db, overplayed=True, limit=None,
+        player_ids=player_ids or None, season_id=season_id,
+        focus_player_id=player_id,
+    )
+
+
+@router.get("/partnerships/underplayed/{player_id}", response_model=list[AnomalyEntry])
+def partnerships_underplayed_for_player(
+    player_id: int,
+    player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    return anomaly_service.get_partnership_anomalies(
+        db, overplayed=False, limit=None,
+        player_ids=player_ids or None, season_id=season_id,
+        focus_player_id=player_id,
+    )
+
+
+@router.get("/head-to-head/overplayed/{player_id}", response_model=list[AnomalyEntry])
+def head_to_head_overplayed_for_player(
+    player_id: int,
+    player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    return anomaly_service.get_head_to_head_anomalies(
+        db, overplayed=True, limit=None,
+        player_ids=player_ids or None, season_id=season_id,
+        focus_player_id=player_id,
+    )
+
+
+@router.get("/head-to-head/underplayed/{player_id}", response_model=list[AnomalyEntry])
+def head_to_head_underplayed_for_player(
+    player_id: int,
+    player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    return anomaly_service.get_head_to_head_anomalies(
+        db, overplayed=False, limit=None,
+        player_ids=player_ids or None, season_id=season_id,
+        focus_player_id=player_id,
+    )
