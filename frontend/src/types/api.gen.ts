@@ -510,20 +510,10 @@ export interface components {
             id: number;
             /** Canonical Name */
             canonical_name: string;
-            /** Aliases */
-            aliases: components["schemas"]["AliasResponse"][];
-            /**
-             * Season Roles
-             * @default []
-             */
-            season_roles: components["schemas"]["PlayerSeasonRoleResponse"][];
-        };
-        /** PlayerSeasonRoleResponse */
-        PlayerSeasonRoleResponse: {
-            /** Season Id */
-            season_id: number;
             /** Is Sub */
             is_sub: boolean;
+            /** Aliases */
+            aliases: components["schemas"]["AliasResponse"][];
         };
         /** PlayerStatsResponse */
         PlayerStatsResponse: {

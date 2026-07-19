@@ -1,18 +1,9 @@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
-import { useSeasonFilter } from '../context/SeasonFilterContext'
 
 export default function PlayerFilterPopover() {
   const { allPlayers, selectedIds, setSelectedIds, activePreset, setPreset } = usePlayerFilter()
-  const { selectedSeasonId } = useSeasonFilter()
-
-  function isSub(player: (typeof allPlayers)[number]): boolean {
-    const role = selectedSeasonId != null
-      ? player.season_roles.find((r) => r.season_id === selectedSeasonId)
-      : player.season_roles[player.season_roles.length - 1]
-    return role?.is_sub ?? false
-  }
 
   const label =
     activePreset === 'everyone' ? 'Everyone' :
@@ -66,7 +57,7 @@ export default function PlayerFilterPopover() {
                 className="h-3.5 w-3.5"
               />
               <span>{p.canonical_name}</span>
-              {isSub(p) && (
+              {p.is_sub && (
                 <span className="ml-auto text-[10px] text-muted-foreground">sub</span>
               )}
             </label>

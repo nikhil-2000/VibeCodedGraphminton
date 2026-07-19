@@ -8,12 +8,9 @@ import UploadPage from './pages/UploadPage'
 import GraphPage from './pages/GraphPage'
 import AnomaliesPage from './pages/AnomaliesPage'
 import SeasonsPage from './pages/SeasonsPage'
-import { SeasonFilterProvider } from './context/SeasonFilterContext'
-
 export default function App() {
   return (
-    <SeasonFilterProvider>
-      <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
         <Nav />
         <main className="mx-auto max-w-5xl px-4 py-8">
           <Routes>
@@ -29,6 +26,5 @@ export default function App() {
           </Routes>
         </main>
       </div>
-    </SeasonFilterProvider>
   )
 }

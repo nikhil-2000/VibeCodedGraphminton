@@ -1,5 +1,5 @@
 """
-One-time migration: add seasons, player_season_roles, season_id on games, drop is_sub from players.
+Migration: add seasons + season_id on games. Reverts player_season_roles back to is_sub on players.
 Idempotent — safe to re-run.
 """
 import os
@@ -63,21 +63,25 @@ def run():
             ALTER TABLE games ALTER COLUMN season_id SET NOT NULL
         """))
 
-        # 7. Seed player_season_roles from current is_sub values
+        # 7. Restore is_sub on players (backfill from player_season_roles if table exists)
         has_is_sub = conn.execute(text("""
             SELECT column_name FROM information_schema.columns
             WHERE table_name = 'players' AND column_name = 'is_sub'
         """)).fetchone()
 
-        if has_is_sub:
+        if not has_is_sub:
+            conn.execute(text(
+                "ALTER TABLE players ADD COLUMN is_sub BOOLEAN NOT NULL DEFAULT FALSE"
+            ))
             conn.execute(text("""
-                INSERT INTO player_season_roles (player_id, season_id, is_sub)
-                SELECT id, :season_id, is_sub FROM players
-                ON CONFLICT (player_id, season_id) DO NOTHING
+                UPDATE players p
+                SET is_sub = r.is_sub
+                FROM player_season_roles r
+                WHERE r.player_id = p.id AND r.season_id = :season_id
             """), {"season_id": season_id})
 
-            # 8. Drop is_sub from players
-            conn.execute(text("ALTER TABLE players DROP COLUMN IF EXISTS is_sub"))
+        # 8. Drop player_season_roles if it exists
+        conn.execute(text("DROP TABLE IF EXISTS player_season_roles"))
 
     print("Migration complete.")
 

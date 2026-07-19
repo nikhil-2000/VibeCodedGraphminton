@@ -45,7 +45,11 @@ export default function Nav() {
               onValueChange={(v) => setSelectedSeasonId(v === 'all' ? null : Number(v))}
             >
               <SelectTrigger className="h-8 w-36 text-xs">
-                <SelectValue placeholder="Season" />
+                <span>
+                  {selectedSeasonId == null
+                    ? 'All seasons'
+                    : (seasons.find((s) => s.id === selectedSeasonId)?.name ?? 'Season')}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All seasons</SelectItem>

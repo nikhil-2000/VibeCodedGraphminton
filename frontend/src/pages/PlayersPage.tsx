@@ -11,11 +11,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { useSeasonFilter } from '../context/SeasonFilterContext'
 import type { Player } from '../types'
 
 export default function PlayersPage() {
-  const { selectedSeasonId } = useSeasonFilter()
   const [allPlayers, setAllPlayers] = useState<Player[]>([])
   const [showSubs, setShowSubs] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -28,14 +26,7 @@ export default function PlayersPage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  function isSubInSeason(player: Player): boolean {
-    const role = selectedSeasonId != null
-      ? player.season_roles.find((r) => r.season_id === selectedSeasonId)
-      : player.season_roles[player.season_roles.length - 1]
-    return role?.is_sub ?? false
-  }
-
-  const players = showSubs ? allPlayers : allPlayers.filter((p) => !isSubInSeason(p))
+  const players = showSubs ? allPlayers : allPlayers.filter((p) => !p.is_sub)
 
   const loadPlayers = () => {
     setLoading(true)
@@ -99,7 +90,7 @@ export default function PlayersPage() {
             className="rounded-lg border border-border bg-card p-4 hover:border-yellow-400 transition-colors"
           >
             <p className="font-medium">{p.canonical_name}</p>
-            {isSubInSeason(p) && <Badge variant="secondary" className="mt-1">sub</Badge>}
+            {p.is_sub && <Badge variant="secondary" className="mt-1">sub</Badge>}
             {p.aliases.length > 0 && (
               <p className="mt-1 text-xs text-muted-foreground">
                 {p.aliases.map((a) => a.alias).join(', ')}

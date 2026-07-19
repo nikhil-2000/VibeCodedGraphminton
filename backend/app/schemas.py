@@ -38,12 +38,6 @@ class PlayerUpdate(BaseModel):
     remove_aliases: list[str] = []
 
 
-class PlayerSeasonRoleResponse(BaseModel):
-    season_id: int
-    is_sub: bool
-    model_config = {"from_attributes": True}
-
-
 class AliasResponse(BaseModel):
     id: int
     alias: str
@@ -53,8 +47,8 @@ class AliasResponse(BaseModel):
 class PlayerResponse(BaseModel):
     id: int
     canonical_name: str
+    is_sub: bool
     aliases: list[AliasResponse]
-    season_roles: list[PlayerSeasonRoleResponse] = []
     model_config = {"from_attributes": True}
 
 

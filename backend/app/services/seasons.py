@@ -29,6 +29,20 @@ def resolve_season_for_date(db: Session, played_on: date) -> Season | None:
     return None
 
 
+def update_season(db: Session, season_id: int, name: str | None, start_date: date | None, end_date: date | None) -> Season | None:
+    season = db.get(Season, season_id)
+    if not season:
+        return None
+    if name is not None:
+        season.name = name
+    if start_date is not None:
+        season.start_date = start_date
+    if end_date is not None:
+        season.end_date = end_date
+    db.flush()
+    return season
+
+
 def get_season_game_counts(db: Session) -> dict[int, int]:
     rows = db.query(Game.season_id, func.count(Game.id)).group_by(Game.season_id).all()
     return {season_id: count for season_id, count in rows}

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Season
-from ..schemas import SeasonCreate, SeasonResponse
+from ..schemas import SeasonCreate, SeasonUpdate, SeasonResponse
 from ..services import seasons as season_svc
 
 router = APIRouter(prefix="/seasons", tags=["seasons"])
@@ -18,6 +18,16 @@ def get_season(season_id: int, db: Session = Depends(get_db)):
     season = season_svc.get_season(db, season_id)
     if not season:
         raise HTTPException(status_code=404, detail="Season not found")
+    return season
+
+
+@router.patch("/{season_id}", response_model=SeasonResponse)
+def update_season(season_id: int, body: SeasonUpdate, db: Session = Depends(get_db)):
+    season = season_svc.update_season(db, season_id, body.name, body.start_date, body.end_date)
+    if not season:
+        raise HTTPException(status_code=404, detail="Season not found")
+    db.commit()
+    db.refresh(season)
     return season
 
 
