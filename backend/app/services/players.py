@@ -1,7 +1,7 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from ..models import Player, PlayerAlias, GamePlayer
+from ..models import Player, PlayerAlias, GamePlayer, PlayerSeasonRole, Season
 from ..schemas import PlayerCreate, PlayerUpdate
 
 
@@ -20,6 +20,15 @@ def create_player(db: Session, data: PlayerCreate) -> Player:
         db.flush()
     except IntegrityError:
         raise ValueError("One or more aliases already belong to another player")
+
+    latest_season = db.query(Season).order_by(Season.start_date.desc()).first()
+    if latest_season:
+        db.add(PlayerSeasonRole(
+            player_id=player.id,
+            season_id=latest_season.id,
+            is_sub=data.is_sub,
+        ))
+        db.flush()
 
     db.refresh(player)
     return player

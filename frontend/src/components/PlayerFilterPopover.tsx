@@ -1,12 +1,23 @@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
+import { useSeasonFilter } from '../context/SeasonFilterContext'
 
 export default function PlayerFilterPopover() {
-  const { allPlayers, selectedIds, setSelectedIds } = usePlayerFilter()
+  const { allPlayers, selectedIds, setSelectedIds, activePreset, setPreset } = usePlayerFilter()
+  const { selectedSeasonId } = useSeasonFilter()
 
-  const isAll = selectedIds.length === allPlayers.length
-  const label = isAll ? 'Everyone' : `${selectedIds.length} players`
+  function isSub(player: (typeof allPlayers)[number]): boolean {
+    const role = selectedSeasonId != null
+      ? player.season_roles.find((r) => r.season_id === selectedSeasonId)
+      : player.season_roles[player.season_roles.length - 1]
+    return role?.is_sub ?? false
+  }
+
+  const label =
+    activePreset === 'everyone' ? 'Everyone' :
+    activePreset === 'regulars' ? 'Regulars' :
+    `${selectedIds.length} players`
 
   const togglePlayer = (id: number) => {
     const next = selectedIds.includes(id)
@@ -14,8 +25,6 @@ export default function PlayerFilterPopover() {
       : [...selectedIds, id]
     setSelectedIds(next)
   }
-
-  const selectAll = () => setSelectedIds(allPlayers.map((p) => p.id))
 
   return (
     <Popover>
@@ -29,8 +38,16 @@ export default function PlayerFilterPopover() {
         <div className="mb-3 flex gap-2">
           <Button
             size="sm"
-            variant={isAll ? 'default' : 'outline'}
-            onClick={selectAll}
+            variant={activePreset === 'regulars' ? 'default' : 'outline'}
+            onClick={() => setPreset('regulars')}
+            className="flex-1 text-xs"
+          >
+            Regulars only
+          </Button>
+          <Button
+            size="sm"
+            variant={activePreset === 'everyone' ? 'default' : 'outline'}
+            onClick={() => setPreset('everyone')}
             className="flex-1 text-xs"
           >
             Everyone
@@ -49,6 +66,9 @@ export default function PlayerFilterPopover() {
                 className="h-3.5 w-3.5"
               />
               <span>{p.canonical_name}</span>
+              {isSub(p) && (
+                <span className="ml-auto text-[10px] text-muted-foreground">sub</span>
+              )}
             </label>
           ))}
         </div>

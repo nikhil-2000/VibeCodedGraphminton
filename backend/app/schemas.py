@@ -11,6 +11,12 @@ class SeasonCreate(BaseModel):
     end_date: Optional[date] = None
 
 
+class SeasonUpdate(BaseModel):
+    name: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+
+
 class SeasonResponse(BaseModel):
     id: int
     name: str
@@ -24,6 +30,7 @@ class SeasonResponse(BaseModel):
 class PlayerCreate(BaseModel):
     canonical_name: str
     aliases: list[str] = []
+    is_sub: bool = False
 
 
 class PlayerUpdate(BaseModel):

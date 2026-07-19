@@ -1,12 +1,8 @@
 import { apiFetch } from './client'
 import type { Player, PlayerCreate, PlayerStats, PlayerPartnership } from '../types'
 
-export const getPlayers = (isSub?: boolean) => {
-  const params = new URLSearchParams()
-  if (isSub !== undefined) params.set('is_sub', String(isSub))
-  const qs = params.toString()
-  return apiFetch<Player[]>(`/players${qs ? `?${qs}` : ''}`)
-}
+export const getPlayers = () =>
+  apiFetch<Player[]>('/players')
 
 export const getPlayer = (id: number) =>
   apiFetch<Player>(`/players/${id}`)

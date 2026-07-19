@@ -36,7 +36,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Season */
+        patch: operations["update_season_seasons__season_id__patch"];
         trace?: never;
     };
     "/players": {
@@ -484,6 +485,11 @@ export interface components {
              * @default []
              */
             aliases: string[];
+            /**
+             * Is Sub
+             * @default false
+             */
+            is_sub: boolean;
         };
         /** PlayerPartnershipResponse */
         PlayerPartnershipResponse: {
@@ -573,6 +579,15 @@ export interface components {
             /** End Date */
             end_date: string | null;
         };
+        /** SeasonUpdate */
+        SeasonUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -654,6 +669,41 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeasonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_season_seasons__season_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                season_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeasonUpdate"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
