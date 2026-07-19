@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..services import games as games_service
-from ..schemas import GameResponse, GameDetailResponse
+from ..schemas import GameResponse, GameDetailResponse, DeleteSessionResponse
 
 router = APIRouter()
 
@@ -41,3 +41,20 @@ def get_game(game_id: int, db: Session = Depends(get_db)):
         return games_service.get_game_detail(db, game_id)
     except KeyError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/{game_id}", status_code=204)
+def delete_game(game_id: int, db: Session = Depends(get_db)):
+    try:
+        games_service.delete_game(db, game_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/session/{played_on}", response_model=DeleteSessionResponse)
+def delete_session(played_on: str, db: Session = Depends(get_db)):
+    try:
+        deleted = games_service.delete_session(db, played_on)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return DeleteSessionResponse(deleted=deleted)

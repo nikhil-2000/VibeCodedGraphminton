@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getGames } from '../api/games'
+import { getGames, deleteGame, deleteSession } from '../api/games'
 import GameCard from '../components/GameCard'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -13,16 +13,27 @@ export default function GamesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const load = (w: string) => {
-    getGames({ week: w ? Number(w) : undefined, season_id: selectedSeasonId })
+  const load = () => {
+    setLoading(true)
+    getGames({ week: week ? Number(week) : undefined, season_id: selectedSeasonId })
       .then(setGames)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load(week) }, [week, selectedSeasonId])
+  useEffect(() => { load() }, [week, selectedSeasonId])
 
-  const bySession = games.reduce<Record<string, Game[]>>((acc, g) => {
+  const handleDeleteGame = async (id: number) => {
+    await deleteGame(id)
+    setGames((prev) => prev.filter((g) => g.id !== id))
+  }
+
+  const handleDeleteSession = async (playedOn: string) => {
+    await deleteSession(playedOn)
+    setGames((prev) => prev.filter((g) => g.played_on !== playedOn))
+  }
+
+  const bySession = games.reduce<Record<string, GameDetail[]>>((acc, g) => {
     const key = g.session !== null ? `Session ${g.session}` : g.played_on
     ;(acc[key] ??= []).push(g)
     return acc
@@ -48,11 +59,27 @@ export default function GamesPage() {
       {error && <p className="text-destructive">{error}</p>}
       {Object.entries(bySession).map(([sessionLabel, sessionGames]) => (
         <div key={sessionLabel} className="mb-8">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            {sessionLabel} — {sessionGames[0].played_on}
-          </h2>
+          <div className="mb-3 flex items-center gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              {sessionLabel} — {sessionGames[0].played_on}
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-muted-foreground/60 hover:text-destructive"
+              onClick={() => {
+                if (confirm(`Delete all ${sessionGames.length} games from ${sessionGames[0].played_on}?`)) {
+                  handleDeleteSession(sessionGames[0].played_on)
+                }
+              }}
+            >
+              Delete session
+            </Button>
+          </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {sessionGames.map((g) => <GameCard key={g.id} game={g} />)}
+            {sessionGames.map((g) => (
+              <GameCard key={g.id} game={g} onDelete={handleDeleteGame} />
+            ))}
           </div>
         </div>
       ))}
