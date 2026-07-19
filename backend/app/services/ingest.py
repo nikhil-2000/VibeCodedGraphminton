@@ -88,6 +88,7 @@ def parse_csv_rows(lines: list[str]) -> tuple[list[RawGameRow], list[str]]:
 
 from sqlalchemy.orm import Session
 from ..models import PlayerAlias, Game, GamePlayer
+from .seasons import resolve_season_for_date
 
 
 def resolve_aliases(db: Session) -> dict[str, int]:
@@ -113,6 +114,11 @@ def ingest_csv_file(
     if len(dates) > 1:
         return 0, [f"All rows must share the same date, found: {', '.join(str(d) for d in sorted(dates))}"]
 
+    played_on = next(iter(dates))
+    season = resolve_season_for_date(db, played_on)
+    if not season:
+        return 0, [f"No season found covering date {played_on}. Create a season first."]
+
     all_errors: list[str] = []
 
     for row in rows:
@@ -135,6 +141,7 @@ def ingest_csv_file(
 
         game = Game(
             played_on=row.played_on,
+            season_id=season.id,
             game_number=row.game_number,
             team_a_score=row.team_a_score,
             team_b_score=row.team_b_score,

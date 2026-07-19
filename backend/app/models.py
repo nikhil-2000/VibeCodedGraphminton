@@ -1,7 +1,19 @@
 from datetime import date
-from sqlalchemy import String, ForeignKey, UniqueConstraint
+from typing import Optional
+from sqlalchemy import String, Boolean, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from .database import Base
+
+
+class Season(Base):
+    __tablename__ = "seasons"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    start_date: Mapped[date] = mapped_column(nullable=False)
+    end_date: Mapped[Optional[date]] = mapped_column(nullable=True)
+
+    games: Mapped[list["Game"]] = relationship(back_populates="season")
 
 
 class Player(Base):
@@ -32,10 +44,12 @@ class Game(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     played_on: Mapped[date] = mapped_column(nullable=False)
+    season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id"), nullable=False)
     game_number: Mapped[int] = mapped_column(nullable=False)
     team_a_score: Mapped[int] = mapped_column(nullable=False)
     team_b_score: Mapped[int] = mapped_column(nullable=False)
 
+    season: Mapped["Season"] = relationship(back_populates="games")
     game_players: Mapped[list["GamePlayer"]] = relationship(back_populates="game")
 
     __table_args__ = (

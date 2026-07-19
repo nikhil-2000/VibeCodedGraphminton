@@ -20,8 +20,8 @@ def create_player(data: PlayerCreate, db: Session = Depends(get_db)):
 
 
 @router.get("", response_model=List[PlayerResponse])
-def list_players(is_sub: Optional[bool] = None, db: Session = Depends(get_db)):
-    return player_service.get_all_players(db, is_sub)
+def list_players(db: Session = Depends(get_db)):
+    return player_service.get_all_players(db)
 
 
 @router.get("/{player_id}", response_model=PlayerResponse)
@@ -48,10 +48,11 @@ def update_player(player_id: int, data: PlayerUpdate, db: Session = Depends(get_
 def get_player_stats(
     player_id: int,
     player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
     db: Session = Depends(get_db),
 ):
     try:
-        return stats_service.get_player_stats(db, player_id, player_ids or None)
+        return stats_service.get_player_stats(db, player_id, player_ids or None, season_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 

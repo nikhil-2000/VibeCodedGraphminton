@@ -25,11 +25,8 @@ def create_player(db: Session, data: PlayerCreate) -> Player:
     return player
 
 
-def get_all_players(db: Session, is_sub: Optional[bool] = None) -> List[Player]:
-    query = db.query(Player)
-    if is_sub is not None:
-        query = query.filter(Player.is_sub == is_sub)
-    return query.all()
+def get_all_players(db: Session) -> List[Player]:
+    return db.query(Player).all()
 
 
 def get_player(db: Session, player_id: int) -> Player:
@@ -40,7 +37,7 @@ def get_player(db: Session, player_id: int) -> Player:
 
 
 def update_player(db: Session, player_id: int, data: PlayerUpdate) -> Player:
-    player = get_player(db, player_id)  # raises KeyError if not found
+    player = get_player(db, player_id)
 
     if data.is_sub is not None:
         player.is_sub = data.is_sub

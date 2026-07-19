@@ -7,20 +7,25 @@ from ..models import Game, GamePlayer
 MIN_GAMES_THRESHOLD = 3
 
 
-def _valid_game_id_set(db: Session, player_ids: list[int] | None) -> set[int] | None:
-    """Returns the set of game IDs where all participants are in player_ids.
-    Returns None when player_ids is None or empty (no filter)."""
-    if not player_ids:
+def _valid_game_id_set(db: Session, player_ids: list[int] | None, season_id: int | None = None) -> set[int] | None:
+    """Returns the set of game IDs filtered by player_ids and/or season_id.
+    Returns None when no filters apply (no filter)."""
+    if not player_ids and season_id is None:
         return None
-    excluded = {
-        row.game_id
-        for row in db.query(GamePlayer.game_id)
-        .filter(GamePlayer.player_id.notin_(player_ids))
-        .distinct()
-        .all()
-    }
-    all_ids = {row.id for row in db.query(Game.id).all()}
-    return all_ids - excluded
+    q = db.query(Game.id)
+    if season_id is not None:
+        q = q.filter(Game.season_id == season_id)
+    all_ids = {row.id for row in q.all()}
+    if player_ids:
+        excluded = {
+            row.game_id
+            for row in db.query(GamePlayer.game_id)
+            .filter(GamePlayer.player_id.notin_(player_ids))
+            .distinct()
+            .all()
+        }
+        return all_ids - excluded
+    return all_ids
 
 
 def _get_player_game_counts(db: Session, valid_game_ids: set[int] | None = None) -> dict[int, int]:
@@ -49,8 +54,8 @@ def _expected_frequency(games_a: int, games_b: int, total: int, prob_given_same_
     return (games_a / total) * (games_b / total) * total * prob_given_same_game
 
 
-def get_partnership_anomalies(db: Session, overplayed: bool, limit: int = 10, player_ids: list[int] | None = None) -> list[dict[str, Any]]:
-    valid_game_ids = _valid_game_id_set(db, player_ids)
+def get_partnership_anomalies(db: Session, overplayed: bool, limit: int = 10, player_ids: list[int] | None = None, season_id: int | None = None) -> list[dict[str, Any]]:
+    valid_game_ids = _valid_game_id_set(db, player_ids, season_id)
     gp1 = aliased(GamePlayer)
     gp2 = aliased(GamePlayer)
 
@@ -101,8 +106,8 @@ def get_partnership_anomalies(db: Session, overplayed: bool, limit: int = 10, pl
     return results[:limit]
 
 
-def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int = 10, player_ids: list[int] | None = None) -> list[dict[str, Any]]:
-    valid_game_ids = _valid_game_id_set(db, player_ids)
+def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int = 10, player_ids: list[int] | None = None, season_id: int | None = None) -> list[dict[str, Any]]:
+    valid_game_ids = _valid_game_id_set(db, player_ids, season_id)
     gp1 = aliased(GamePlayer)
     gp2 = aliased(GamePlayer)
 

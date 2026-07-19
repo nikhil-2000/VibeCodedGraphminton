@@ -4,6 +4,9 @@ import type { components } from "./api.gen";
 
 type Schema = components["schemas"];
 
+export type Season = Schema["SeasonResponse"];
+export type SeasonCreate = Schema["SeasonCreate"];
+export type SeasonUpdate = Schema["SeasonUpdate"];
 export type Player = Schema["PlayerResponse"];
 export type PlayerCreate = Schema["PlayerCreate"];
 export type PlayerUpdate = Schema["PlayerUpdate"];

@@ -56,8 +56,10 @@ export default function PlayerFilterPopover() {
                 onChange={() => togglePlayer(p.id)}
                 className="h-3.5 w-3.5"
               />
-              <span className={p.is_sub ? 'text-muted-foreground' : ''}>{p.canonical_name}</span>
-              {p.is_sub && <span className="text-xs text-yellow-400">sub</span>}
+              <span>{p.canonical_name}</span>
+              {p.is_sub && (
+                <span className="ml-auto text-[10px] text-muted-foreground">sub</span>
+              )}
             </label>
           ))}
         </div>

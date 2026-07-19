@@ -6,6 +6,7 @@ export interface GamesFilter {
   player_id?: number
   team?: string
   vs?: string
+  season_id?: number | null
 }
 
 export const getGames = (filter: GamesFilter = {}) => {
@@ -14,6 +15,7 @@ export const getGames = (filter: GamesFilter = {}) => {
   if (filter.player_id !== undefined) params.set('player_id', String(filter.player_id))
   if (filter.team) params.set('team', filter.team)
   if (filter.vs) params.set('vs', filter.vs)
+  if (filter.season_id != null) params.set('season_id', String(filter.season_id))
   const qs = params.toString()
   return apiFetch<Game[]>(`/games${qs ? `?${qs}` : ''}`)
 }

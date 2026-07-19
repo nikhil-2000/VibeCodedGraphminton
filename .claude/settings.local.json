@@ -21,7 +21,12 @@
       "Bash(npx vitest:*)",
       "Bash(npx shadcn@latest add dialog)",
       "Bash(DATABASE_URL=postgresql://graphminton:graphminton@localhost:5432/graphminton_test /Users/nikhil.patel/Documents/personal/VibeCodedGraphminton/backend/.venv/bin/python -m pytest:*)",
-      "Bash(/Users/nikhil.patel/Documents/personal/VibeCodedGraphminton/backend/.venv/bin/python backend/export_openapi.py)"
+      "Bash(/Users/nikhil.patel/Documents/personal/VibeCodedGraphminton/backend/.venv/bin/python backend/export_openapi.py)",
+      "Bash(DATABASE_URL=postgresql://graphminton:graphminton@localhost:5432/graphminton_test backend/.venv/bin/python -m pytest backend/tests/integration/test_players.py -v -q)",
+      "Bash(DATABASE_URL=postgresql://graphminton:graphminton@localhost:5432/graphminton_test backend/.venv/bin/python -m pytest backend/tests/integration/ -q)",
+      "Bash(grep -E \"\\\\.ts$|types\")",
+      "Bash(git *)",
+      "Bash(brew services *)"
     ]
   }
 }

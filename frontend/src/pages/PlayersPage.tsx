@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getPlayers, createPlayer } from '../api/players'
+import { createPlayer } from '../api/players'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,13 +11,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import type { Player } from '../types'
+import { usePlayerFilter } from '../context/PlayerFilterContext'
 
 export default function PlayersPage() {
-  const [players, setPlayers] = useState<Player[]>([])
-  const [showSubs, setShowSubs] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { allPlayers, selectedIds, reloadPlayers } = usePlayerFilter()
+  const players = allPlayers.filter((p) => selectedIds.includes(p.id))
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [name, setName] = useState('')
@@ -25,16 +23,6 @@ export default function PlayersPage() {
   const [aliasInput, setAliasInput] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-
-  const loadPlayers = () => {
-    setLoading(true)
-    getPlayers(showSubs ? undefined : false)
-      .then(setPlayers)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => { loadPlayers() }, [showSubs])
 
   const openDialog = () => {
     setName('')
@@ -46,16 +34,13 @@ export default function PlayersPage() {
 
   const handleCreate = () => {
     if (!name.trim()) return
-    const aliases = aliasInput
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
+    const aliases = aliasInput.split(',').map((s) => s.trim()).filter(Boolean)
     setSaving(true)
     setSaveError(null)
     createPlayer({ canonical_name: name.trim(), is_sub: isSub, aliases })
       .then(() => {
         setDialogOpen(false)
-        loadPlayers()
+        reloadPlayers()
       })
       .catch((e: Error) => setSaveError(e.message))
       .finally(() => setSaving(false))
@@ -65,22 +50,11 @@ export default function PlayersPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Players</h1>
-        <div className="flex gap-2">
-          <Button variant="default" size="sm" onClick={openDialog}>
-            New player
-          </Button>
-          <Button
-            variant={showSubs ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setShowSubs((v) => !v)}
-          >
-            {showSubs ? 'Hiding subs' : 'Show subs'}
-          </Button>
-        </div>
+        <Button variant="default" size="sm" onClick={openDialog}>
+          New player
+        </Button>
       </div>
-      {error && <p className="text-destructive">{error}</p>}
-      {loading && players.length === 0 && <p className="text-muted-foreground">Loading…</p>}
-      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 transition-opacity duration-150 ${loading ? 'opacity-50' : ''}`}>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {players.map((p) => (
           <Link
             key={p.id}

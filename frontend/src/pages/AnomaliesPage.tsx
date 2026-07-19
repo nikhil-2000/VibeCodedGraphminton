@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getPartnershipAnomalies, getHeadToHeadAnomalies } from '../api/anomalies'
 import { getPlayers } from '../api/players'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
+import { useSeasonFilter } from '../context/SeasonFilterContext'
 import AnomalyTable from '../components/AnomalyTable'
 import { Button } from '@/components/ui/button'
 import type { AnomalyEntry } from '../types'
@@ -11,6 +12,7 @@ type Direction = 'overplayed' | 'underplayed'
 
 export default function AnomaliesPage() {
   const { selectedIds } = usePlayerFilter()
+  const { selectedSeasonId } = useSeasonFilter()
   const [tab, setTab] = useState<Tab>('partnerships')
   const [direction, setDirection] = useState<Direction>('overplayed')
   const [entries, setEntries] = useState<AnomalyEntry[]>([])
@@ -26,11 +28,11 @@ export default function AnomaliesPage() {
 
   useEffect(() => {
     const fetch = tab === 'partnerships' ? getPartnershipAnomalies : getHeadToHeadAnomalies
-    fetch(direction, 20, selectedIds)
+    fetch(direction, 20, selectedIds, selectedSeasonId)
       .then(setEntries)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [tab, direction, selectedIds])
+  }, [tab, direction, selectedIds, selectedSeasonId])
 
   return (
     <div>

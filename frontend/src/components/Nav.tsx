@@ -2,6 +2,8 @@ import { NavLink } from 'react-router-dom'
 import { Sun, Moon } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 import PlayerFilterPopover from './PlayerFilterPopover'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import { useSeasonFilter } from '../context/SeasonFilterContext'
 
 const links = [
   { to: '/leaderboard', label: 'Leaderboard' },
@@ -9,11 +11,13 @@ const links = [
   { to: '/games', label: 'Games' },
   { to: '/graph', label: 'Graph' },
   { to: '/anomalies', label: 'Anomalies' },
+  { to: '/seasons', label: 'Seasons' },
   { to: '/upload', label: 'Upload' },
 ]
 
 export default function Nav() {
   const { theme, toggle } = useTheme()
+  const { seasons, selectedSeasonId, setSelectedSeasonId } = useSeasonFilter()
 
   return (
     <nav className="border-b border-border bg-card px-4">
@@ -35,6 +39,28 @@ export default function Nav() {
           </NavLink>
         ))}
         <div className="ml-auto flex items-center gap-2">
+          {seasons.length > 0 && (
+            <Select
+              value={selectedSeasonId != null ? String(selectedSeasonId) : 'all'}
+              onValueChange={(v) => setSelectedSeasonId(v === 'all' ? null : Number(v))}
+            >
+              <SelectTrigger className="h-8 w-36 text-xs">
+                <span>
+                  {selectedSeasonId == null
+                    ? 'All seasons'
+                    : (seasons.find((s) => s.id === selectedSeasonId)?.name ?? 'Season')}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All seasons</SelectItem>
+                {seasons.map((s) => (
+                  <SelectItem key={s.id} value={String(s.id)}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <PlayerFilterPopover />
           <button
             onClick={toggle}

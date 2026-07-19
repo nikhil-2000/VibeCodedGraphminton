@@ -17,6 +17,7 @@ export default defineConfig({
       '/stats': 'http://localhost:8000',
       '/anomalies': 'http://localhost:8000',
       '/ingest': 'http://localhost:8000',
+      '/seasons': 'http://localhost:8000',
     },
   },
   test: {

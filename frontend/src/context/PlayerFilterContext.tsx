@@ -10,42 +10,49 @@ interface PlayerFilterContextValue {
   setSelectedIds: (ids: number[]) => void
   activePreset: Preset
   setPreset: (preset: 'everyone' | 'regulars') => void
+  reloadPlayers: () => void
 }
 
 const PlayerFilterContext = createContext<PlayerFilterContextValue | null>(null)
+
+function regularIds(players: Player[]): number[] {
+  return players.filter((p) => !p.is_sub).map((p) => p.id)
+}
 
 export function PlayerFilterProvider({ children }: { children: ReactNode }) {
   const [allPlayers, setAllPlayers] = useState<Player[]>([])
   const [selectedIds, setSelectedIdsRaw] = useState<number[]>([])
   const [activePreset, setActivePreset] = useState<Preset>('regulars')
 
-  useEffect(() => {
+  const reloadPlayers = () => {
     getPlayers().then((players) => {
       setAllPlayers(players)
-      setSelectedIdsRaw(players.filter((p) => !p.is_sub).map((p) => p.id))
+      setSelectedIdsRaw(regularIds(players))
     })
-  }, [])
+  }
+
+  useEffect(() => { reloadPlayers() }, [])
 
   const setSelectedIds = (ids: number[]) => {
     setSelectedIdsRaw(ids)
     const allIds = allPlayers.map((p) => p.id)
-    const regularIds = allPlayers.filter((p) => !p.is_sub).map((p) => p.id)
+    const regIds = regularIds(allPlayers)
     const sorted = [...ids].sort((a, b) => a - b)
     const isAll = sorted.join() === [...allIds].sort((a, b) => a - b).join()
-    const isRegulars = sorted.join() === [...regularIds].sort((a, b) => a - b).join()
+    const isRegulars = sorted.join() === [...regIds].sort((a, b) => a - b).join()
     setActivePreset(isAll ? 'everyone' : isRegulars ? 'regulars' : 'custom')
   }
 
   const setPreset = (preset: 'everyone' | 'regulars') => {
     const ids = preset === 'everyone'
       ? allPlayers.map((p) => p.id)
-      : allPlayers.filter((p) => !p.is_sub).map((p) => p.id)
+      : regularIds(allPlayers)
     setSelectedIdsRaw(ids)
     setActivePreset(preset)
   }
 
   return (
-    <PlayerFilterContext.Provider value={{ allPlayers, selectedIds, setSelectedIds, activePreset, setPreset }}>
+    <PlayerFilterContext.Provider value={{ allPlayers, selectedIds, setSelectedIds, activePreset, setPreset, reloadPlayers }}>
       {children}
     </PlayerFilterContext.Provider>
   )

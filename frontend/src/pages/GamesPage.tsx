@@ -4,21 +4,23 @@ import GameCard from '../components/GameCard'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import type { Game } from '../types'
+import { useSeasonFilter } from '../context/SeasonFilterContext'
 
 export default function GamesPage() {
+  const { selectedSeasonId } = useSeasonFilter()
   const [games, setGames] = useState<Game[]>([])
   const [week, setWeek] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const load = (w: string) => {
-    getGames({ week: w ? Number(w) : undefined })
+    getGames({ week: w ? Number(w) : undefined, season_id: selectedSeasonId })
       .then(setGames)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load(week) }, [week])
+  useEffect(() => { load(week) }, [week, selectedSeasonId])
 
   const bySession = games.reduce<Record<string, Game[]>>((acc, g) => {
     const key = g.session !== null ? `Session ${g.session}` : g.played_on
