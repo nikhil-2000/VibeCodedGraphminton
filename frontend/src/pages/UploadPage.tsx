@@ -4,17 +4,29 @@ import SessionCard, { type SessionData, type SessionRow } from '../components/Se
 import { parseSessionCsv } from '../utils/parseSessionCsv'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 import { postScores } from '../api/ingest'
+import type { Player } from '../types'
 
 let nextId = 1
 const makeId = () => String(nextId++)
 
-function csvToSessionData(csvText: string): SessionData {
+function buildAliasMap(players: Player[]): Map<string, number> {
+  const map = new Map<string, number>()
+  for (const p of players) {
+    map.set(p.canonical_name.toLowerCase(), p.id)
+    for (const a of p.aliases) map.set(a.alias.toLowerCase(), p.id)
+  }
+  return map
+}
+
+function csvToSessionData(csvText: string, players: Player[]): SessionData {
   const { dateStr, games } = parseSessionCsv(csvText)
+  const aliasMap = buildAliasMap(players)
+  const resolve = (name: string): number | null => aliasMap.get(name.toLowerCase()) ?? null
   const rows: SessionRow[] = games.map((g) => ({
-    teamA: [null, null],
+    teamA: [resolve(g.teamARaw[0]), resolve(g.teamARaw[1])],
     teamARaw: g.teamARaw,
     scoreA: g.scoreA,
-    teamB: [null, null],
+    teamB: [resolve(g.teamBRaw[0]), resolve(g.teamBRaw[1])],
     teamBRaw: g.teamBRaw,
     scoreB: g.scoreB,
   }))
@@ -38,7 +50,7 @@ export default function UploadPage() {
       const reader = new FileReader()
       reader.onload = (e) => {
         const text = e.target?.result as string
-        setSessions((prev) => [...prev, csvToSessionData(text)])
+        setSessions((prev) => [...prev, csvToSessionData(text, allPlayers)])
       }
       reader.readAsText(file)
     })
