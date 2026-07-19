@@ -18,3 +18,23 @@ export const getHeadToHeadAnomalies = (type: 'overplayed' | 'underplayed', limit
   const params = qs(`limit=${limit}`, playerIdsQs(playerIds), seasonQs(seasonId))
   return apiFetch<AnomalyEntry[]>(`/anomalies/head-to-head/${type}?${params}`)
 }
+
+export const getPartnershipAnomaliesForPlayer = (
+  playerId: number,
+  type: 'overplayed' | 'underplayed',
+  playerIds?: number[],
+  seasonId?: number | null,
+) => {
+  const params = qs(playerIdsQs(playerIds), seasonQs(seasonId))
+  return apiFetch<AnomalyEntry[]>(`/anomalies/partnerships/${type}/${playerId}${params ? '?' + params : ''}`)
+}
+
+export const getHeadToHeadAnomaliesForPlayer = (
+  playerId: number,
+  type: 'overplayed' | 'underplayed',
+  playerIds?: number[],
+  seasonId?: number | null,
+) => {
+  const params = qs(playerIdsQs(playerIds), seasonQs(seasonId))
+  return apiFetch<AnomalyEntry[]>(`/anomalies/head-to-head/${type}/${playerId}${params ? '?' + params : ''}`)
+}
