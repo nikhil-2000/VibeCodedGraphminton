@@ -203,7 +203,15 @@ def validate_games(
     played_on_str: str,
     games: list,
 ) -> list[dict]:
-    """Validate a list of GameRowIn objects. Returns list of {row, errors} dicts."""
+    """Validate date, season coverage, and game rows. Returns list of {row, errors} dicts."""
+    try:
+        played_on = date.fromisoformat(played_on_str)
+    except ValueError:
+        return [{"row": 0, "errors": [f"Invalid date format: {played_on_str!r}, expected YYYY-MM-DD"]}]
+
+    if not resolve_season_for_date(db, played_on):
+        return [{"row": 0, "errors": [f"No season found covering date {played_on}. Create a season first."]}]
+
     from ..models import Player as PlayerModel
     known_ids: set[int] = {row.id for row in db.query(PlayerModel.id).all()}
     result = []

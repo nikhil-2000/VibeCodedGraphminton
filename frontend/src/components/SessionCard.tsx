@@ -57,6 +57,7 @@ export default function SessionCard({ session, players, onPlayerCreated, onChang
     const result: GameRowIn[] = []
     for (const row of session.rows) {
       if (row.teamA[0] === null || row.teamA[1] === null || row.teamB[0] === null || row.teamB[1] === null) return null
+      if (row.scoreA === '' || row.scoreB === '') return null
       const sA = Number(row.scoreA)
       const sB = Number(row.scoreB)
       if (isNaN(sA) || isNaN(sB)) return null
@@ -75,7 +76,7 @@ export default function SessionCard({ session, players, onPlayerCreated, onChang
     try {
       const { errors } = await validateGames({ played_on: session.dateStr, games })
       const map: Record<number, string[]> = {}
-      for (const e of errors) map[e.row - 1] = e.errors
+      for (const e of errors) map[e.row === 0 ? -1 : e.row - 1] = e.errors
       setRowErrors(map)
       setHasValidated(Object.keys(map).length === 0)
     } catch (e) {
@@ -225,7 +226,9 @@ export default function SessionCard({ session, players, onPlayerCreated, onChang
           <div className="mt-2 space-y-0.5">
             {Object.entries(rowErrors).map(([idx, errs]) =>
               errs.map((e) => (
-                <p key={e} className="text-xs text-destructive">Row {Number(idx) + 1}: {e}</p>
+                <p key={e} className="text-xs text-destructive">
+                  {Number(idx) === -1 ? e : `Row ${Number(idx) + 1}: ${e}`}
+                </p>
               ))
             )}
           </div>
