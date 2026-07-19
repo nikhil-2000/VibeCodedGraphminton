@@ -9,8 +9,7 @@ const links = [
   { to: '/leaderboard', label: 'Leaderboard' },
   { to: '/players', label: 'Players' },
   { to: '/games', label: 'Games' },
-  { to: '/graph', label: 'Graph' },
-  { to: '/anomalies', label: 'Anomalies' },
+{ to: '/anomalies', label: 'Anomalies' },
   { to: '/seasons', label: 'Seasons' },
   { to: '/upload', label: 'Upload' },
 ]
