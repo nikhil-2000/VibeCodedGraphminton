@@ -27,10 +27,10 @@ export default function AnomaliesPage() {
   const [error, setError] = useState<string | null>(null)
   const [focusedPlayerId, setFocusedPlayerId] = useState<number | null>(null)
   const [summary, setSummary] = useState<{
-    moreWith: number[]
-    lessWith: number[]
-    moreAgainst: number[]
-    lessAgainst: number[]
+    moreWith: [number, number][]
+    lessWith: [number, number][]
+    moreAgainst: [number, number][]
+    lessAgainst: [number, number][]
   } | null>(null)
   const summaryAbort = useRef<AbortController | null>(null)
 
@@ -57,27 +57,34 @@ export default function AnomaliesPage() {
   }, [tab, direction, selectedIds, selectedSeasonId, focusedPlayerId])
 
   useEffect(() => {
-    if (focusedPlayerId === null) {
-      setSummary(null)
-      return
-    }
     summaryAbort.current?.abort()
     const ctrl = new AbortController()
     summaryAbort.current = ctrl
-    Promise.all([
-      getPartnershipAnomaliesForPlayer(focusedPlayerId, 'underplayed', selectedIds, selectedSeasonId),
-      getPartnershipAnomaliesForPlayer(focusedPlayerId, 'overplayed', selectedIds, selectedSeasonId),
-      getHeadToHeadAnomaliesForPlayer(focusedPlayerId, 'underplayed', selectedIds, selectedSeasonId),
-      getHeadToHeadAnomaliesForPlayer(focusedPlayerId, 'overplayed', selectedIds, selectedSeasonId),
-    ]).then(([moreWith, lessWith, moreAgainst, lessAgainst]) => {
+    const pair = (e: AnomalyEntry): [number, number] => [e.player_a_id, e.player_b_id]
+    const partnerOf = (id: number) => (e: AnomalyEntry): [number, number] =>
+      [id, e.player_a_id === id ? e.player_b_id : e.player_a_id]
+    Promise.all(
+      focusedPlayerId !== null
+        ? [
+            getPartnershipAnomaliesForPlayer(focusedPlayerId, 'underplayed', selectedIds, selectedSeasonId),
+            getPartnershipAnomaliesForPlayer(focusedPlayerId, 'overplayed', selectedIds, selectedSeasonId),
+            getHeadToHeadAnomaliesForPlayer(focusedPlayerId, 'underplayed', selectedIds, selectedSeasonId),
+            getHeadToHeadAnomaliesForPlayer(focusedPlayerId, 'overplayed', selectedIds, selectedSeasonId),
+          ]
+        : [
+            getPartnershipAnomalies('underplayed', 3, selectedIds, selectedSeasonId),
+            getPartnershipAnomalies('overplayed', 3, selectedIds, selectedSeasonId),
+            getHeadToHeadAnomalies('underplayed', 3, selectedIds, selectedSeasonId),
+            getHeadToHeadAnomalies('overplayed', 3, selectedIds, selectedSeasonId),
+          ]
+    ).then(([moreWith, lessWith, moreAgainst, lessAgainst]) => {
       if (ctrl.signal.aborted) return
-      const otherId = (e: AnomalyEntry) =>
-        e.player_a_id === focusedPlayerId ? e.player_b_id : e.player_a_id
+      const toIds = focusedPlayerId !== null ? partnerOf(focusedPlayerId) : pair
       setSummary({
-        moreWith: moreWith.slice(0, 3).map(otherId),
-        lessWith: lessWith.slice(0, 3).map(otherId),
-        moreAgainst: moreAgainst.slice(0, 3).map(otherId),
-        lessAgainst: lessAgainst.slice(0, 3).map(otherId),
+        moreWith: moreWith.slice(0, 3).map(toIds),
+        lessWith: lessWith.slice(0, 3).map(toIds),
+        moreAgainst: moreAgainst.slice(0, 3).map(toIds),
+        lessAgainst: lessAgainst.slice(0, 3).map(toIds),
       })
     }).catch(() => {})
   }, [focusedPlayerId, selectedIds, selectedSeasonId])
@@ -143,17 +150,29 @@ export default function AnomaliesPage() {
         </div>
       </div>
 
-      {summary && focusedPlayerId !== null && (
+      {summary && (
         <div className="mb-4 rounded-lg border p-4 text-sm space-y-1">
-          {[
-            { label: 'Play more with', ids: summary.moreWith },
-            { label: 'Play less with', ids: summary.lessWith },
-            { label: 'Face more', ids: summary.moreAgainst },
-            { label: 'Face less', ids: summary.lessAgainst },
-          ].filter(({ ids }) => ids.length > 0).map(({ label, ids }) => (
+          {(focusedPlayerId !== null
+            ? [
+                { label: 'Play more with', pairs: summary.moreWith },
+                { label: 'Play less with', pairs: summary.lessWith },
+                { label: 'Face more', pairs: summary.moreAgainst },
+                { label: 'Face less', pairs: summary.lessAgainst },
+              ]
+            : [
+                { label: 'Most underplayed partnerships', pairs: summary.moreWith },
+                { label: 'Most overplayed partnerships', pairs: summary.lessWith },
+                { label: 'Most underplayed head-to-head', pairs: summary.moreAgainst },
+                { label: 'Most overplayed head-to-head', pairs: summary.lessAgainst },
+              ]
+          ).filter(({ pairs }) => pairs.length > 0).map(({ label, pairs }) => (
             <p key={label}>
               <span className="text-muted-foreground">{label}: </span>
-              {ids.map((id) => playerNames[id] ?? `#${id}`).join(', ')}
+              {pairs.map(([a, b]) =>
+                focusedPlayerId !== null
+                  ? (playerNames[b] ?? `#${b}`)
+                  : `${playerNames[a] ?? `#${a}`} & ${playerNames[b] ?? `#${b}`}`
+              ).join(', ')}
             </p>
           ))}
         </div>
