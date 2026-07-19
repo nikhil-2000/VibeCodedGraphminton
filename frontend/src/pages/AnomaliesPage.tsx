@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   getPartnershipAnomalies,
   getHeadToHeadAnomalies,
@@ -26,6 +26,13 @@ export default function AnomaliesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [focusedPlayerId, setFocusedPlayerId] = useState<number | null>(null)
+  const [summary, setSummary] = useState<{
+    moreWith: number[]
+    lessWith: number[]
+    moreAgainst: number[]
+    lessAgainst: number[]
+  } | null>(null)
+  const summaryAbort = useRef<AbortController | null>(null)
 
   useEffect(() => {
     getPlayers().then((players) =>
@@ -48,6 +55,32 @@ export default function AnomaliesPage() {
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
   }, [tab, direction, selectedIds, selectedSeasonId, focusedPlayerId])
+
+  useEffect(() => {
+    if (focusedPlayerId === null) {
+      setSummary(null)
+      return
+    }
+    summaryAbort.current?.abort()
+    const ctrl = new AbortController()
+    summaryAbort.current = ctrl
+    Promise.all([
+      getPartnershipAnomaliesForPlayer(focusedPlayerId, 'underplayed', selectedIds, selectedSeasonId),
+      getPartnershipAnomaliesForPlayer(focusedPlayerId, 'overplayed', selectedIds, selectedSeasonId),
+      getHeadToHeadAnomaliesForPlayer(focusedPlayerId, 'underplayed', selectedIds, selectedSeasonId),
+      getHeadToHeadAnomaliesForPlayer(focusedPlayerId, 'overplayed', selectedIds, selectedSeasonId),
+    ]).then(([moreWith, lessWith, moreAgainst, lessAgainst]) => {
+      if (ctrl.signal.aborted) return
+      const otherId = (e: AnomalyEntry) =>
+        e.player_a_id === focusedPlayerId ? e.player_b_id : e.player_a_id
+      setSummary({
+        moreWith: moreWith.slice(0, 3).map(otherId),
+        lessWith: lessWith.slice(0, 3).map(otherId),
+        moreAgainst: moreAgainst.slice(0, 3).map(otherId),
+        lessAgainst: lessAgainst.slice(0, 3).map(otherId),
+      })
+    }).catch(() => {})
+  }, [focusedPlayerId, selectedIds, selectedSeasonId])
 
   return (
     <div>
@@ -106,6 +139,22 @@ export default function AnomaliesPage() {
           ? ' Positive = more frequent than random chance.'
           : ' Negative = less frequent than random chance.'}
       </p>
+
+      {summary && focusedPlayerId !== null && (
+        <div className="mb-4 rounded-lg border p-4 text-sm space-y-1">
+          {[
+            { label: 'Play more with', ids: summary.moreWith },
+            { label: 'Play less with', ids: summary.lessWith },
+            { label: 'Face more', ids: summary.moreAgainst },
+            { label: 'Face less', ids: summary.lessAgainst },
+          ].filter(({ ids }) => ids.length > 0).map(({ label, ids }) => (
+            <p key={label}>
+              <span className="text-muted-foreground">{label}: </span>
+              {ids.map((id) => playerNames[id] ?? `#${id}`).join(', ')}
+            </p>
+          ))}
+        </div>
+      )}
 
       {loading && entries.length === 0 && <p className="text-muted-foreground">Loading…</p>}
       {error && <p className="text-destructive">{error}</p>}
