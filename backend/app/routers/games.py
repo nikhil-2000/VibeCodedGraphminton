@@ -43,14 +43,6 @@ def get_game(game_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.delete("/{game_id}", status_code=204)
-def delete_game(game_id: int, db: Session = Depends(get_db)):
-    try:
-        games_service.delete_game(db, game_id)
-    except KeyError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
-
 @router.delete("/session/{played_on}", response_model=DeleteSessionResponse)
 def delete_session(played_on: str, db: Session = Depends(get_db)):
     try:
@@ -58,3 +50,11 @@ def delete_session(played_on: str, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     return DeleteSessionResponse(deleted=deleted)
+
+
+@router.delete("/{game_id}", status_code=204)
+def delete_game(game_id: int, db: Session = Depends(get_db)):
+    try:
+        games_service.delete_game(db, game_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
