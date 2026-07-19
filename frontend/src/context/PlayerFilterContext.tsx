@@ -10,6 +10,7 @@ interface PlayerFilterContextValue {
   setSelectedIds: (ids: number[]) => void
   activePreset: Preset
   setPreset: (preset: 'everyone' | 'regulars') => void
+  reloadPlayers: () => void
 }
 
 const PlayerFilterContext = createContext<PlayerFilterContextValue | null>(null)
@@ -23,12 +24,14 @@ export function PlayerFilterProvider({ children }: { children: ReactNode }) {
   const [selectedIds, setSelectedIdsRaw] = useState<number[]>([])
   const [activePreset, setActivePreset] = useState<Preset>('regulars')
 
-  useEffect(() => {
+  const reloadPlayers = () => {
     getPlayers().then((players) => {
       setAllPlayers(players)
       setSelectedIdsRaw(regularIds(players))
     })
-  }, [])
+  }
+
+  useEffect(() => { reloadPlayers() }, [])
 
   const setSelectedIds = (ids: number[]) => {
     setSelectedIdsRaw(ids)
@@ -49,7 +52,7 @@ export function PlayerFilterProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <PlayerFilterContext.Provider value={{ allPlayers, selectedIds, setSelectedIds, activePreset, setPreset }}>
+    <PlayerFilterContext.Provider value={{ allPlayers, selectedIds, setSelectedIds, activePreset, setPreset, reloadPlayers }}>
       {children}
     </PlayerFilterContext.Provider>
   )
