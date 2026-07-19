@@ -100,7 +100,7 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 8: Player Insights *(Player Pro)*
+### Epic 1: Player Insights *(Player Pro)*
 
 > Players get a personalised performance breakdown beyond raw stats.
 
@@ -111,7 +111,7 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 9: Compare Players *(Player Pro)*
+### Epic 2: Compare Players *(Player Pro)*
 
 > Players can run a head-to-head comparison between any two players.
 
@@ -120,7 +120,7 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 10: Advanced Game Browser *(Player Pro)*
+### Epic 3: Advanced Game Browser *(Player Pro)*
 
 > Players can slice and filter game history in detail.
 
@@ -129,7 +129,7 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 11: Pairs Analysis *(All players)*
+### Epic 4: Pairs Analysis *(All players)*
 
 > The league can see which partnerships work and which are underused.
 
@@ -138,7 +138,7 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 12: Subscription Tiers
+### Epic 5: Subscription Tiers
 
 > Features are gated by subscription tier. Users upgrade their own account.
 
@@ -148,7 +148,7 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 13: Standings Enhancement
+### Epic 6: Standings Enhancement
 
 > Standings account for the strength of opponents faced.
 
@@ -157,7 +157,7 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 14: Commissioner Tier
+### Epic 7: Commissioner Tier
 
 > A Commissioner can manage multiple leagues from one account.
 
@@ -167,7 +167,7 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 15: Second Sport
+### Epic 8: Second Sport
 
 > The platform supports a second racquet sport, proving the sport-agnostic model.
 
@@ -176,7 +176,7 @@ Ordered by dependency within each release. Build epics top-to-bottom — each on
 
 ---
 
-### Epic 16: Player Merge Tool
+### Epic 9: Player Merge Tool
 
 > Admins can clean up duplicate player entries.
 
