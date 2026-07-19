@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react'
-import { getPartnershipAnomalies, getHeadToHeadAnomalies } from '../api/anomalies'
+import {
+  getPartnershipAnomalies,
+  getHeadToHeadAnomalies,
+  getPartnershipAnomaliesForPlayer,
+  getHeadToHeadAnomaliesForPlayer,
+} from '../api/anomalies'
 import { getPlayers } from '../api/players'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
 import AnomalyTable from '../components/AnomalyTable'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { AnomalyEntry } from '../types'
 
 type Tab = 'partnerships' | 'head-to-head'
@@ -19,6 +25,7 @@ export default function AnomaliesPage() {
   const [playerNames, setPlayerNames] = useState<Record<number, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [focusedPlayerId, setFocusedPlayerId] = useState<number | null>(null)
 
   useEffect(() => {
     getPlayers().then((players) =>
@@ -27,12 +34,20 @@ export default function AnomaliesPage() {
   }, [])
 
   useEffect(() => {
-    const fetch = tab === 'partnerships' ? getPartnershipAnomalies : getHeadToHeadAnomalies
-    fetch(direction, 20, selectedIds, selectedSeasonId)
+    setLoading(true)
+    setError(null)
+    const promise = focusedPlayerId !== null
+      ? (tab === 'partnerships'
+          ? getPartnershipAnomaliesForPlayer(focusedPlayerId, direction, selectedIds, selectedSeasonId)
+          : getHeadToHeadAnomaliesForPlayer(focusedPlayerId, direction, selectedIds, selectedSeasonId))
+      : (tab === 'partnerships'
+          ? getPartnershipAnomalies(direction, 20, selectedIds, selectedSeasonId)
+          : getHeadToHeadAnomalies(direction, 20, selectedIds, selectedSeasonId))
+    promise
       .then(setEntries)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [tab, direction, selectedIds, selectedSeasonId])
+  }, [tab, direction, selectedIds, selectedSeasonId, focusedPlayerId])
 
   return (
     <div>
@@ -50,7 +65,7 @@ export default function AnomaliesPage() {
             {t}
           </Button>
         ))}
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex items-center gap-2">
           {(['overplayed', 'underplayed'] as Direction[]).map((d) => (
             <Button
               key={d}
@@ -62,6 +77,22 @@ export default function AnomaliesPage() {
               {d}
             </Button>
           ))}
+          <Select
+            value={focusedPlayerId !== null ? String(focusedPlayerId) : 'all'}
+            onValueChange={(v) => setFocusedPlayerId(v === 'all' ? null : Number(v))}
+          >
+            <SelectTrigger className="h-8 w-36 text-xs">
+              <SelectValue placeholder="All players" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All players</SelectItem>
+              {Object.entries(playerNames)
+                .sort(([, a], [, b]) => a.localeCompare(b))
+                .map(([id, name]) => (
+                  <SelectItem key={id} value={id}>{name}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
