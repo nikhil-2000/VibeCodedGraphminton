@@ -74,6 +74,17 @@ class LeaderboardEntry(BaseModel):
     avg_points: float
 
 
+class MatchupQualityEntry(BaseModel):
+    player_id: int
+    canonical_name: str
+    games_played: int
+    avg_point_diff: float
+    avg_team_skill_imbalance: float
+    pct_vs_top3: float
+    blowout_win_pct: float | None
+    blowout_games: int
+
+
 class PartnershipResponse(BaseModel):
     player_a_id: int
     player_b_id: int

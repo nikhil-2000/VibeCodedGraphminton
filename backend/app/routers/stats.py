@@ -5,6 +5,7 @@ from ..database import get_db
 from ..services import stats as stats_service
 from ..schemas import (
     LeaderboardEntry,
+    MatchupQualityEntry,
     PartnershipResponse,
     PlayerPartnershipResponse,
     PlayerStatsResponse,
@@ -107,3 +108,12 @@ def matchup(
     except ValueError:
         raise HTTPException(status_code=422, detail="Pair IDs must be comma-separated integers e.g. /1,2/vs/3,4")
     return stats_service.get_matchup(db, (a1, a2), (b1, b2), player_ids or None, season_id)
+
+
+@router.get("/matchup-quality", response_model=list[MatchupQualityEntry])
+def matchup_quality(
+    player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    return stats_service.get_matchup_quality(db, player_ids or None, season_id)

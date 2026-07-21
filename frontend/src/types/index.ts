@@ -22,6 +22,17 @@ export type AnomalyEntry = Schema["AnomalyEntry"];
 export type IngestRequest = Schema["IngestRequest"];
 export type IngestResult = Schema["IngestResponse"];
 
+export type MatchupQualityEntry = {
+  player_id: number
+  canonical_name: string
+  games_played: number
+  avg_point_diff: number
+  avg_team_skill_imbalance: number
+  pct_vs_top3: number
+  blowout_win_pct: number | null
+  blowout_games: number
+}
+
 export type HeadToHeadRecord = {
   opponent_id: number
   games_played: number

@@ -28,3 +28,8 @@ export const getHeadToHeadAll = (playerId: number, playerIds?: number[], seasonI
   const params = qs(playerIdsQs(playerIds), seasonQs(seasonId))
   return apiFetch<import('../types').HeadToHeadRecord[]>(`/stats/head-to-head/${playerId}/all${params ? '?' + params : ''}`)
 }
+
+export const getMatchupQuality = (playerIds?: number[], seasonId?: number | null) => {
+  const params = qs(playerIdsQs(playerIds), seasonQs(seasonId))
+  return apiFetch<import('../types').MatchupQualityEntry[]>(`/stats/matchup-quality${params ? '?' + params : ''}`)
+}

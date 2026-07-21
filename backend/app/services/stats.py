@@ -293,3 +293,113 @@ def get_matchup(db: Session, pair_a: tuple[int, int], pair_b: tuple[int, int], p
         "pair_a_wins": a_wins,
         "pair_b_wins": b_wins,
     }
+
+
+def get_matchup_quality(db: Session, player_ids: list[int] | None = None, season_id: int | None = None) -> list[dict[str, Any]]:
+    from collections import defaultdict
+    valid_ids = _valid_game_ids(player_ids, season_id)
+
+    # Step 1: compute win rate per player across filtered games
+    won_case = case(
+        ((GamePlayer.team == "A") & (Game.team_a_score > Game.team_b_score), 1),
+        ((GamePlayer.team == "B") & (Game.team_b_score > Game.team_a_score), 1),
+        else_=0,
+    )
+    wr_q = (
+        db.query(
+            GamePlayer.player_id,
+            func.count(GamePlayer.id).label("gp"),
+            func.sum(won_case).label("wins"),
+        )
+        .join(Game, GamePlayer.game_id == Game.id)
+        .group_by(GamePlayer.player_id)
+    )
+    if valid_ids is not None:
+        wr_q = wr_q.filter(Game.id.in_(valid_ids))
+    win_rates: dict[int, float] = {}
+    for r in wr_q.all():
+        gp = r.gp or 0
+        win_rates[r.player_id] = round(int(r.wins or 0) / gp, 4) if gp else 0.0
+
+    # Step 2: per (player, game) fetch partner + both opponents
+    # Join: me → partner (same team, different player) + opp (other team)
+    # Produces 2 rows per (player, game): one per opponent, partner is same both rows
+    gp_me = aliased(GamePlayer)
+    gp_partner = aliased(GamePlayer)
+    gp_opp = aliased(GamePlayer)
+    my_pts = case((gp_me.team == "A", Game.team_a_score), else_=Game.team_b_score)
+    opp_pts = case((gp_me.team == "A", Game.team_b_score), else_=Game.team_a_score)
+
+    detail_rows = (
+        db.query(
+            gp_me.player_id.label("player_id"),
+            gp_me.game_id.label("game_id"),
+            my_pts.label("my_pts"),
+            opp_pts.label("opp_pts"),
+            gp_partner.player_id.label("partner_id"),
+            gp_opp.player_id.label("opp_id"),
+        )
+        .join(gp_partner, (gp_partner.game_id == gp_me.game_id) & (gp_partner.team == gp_me.team) & (gp_partner.player_id != gp_me.player_id))
+        .join(gp_opp, (gp_opp.game_id == gp_me.game_id) & (gp_opp.team != gp_me.team))
+        .join(Game, gp_me.game_id == Game.id)
+    )
+    if valid_ids is not None:
+        detail_rows = detail_rows.filter(Game.id.in_(valid_ids))
+
+    # Group by (player, game): collect partner_id (same each row) + opp_ids (2 different ones)
+    player_games: dict[int, dict[int, dict]] = defaultdict(dict)
+    for r in detail_rows.all():
+        if r.game_id not in player_games[r.player_id]:
+            player_games[r.player_id][r.game_id] = {
+                "my_pts": int(r.my_pts),
+                "opp_pts": int(r.opp_pts),
+                "partner_id": r.partner_id,
+                "opp_ids": [],
+            }
+        player_games[r.player_id][r.game_id]["opp_ids"].append(r.opp_id)
+
+    player_name = {p.id: p.canonical_name for p in db.query(Player).all()}
+
+    top3_ids = set(sorted(win_rates, key=win_rates.get, reverse=True)[:3])
+
+    results = []
+    for player_id, games_dict in player_games.items():
+        total_diff = 0.0
+        total_imbalance = 0.0
+        blowout_wins = blowout_losses = 0
+        vs_top3 = 0
+        for g in games_dict.values():
+            diff = g["my_pts"] - g["opp_pts"]
+            total_diff += diff
+            my_team_wr = (win_rates.get(player_id, 0.0) + win_rates.get(g["partner_id"], 0.0)) / 2
+            opp_team_wr = sum(win_rates.get(oid, 0.0) for oid in g["opp_ids"]) / len(g["opp_ids"]) if g["opp_ids"] else 0.0
+            total_imbalance += my_team_wr - opp_team_wr
+            effective_top3 = top3_ids - {player_id}
+            if any(oid in effective_top3 for oid in g["opp_ids"]):
+                vs_top3 += 1
+            gap = abs(diff)
+            if gap > 6:
+                if diff > 0:
+                    blowout_wins += 1
+                else:
+                    blowout_losses += 1
+        n = len(games_dict)
+        blowout_total = blowout_wins + blowout_losses
+        raw_pct = (vs_top3 / n) if n else 0.0
+        # Normalize for players in top3: they have one fewer top-3 opponent available
+        # so divide by the fraction of top3 actually available to them
+        available_top3_count = len(top3_ids - {player_id})
+        normalization = available_top3_count / len(top3_ids) if top3_ids else 1.0
+        normalized_pct_vs_top3 = round(raw_pct / normalization, 4) if normalization else raw_pct
+        results.append({
+            "player_id": player_id,
+            "canonical_name": player_name.get(player_id, f"#{player_id}"),
+            "games_played": n,
+            "avg_point_diff": round(total_diff / n, 2) if n else 0.0,
+            "avg_team_skill_imbalance": round(total_imbalance / n, 4) if n else 0.0,
+            "pct_vs_top3": normalized_pct_vs_top3,
+            "blowout_win_pct": round(blowout_wins / blowout_total, 4) if blowout_total else None,
+            "blowout_games": blowout_total,
+        })
+
+    return sorted(results, key=lambda r: r["avg_team_skill_imbalance"], reverse=True)
