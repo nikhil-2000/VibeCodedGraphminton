@@ -112,6 +112,10 @@ def get_all_partnerships(db: Session, player_id: int | None = None, player_ids: 
         ((gp1.team == "B") & (Game.team_b_score > Game.team_a_score), 1),
         else_=0,
     )
+    points_case = case(
+        (gp1.team == "A", Game.team_a_score),
+        else_=Game.team_b_score,
+    )
 
     query = (
         db.query(
@@ -119,6 +123,7 @@ def get_all_partnerships(db: Session, player_id: int | None = None, player_ids: 
             gp2.player_id.label("player_b_id"),
             func.count().label("games_together"),
             func.sum(won_case).label("wins"),
+            func.avg(points_case).label("avg_points"),
         )
         .join(gp2, (gp1.game_id == gp2.game_id) & (gp1.team == gp2.team) & (gp1.player_id < gp2.player_id))
         .join(Game, gp1.game_id == Game.id)
@@ -142,6 +147,7 @@ def get_all_partnerships(db: Session, player_id: int | None = None, player_ids: 
             "wins": wins,
             "losses": games - wins,
             "win_rate": round(wins / games, 4) if games else 0.0,
+            "avg_points": round(float(row.avg_points or 0), 2),
         })
     return results
 
@@ -202,6 +208,51 @@ def get_head_to_head(db: Session, player_a_id: int, player_b_id: int, player_ids
         "player_a_wins": a_wins,
         "player_b_wins": b_wins,
     }
+
+
+def get_head_to_head_all(db: Session, player_id: int, player_ids: list[int] | None = None, season_id: int | None = None) -> list[dict[str, Any]]:
+    valid_ids = _valid_game_ids(player_ids, season_id)
+    gp_me = aliased(GamePlayer)
+    gp_opp = aliased(GamePlayer)
+
+    won_case = case(
+        ((gp_me.team == "A") & (Game.team_a_score > Game.team_b_score), 1),
+        ((gp_me.team == "B") & (Game.team_b_score > Game.team_a_score), 1),
+        else_=0,
+    )
+    points_case = case(
+        (gp_me.team == "A", Game.team_a_score),
+        else_=Game.team_b_score,
+    )
+
+    q = (
+        db.query(
+            gp_opp.player_id.label("opponent_id"),
+            func.count().label("games_played"),
+            func.sum(won_case).label("wins"),
+            func.avg(points_case).label("avg_points"),
+        )
+        .join(gp_opp, (gp_opp.game_id == gp_me.game_id) & (gp_opp.team != gp_me.team))
+        .join(Game, gp_me.game_id == Game.id)
+        .filter(gp_me.player_id == player_id)
+        .group_by(gp_opp.player_id)
+    )
+    if valid_ids is not None:
+        q = q.filter(Game.id.in_(valid_ids))
+
+    results = []
+    for row in q.all():
+        games = row.games_played or 0
+        wins = int(row.wins or 0)
+        results.append({
+            "opponent_id": row.opponent_id,
+            "games_played": games,
+            "wins": wins,
+            "losses": games - wins,
+            "avg_points": round(float(row.avg_points or 0), 2),
+        })
+    results.sort(key=lambda r: (r["wins"] / r["games_played"] if r["games_played"] else 0), reverse=True)
+    return results
 
 
 def get_matchup(db: Session, pair_a: tuple[int, int], pair_b: tuple[int, int], player_ids: list[int] | None = None, season_id: int | None = None) -> dict[str, Any]:

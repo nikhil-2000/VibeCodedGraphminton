@@ -21,3 +21,11 @@ export type GameDetail = Schema["GameDetailResponse"];
 export type AnomalyEntry = Schema["AnomalyEntry"];
 export type IngestRequest = Schema["IngestRequest"];
 export type IngestResult = Schema["IngestResponse"];
+
+export type HeadToHeadRecord = {
+  opponent_id: number
+  games_played: number
+  wins: number
+  losses: number
+  avg_points: number
+}

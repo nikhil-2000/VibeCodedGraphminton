@@ -20,6 +20,7 @@ export default function PartnershipTable({ partnerships, playerNames }: Props) {
           <TableHead className="text-right">W</TableHead>
           <TableHead className="text-right">L</TableHead>
           <TableHead className="text-right">Win %</TableHead>
+          <TableHead className="text-right">Avg Pts</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -34,6 +35,7 @@ export default function PartnershipTable({ partnerships, playerNames }: Props) {
             <TableCell className="text-right text-green-400">{p.wins}</TableCell>
             <TableCell className="text-right text-red-400">{p.losses}</TableCell>
             <TableCell className="text-right">{(p.win_rate * 100).toFixed(1)}%</TableCell>
+            <TableCell className="text-right">{p.avg_points.toFixed(1)}</TableCell>
           </TableRow>
         ))}
       </TableBody>

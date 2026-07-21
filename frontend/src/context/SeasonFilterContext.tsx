@@ -15,7 +15,12 @@ export function SeasonFilterProvider({ children }: { children: ReactNode }) {
   const [selectedSeasonId, setSelectedSeasonId] = useState<number | null>(null)
 
   useEffect(() => {
-    getSeasons().then(setSeasons)
+    getSeasons().then((data) => {
+      setSeasons(data)
+      if (data.length > 0) {
+        setSelectedSeasonId(data[data.length - 1].id)
+      }
+    })
   }, [])
 
   return (

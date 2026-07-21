@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getPlayer, getPlayerStats, getPlayerPartnerships, deletePlayer, updatePlayer } from '../api/players'
+import { getHeadToHeadAll } from '../api/stats'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
 import StatCard from '../components/StatCard'
 import PartnershipTable from '../components/PartnershipTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import type { Player, PlayerStats, PlayerPartnership } from '../types'
+import type { Player, PlayerStats, PlayerPartnership, HeadToHeadRecord } from '../types'
 
 export default function PlayerDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -22,6 +24,7 @@ export default function PlayerDetailPage() {
   const [player, setPlayer] = useState<Player | null>(null)
   const [stats, setStats] = useState<PlayerStats | null>(null)
   const [partnerships, setPartnerships] = useState<PlayerPartnership[]>([])
+  const [h2hRecords, setH2hRecords] = useState<HeadToHeadRecord[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const playerNames = Object.fromEntries(allPlayers.map((p) => [p.id, p.canonical_name]))
@@ -45,11 +48,13 @@ export default function PlayerDetailPage() {
       getPlayer(playerId),
       getPlayerStats(playerId, selectedIds, selectedSeasonId),
       getPlayerPartnerships(playerId, selectedIds, selectedSeasonId),
+      getHeadToHeadAll(playerId, selectedIds, selectedSeasonId),
     ])
-      .then(([p, s, partners]) => {
+      .then(([p, s, partners, h2h]) => {
         setPlayer(p)
         setStats(s)
         setPartnerships(partners)
+        setH2hRecords(h2h)
       })
       .catch((e: Error) => setError(e.message))
   }, [playerId, selectedIds, selectedSeasonId])
@@ -155,6 +160,46 @@ export default function PlayerDetailPage() {
           {partnerships.length === 0
             ? <p className="text-muted-foreground">No partnerships yet.</p>
             : <PartnershipTable partnerships={partnerships} playerNames={playerNames} />}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader><CardTitle>Head-to-Head</CardTitle></CardHeader>
+        <CardContent>
+          {h2hRecords.length === 0
+            ? <p className="text-muted-foreground">No head-to-head records yet.</p>
+            : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Opponent</TableHead>
+                    <TableHead className="text-right">GP</TableHead>
+                    <TableHead className="text-right">W</TableHead>
+                    <TableHead className="text-right">L</TableHead>
+                    <TableHead className="text-right">Win %</TableHead>
+                    <TableHead className="text-right">Avg Pts</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[...h2hRecords]
+                    .sort((a, b) => (b.wins / b.games_played) - (a.wins / a.games_played))
+                    .map((r) => (
+                      <TableRow key={r.opponent_id}>
+                        <TableCell className="font-medium">
+                          <Link to={`/players/${r.opponent_id}`} className="hover:text-yellow-400">
+                            {playerNames[r.opponent_id] ?? r.opponent_id}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right">{r.games_played}</TableCell>
+                        <TableCell className="text-right text-green-400">{r.wins}</TableCell>
+                        <TableCell className="text-right text-red-400">{r.losses}</TableCell>
+                        <TableCell className="text-right">{(r.wins / r.games_played * 100).toFixed(1)}%</TableCell>
+                        <TableCell className="text-right">{r.avg_points.toFixed(1)}</TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            )}
         </CardContent>
       </Card>
 

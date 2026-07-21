@@ -23,3 +23,8 @@ export const getHeadToHead = (playerAId: number, playerBId: number, playerIds?: 
   const params = qs(playerIdsQs(playerIds), seasonQs(seasonId))
   return apiFetch<HeadToHead>(`/stats/head-to-head/${playerAId}/${playerBId}${params ? '?' + params : ''}`)
 }
+
+export const getHeadToHeadAll = (playerId: number, playerIds?: number[], seasonId?: number | null) => {
+  const params = qs(playerIdsQs(playerIds), seasonQs(seasonId))
+  return apiFetch<import('../types').HeadToHeadRecord[]>(`/stats/head-to-head/${playerId}/all${params ? '?' + params : ''}`)
+}

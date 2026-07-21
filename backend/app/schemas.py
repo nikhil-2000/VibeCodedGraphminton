@@ -89,6 +89,7 @@ class PlayerPartnershipResponse(BaseModel):
     wins: int
     losses: int
     win_rate: float
+    avg_points: float
 
 
 class HeadToHeadResponse(BaseModel):
@@ -97,6 +98,14 @@ class HeadToHeadResponse(BaseModel):
     games_played: int
     player_a_wins: int
     player_b_wins: int
+
+
+class HeadToHeadBulkEntry(BaseModel):
+    opponent_id: int
+    games_played: int
+    wins: int
+    losses: int
+    avg_points: float
 
 
 class MatchupResponse(BaseModel):

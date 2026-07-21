@@ -10,6 +10,7 @@ from ..schemas import (
     PlayerStatsResponse,
     HeadToHeadResponse,
     MatchupResponse,
+    HeadToHeadBulkEntry,
 )
 
 router = APIRouter()
@@ -69,6 +70,16 @@ def specific_partnership(
     db: Session = Depends(get_db),
 ):
     return stats_service.get_specific_partnership(db, player_a_id, player_b_id, player_ids or None, season_id)
+
+
+@router.get("/head-to-head/{player_id}/all", response_model=list[HeadToHeadBulkEntry])
+def head_to_head_all(
+    player_id: int,
+    player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    return stats_service.get_head_to_head_all(db, player_id, player_ids or None, season_id)
 
 
 @router.get("/head-to-head/{player_a_id}/{player_b_id}", response_model=HeadToHeadResponse)
