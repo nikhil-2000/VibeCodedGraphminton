@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getPlayer, getPlayerStats, getPlayerPartnerships, deletePlayer, updatePlayer } from '../api/players'
 import { getHeadToHeadAll } from '../api/stats'
+import { getPartnershipAnomaliesForPlayer, getHeadToHeadAnomaliesForPlayer } from '../api/anomalies'
+import { getGames } from '../api/games'
+import GameCard from '../components/GameCard'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
 import StatCard from '../components/StatCard'
@@ -11,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import type { Player, PlayerStats, PlayerPartnership, HeadToHeadRecord } from '../types'
+import type { Player, PlayerStats, PlayerPartnership, HeadToHeadRecord, GameDetail } from '../types'
 
 export default function PlayerDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -25,6 +28,9 @@ export default function PlayerDetailPage() {
   const [stats, setStats] = useState<PlayerStats | null>(null)
   const [partnerships, setPartnerships] = useState<PlayerPartnership[]>([])
   const [h2hRecords, setH2hRecords] = useState<HeadToHeadRecord[]>([])
+  const [partnerAnomalyMap, setPartnerAnomalyMap] = useState<Record<number, 'over' | 'under'>>({})
+  const [opponentAnomalyMap, setOpponentAnomalyMap] = useState<Record<number, 'over' | 'under'>>({})
+  const [games, setGames] = useState<GameDetail[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const playerNames = Object.fromEntries(allPlayers.map((p) => [p.id, p.canonical_name]))
@@ -49,12 +55,40 @@ export default function PlayerDetailPage() {
       getPlayerStats(playerId, selectedIds, selectedSeasonId),
       getPlayerPartnerships(playerId, selectedIds, selectedSeasonId),
       getHeadToHeadAll(playerId, selectedIds, selectedSeasonId),
+      getPartnershipAnomaliesForPlayer(playerId, 'overplayed', selectedIds, selectedSeasonId),
+      getPartnershipAnomaliesForPlayer(playerId, 'underplayed', selectedIds, selectedSeasonId),
+      getHeadToHeadAnomaliesForPlayer(playerId, 'overplayed', selectedIds, selectedSeasonId),
+      getHeadToHeadAnomaliesForPlayer(playerId, 'underplayed', selectedIds, selectedSeasonId),
+      getGames({ player_id: playerId, season_id: selectedSeasonId }),
     ])
-      .then(([p, s, partners, h2h]) => {
+      .then(([p, s, partners, h2h, partnerOver, partnerUnder, oppOver, oppUnder, playerGames]) => {
         setPlayer(p)
         setStats(s)
         setPartnerships(partners)
         setH2hRecords(h2h)
+
+        const pMap: Record<number, 'over' | 'under'> = {}
+        for (const e of partnerUnder) {
+          const id = e.player_a_id === playerId ? e.player_b_id : e.player_a_id
+          pMap[id] = 'under'
+        }
+        for (const e of partnerOver) {
+          const id = e.player_a_id === playerId ? e.player_b_id : e.player_a_id
+          pMap[id] = 'over'
+        }
+        setPartnerAnomalyMap(pMap)
+
+        const oMap: Record<number, 'over' | 'under'> = {}
+        for (const e of oppUnder) {
+          const id = e.player_a_id === playerId ? e.player_b_id : e.player_a_id
+          oMap[id] = 'under'
+        }
+        for (const e of oppOver) {
+          const id = e.player_a_id === playerId ? e.player_b_id : e.player_a_id
+          oMap[id] = 'over'
+        }
+        setOpponentAnomalyMap(oMap)
+        setGames(playerGames)
       })
       .catch((e: Error) => setError(e.message))
   }, [playerId, selectedIds, selectedSeasonId])
@@ -114,6 +148,23 @@ export default function PlayerDetailPage() {
       .catch((e: Error) => { setDeleteError(e.message); setDeleting(false) })
   }
 
+  const gameCloseness = games.reduce(
+    (acc, g) => {
+      const onTeamA = g.team_a.some((p) => p.id === playerId)
+      const won = onTeamA ? g.team_a_score > g.team_b_score : g.team_b_score > g.team_a_score
+      const gap = Math.abs(g.team_a_score - g.team_b_score)
+      const bucket = gap <= 3 ? 'close' : gap <= 6 ? 'normal' : 'blowout'
+      acc[bucket].wins += won ? 1 : 0
+      acc[bucket].losses += won ? 0 : 1
+      return acc
+    },
+    {
+      close: { wins: 0, losses: 0 },
+      normal: { wins: 0, losses: 0 },
+      blowout: { wins: 0, losses: 0 },
+    }
+  )
+
   if (error) return <p className="text-destructive">{error}</p>
   if (!player || !stats) return <p className="text-muted-foreground">Loading…</p>
 
@@ -146,12 +197,20 @@ export default function PlayerDetailPage() {
         </p>
       )}
 
-      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+      <div className="mb-8 grid grid-cols-3 gap-3 sm:grid-cols-4">
         <StatCard label="Games" value={stats.games_played} />
         <StatCard label="Wins" value={stats.wins} />
         <StatCard label="Losses" value={stats.losses} />
         <StatCard label="Win Rate" value={`${(stats.win_rate * 100).toFixed(1)}%`} />
         <StatCard label="Avg Pts" value={stats.avg_points.toFixed(1)} />
+        <StatCard label="Close (≤3)" value={`${gameCloseness.close.wins}–${gameCloseness.close.losses}`} sub={`${gameCloseness.close.wins + gameCloseness.close.losses} games`} />
+        <StatCard label="Normal (4–6)" value={`${gameCloseness.normal.wins}–${gameCloseness.normal.losses}`} sub={`${gameCloseness.normal.wins + gameCloseness.normal.losses} games`} />
+        <StatCard label="Blowout (7+)" value={`${gameCloseness.blowout.wins}–${gameCloseness.blowout.losses}`} sub={`${gameCloseness.blowout.wins + gameCloseness.blowout.losses} games`} />
+      </div>
+
+      <div className="mb-3 flex items-center gap-4 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-green-500" /> Overplayed</span>
+        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-red-500" /> Underplayed</span>
       </div>
 
       <Card>
@@ -159,7 +218,7 @@ export default function PlayerDetailPage() {
         <CardContent>
           {partnerships.length === 0
             ? <p className="text-muted-foreground">No partnerships yet.</p>
-            : <PartnershipTable partnerships={partnerships} playerNames={playerNames} />}
+            : <PartnershipTable partnerships={partnerships} playerNames={playerNames} anomalyMap={partnerAnomalyMap} />}
         </CardContent>
       </Card>
 
@@ -172,6 +231,7 @@ export default function PlayerDetailPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-6" />
                     <TableHead>Opponent</TableHead>
                     <TableHead className="text-right">GP</TableHead>
                     <TableHead className="text-right">W</TableHead>
@@ -185,6 +245,14 @@ export default function PlayerDetailPage() {
                     .sort((a, b) => (b.wins / b.games_played) - (a.wins / a.games_played))
                     .map((r) => (
                       <TableRow key={r.opponent_id}>
+                        <TableCell className="w-6">
+                          {opponentAnomalyMap[r.opponent_id] && (
+                            <span
+                              className={`inline-block h-2 w-2 rounded-full ${opponentAnomalyMap[r.opponent_id] === 'over' ? 'bg-green-500' : 'bg-red-500'}`}
+                              title={opponentAnomalyMap[r.opponent_id] === 'over' ? 'Overplayed' : 'Underplayed'}
+                            />
+                          )}
+                        </TableCell>
                         <TableCell className="font-medium">
                           <Link to={`/players/${r.opponent_id}`} className="hover:text-yellow-400">
                             {playerNames[r.opponent_id] ?? r.opponent_id}
@@ -200,6 +268,33 @@ export default function PlayerDetailPage() {
                 </TableBody>
               </Table>
             )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader><CardTitle>Games</CardTitle></CardHeader>
+        <CardContent>
+          {games.length === 0
+            ? <p className="text-muted-foreground">No games yet.</p>
+            : Object.entries(
+                games.reduce<Record<string, GameDetail[]>>((acc, g) => {
+                  const key = g.session !== null ? `Session ${g.session}` : g.played_on
+                  ;(acc[key] ??= []).push(g)
+                  return acc
+                }, {})
+              ).map(([sessionLabel, sessionGames]) => (
+                <div key={sessionLabel} className="mb-6 last:mb-0">
+                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {sessionLabel} — {sessionGames[0].played_on}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {sessionGames.map((g) => (
+                      <GameCard key={g.id} game={g} />
+                    ))}
+                  </div>
+                </div>
+              ))
+          }
         </CardContent>
       </Card>
 

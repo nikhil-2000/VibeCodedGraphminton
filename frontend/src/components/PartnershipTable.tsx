@@ -7,14 +7,25 @@ import type { PlayerPartnership } from '../types'
 interface Props {
   partnerships: PlayerPartnership[]
   playerNames: Record<number, string>
+  anomalyMap?: Record<number, 'over' | 'under'>
 }
 
-export default function PartnershipTable({ partnerships, playerNames }: Props) {
+function AnomalyDot({ type }: { type: 'over' | 'under' }) {
+  return (
+    <span
+      className={`inline-block h-2 w-2 rounded-full ${type === 'over' ? 'bg-green-500' : 'bg-red-500'}`}
+      title={type === 'over' ? 'Overplayed' : 'Underplayed'}
+    />
+  )
+}
+
+export default function PartnershipTable({ partnerships, playerNames, anomalyMap }: Props) {
   const sorted = [...partnerships].sort((a, b) => b.win_rate - a.win_rate)
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="w-6" />
           <TableHead>Partner</TableHead>
           <TableHead className="text-right">GP</TableHead>
           <TableHead className="text-right">W</TableHead>
@@ -26,6 +37,9 @@ export default function PartnershipTable({ partnerships, playerNames }: Props) {
       <TableBody>
         {sorted.map((p) => (
           <TableRow key={p.partner_id}>
+            <TableCell className="w-6">
+              {anomalyMap?.[p.partner_id] && <AnomalyDot type={anomalyMap[p.partner_id]} />}
+            </TableCell>
             <TableCell className="font-medium">
               <Link to={`/players/${p.partner_id}`} className="hover:text-yellow-400">
                 {playerNames[p.partner_id] ?? `Player ${p.partner_id}`}
