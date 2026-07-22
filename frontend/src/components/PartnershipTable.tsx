@@ -13,7 +13,7 @@ interface Props {
 function AnomalyDot({ type }: { type: 'over' | 'under' }) {
   return (
     <span
-      className={`inline-block h-2 w-2 rounded-full ${type === 'over' ? 'bg-green-500' : 'bg-red-500'}`}
+      className={`inline-block h-2 w-2 rounded-full ${type === 'over' ? 'bg-blue-400' : 'bg-orange-400'}`}
       title={type === 'over' ? 'Overplayed' : 'Underplayed'}
     />
   )

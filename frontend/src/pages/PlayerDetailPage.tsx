@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getPlayer, getPlayerStats, getPlayerPartnerships, deletePlayer, updatePlayer } from '../api/players'
-import { getHeadToHeadAll } from '../api/stats'
+import { getHeadToHeadAll, getLeaderboard } from '../api/stats'
 import { getPartnershipAnomaliesForPlayer, getHeadToHeadAnomaliesForPlayer } from '../api/anomalies'
 import { getGames } from '../api/games'
 import GameCard from '../components/GameCard'
@@ -9,6 +9,7 @@ import { usePlayerFilter } from '../context/PlayerFilterContext'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
 import StatCard from '../components/StatCard'
 import PartnershipTable from '../components/PartnershipTable'
+import SkewPill from '../components/SkewPill'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,8 @@ export default function PlayerDetailPage() {
   const [partnerAnomalyMap, setPartnerAnomalyMap] = useState<Record<number, 'over' | 'under'>>({})
   const [opponentAnomalyMap, setOpponentAnomalyMap] = useState<Record<number, 'over' | 'under'>>({})
   const [games, setGames] = useState<GameDetail[]>([])
+  const [topIds, setTopIds] = useState<Set<number>>(new Set())
+  const [bottomIds, setBottomIds] = useState<Set<number>>(new Set())
   const [error, setError] = useState<string | null>(null)
 
   const playerNames = Object.fromEntries(allPlayers.map((p) => [p.id, p.canonical_name]))
@@ -60,8 +63,9 @@ export default function PlayerDetailPage() {
       getHeadToHeadAnomaliesForPlayer(playerId, 'overplayed', selectedIds, selectedSeasonId),
       getHeadToHeadAnomaliesForPlayer(playerId, 'underplayed', selectedIds, selectedSeasonId),
       getGames({ player_id: playerId, season_id: selectedSeasonId }),
+      getLeaderboard('avg_points', selectedIds, selectedSeasonId),
     ])
-      .then(([p, s, partners, h2h, partnerOver, partnerUnder, oppOver, oppUnder, playerGames]) => {
+      .then(([p, s, partners, h2h, partnerOver, partnerUnder, oppOver, oppUnder, playerGames, lb]) => {
         setPlayer(p)
         setStats(s)
         setPartnerships(partners)
@@ -89,6 +93,11 @@ export default function PlayerDetailPage() {
         }
         setOpponentAnomalyMap(oMap)
         setGames(playerGames)
+
+        const others = lb.filter((e) => e.player_id !== playerId)
+        const third = Math.ceil(others.length / 3)
+        setTopIds(new Set(others.slice(0, third).map((e) => e.player_id)))
+        setBottomIds(new Set(others.slice(others.length - third).map((e) => e.player_id)))
       })
       .catch((e: Error) => setError(e.message))
   }, [playerId, selectedIds, selectedSeasonId])
@@ -209,8 +218,8 @@ export default function PlayerDetailPage() {
       </div>
 
       <div className="mb-3 flex items-center gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-green-500" /> Overplayed</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-red-500" /> Underplayed</span>
+        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-blue-400" /> Overplayed</span>
+        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-orange-400" /> Underplayed</span>
       </div>
 
       <Card>
@@ -218,7 +227,21 @@ export default function PlayerDetailPage() {
         <CardContent>
           {partnerships.length === 0
             ? <p className="text-muted-foreground">No partnerships yet.</p>
-            : <PartnershipTable partnerships={partnerships} playerNames={playerNames} anomalyMap={partnerAnomalyMap} />}
+            : (() => {
+                let pTop = 0, pMid = 0, pBot = 0
+                for (const p of partnerships) {
+                  if (topIds.has(p.partner_id)) pTop += p.games_together
+                  else if (bottomIds.has(p.partner_id)) pBot += p.games_together
+                  else pMid += p.games_together
+                }
+                return (
+                  <>
+                    <SkewPill top={pTop} mid={pMid} bottom={pBot} label="Played with" topLabel="Top third" bottomLabel="Bottom third" />
+                    <PartnershipTable partnerships={partnerships} playerNames={playerNames} anomalyMap={partnerAnomalyMap} />
+                  </>
+                )
+              })()
+          }
         </CardContent>
       </Card>
 
@@ -227,8 +250,17 @@ export default function PlayerDetailPage() {
         <CardContent>
           {h2hRecords.length === 0
             ? <p className="text-muted-foreground">No head-to-head records yet.</p>
-            : (
-              <Table>
+            : (() => {
+                let hTop = 0, hMid = 0, hBot = 0
+                for (const r of h2hRecords) {
+                  if (topIds.has(r.opponent_id)) hTop += r.games_played
+                  else if (bottomIds.has(r.opponent_id)) hBot += r.games_played
+                  else hMid += r.games_played
+                }
+                return (
+                  <>
+                    <SkewPill top={hTop} mid={hMid} bottom={hBot} label="Played against" topLabel="Top third" bottomLabel="Bottom third" />
+                    <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-6" />
@@ -248,7 +280,7 @@ export default function PlayerDetailPage() {
                         <TableCell className="w-6">
                           {opponentAnomalyMap[r.opponent_id] && (
                             <span
-                              className={`inline-block h-2 w-2 rounded-full ${opponentAnomalyMap[r.opponent_id] === 'over' ? 'bg-green-500' : 'bg-red-500'}`}
+                              className={`inline-block h-2 w-2 rounded-full ${opponentAnomalyMap[r.opponent_id] === 'over' ? 'bg-blue-400' : 'bg-orange-400'}`}
                               title={opponentAnomalyMap[r.opponent_id] === 'over' ? 'Overplayed' : 'Underplayed'}
                             />
                           )}
@@ -267,7 +299,10 @@ export default function PlayerDetailPage() {
                     ))}
                 </TableBody>
               </Table>
-            )}
+                  </>
+                )
+              })()
+            }
         </CardContent>
       </Card>
 
