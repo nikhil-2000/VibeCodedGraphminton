@@ -3,10 +3,10 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getPlayer, getPlayerStats, getPlayerPartnerships, deletePlayer, updatePlayer } from '../api/players'
 import { getHeadToHeadAll, getLeaderboard } from '../api/stats'
 import { getPartnershipAnomaliesForPlayer, getHeadToHeadAnomaliesForPlayer } from '../api/anomalies'
-import { getGames } from '../api/games'
 import GameCard from '../components/GameCard'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
+import { useFilteredGames } from '../hooks/useFilteredGames'
 import StatCard from '../components/StatCard'
 import PartnershipTable from '../components/PartnershipTable'
 import SkewPill from '../components/SkewPill'
@@ -31,7 +31,7 @@ export default function PlayerDetailPage() {
   const [h2hRecords, setH2hRecords] = useState<HeadToHeadRecord[]>([])
   const [partnerAnomalyMap, setPartnerAnomalyMap] = useState<Record<number, 'over' | 'under'>>({})
   const [opponentAnomalyMap, setOpponentAnomalyMap] = useState<Record<number, 'over' | 'under'>>({})
-  const [games, setGames] = useState<GameDetail[]>([])
+  const { games } = useFilteredGames({ player_id: playerId })
   const [topIds, setTopIds] = useState<Set<number>>(new Set())
   const [bottomIds, setBottomIds] = useState<Set<number>>(new Set())
   const [error, setError] = useState<string | null>(null)
@@ -62,10 +62,9 @@ export default function PlayerDetailPage() {
       getPartnershipAnomaliesForPlayer(playerId, 'underplayed', selectedIds, selectedSeasonId),
       getHeadToHeadAnomaliesForPlayer(playerId, 'overplayed', selectedIds, selectedSeasonId),
       getHeadToHeadAnomaliesForPlayer(playerId, 'underplayed', selectedIds, selectedSeasonId),
-      getGames({ player_id: playerId, season_id: selectedSeasonId }),
       getLeaderboard('avg_points', selectedIds, selectedSeasonId),
     ])
-      .then(([p, s, partners, h2h, partnerOver, partnerUnder, oppOver, oppUnder, playerGames, lb]) => {
+      .then(([p, s, partners, h2h, partnerOver, partnerUnder, oppOver, oppUnder, lb]) => {
         setPlayer(p)
         setStats(s)
         setPartnerships(partners)
@@ -92,7 +91,6 @@ export default function PlayerDetailPage() {
           oMap[id] = 'over'
         }
         setOpponentAnomalyMap(oMap)
-        setGames(playerGames)
 
         const others = lb.filter((e) => e.player_id !== playerId)
         const third = Math.ceil(others.length / 3)

@@ -1,29 +1,13 @@
-import { useState, useEffect } from 'react'
-import { getGames, deleteGame, deleteSession } from '../api/games'
+import { useState } from 'react'
+import { deleteGame, deleteSession } from '../api/games'
 import GameCard from '../components/GameCard'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import type { GameDetail } from '../types'
-import { useSeasonFilter } from '../context/SeasonFilterContext'
-import { usePlayerFilter } from '../context/PlayerFilterContext'
+import { useFilteredGames } from '../hooks/useFilteredGames'
 
 export default function GamesPage() {
-  const { selectedSeasonId } = useSeasonFilter()
-  const { selectedIds } = usePlayerFilter()
-  const [games, setGames] = useState<GameDetail[]>([])
   const [week, setWeek] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const load = () => {
-    setLoading(true)
-    getGames({ week: week ? Number(week) : undefined, season_id: selectedSeasonId, player_ids: selectedIds })
-      .then(setGames)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => { load() }, [week, selectedSeasonId, selectedIds])
+  const { games, setGames, loading, error } = useFilteredGames({ week: week ? Number(week) : undefined })
 
   const handleDeleteGame = async (id: number) => {
     await deleteGame(id)
@@ -35,7 +19,7 @@ export default function GamesPage() {
     setGames((prev) => prev.filter((g) => g.played_on !== playedOn))
   }
 
-  const bySession = games.reduce<Record<string, GameDetail[]>>((acc, g) => {
+  const bySession = games.reduce<Record<string, typeof games>>((acc, g) => {
     const key = g.session !== null ? `Session ${g.session}` : g.played_on
     ;(acc[key] ??= []).push(g)
     return acc
