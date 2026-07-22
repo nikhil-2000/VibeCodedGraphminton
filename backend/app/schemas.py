@@ -80,7 +80,9 @@ class MatchupQualityEntry(BaseModel):
     games_played: int
     avg_point_diff: float
     avg_team_skill_imbalance: float
-    pct_vs_top3: float
+    partner_quality: float
+    opponent_quality: float
+    partner_advantage: float
     blowout_win_pct: float | None
     blowout_games: int
 

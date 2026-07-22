@@ -299,17 +299,19 @@ def get_matchup_quality(db: Session, player_ids: list[int] | None = None, season
     from collections import defaultdict
     valid_ids = _valid_game_ids(player_ids, season_id)
 
-    # Step 1: compute win rate per player across filtered games
+    # Step 1: compute win rate + avg points per player across filtered games
     won_case = case(
         ((GamePlayer.team == "A") & (Game.team_a_score > Game.team_b_score), 1),
         ((GamePlayer.team == "B") & (Game.team_b_score > Game.team_a_score), 1),
         else_=0,
     )
+    pts_case = case((GamePlayer.team == "A", Game.team_a_score), else_=Game.team_b_score)
     wr_q = (
         db.query(
             GamePlayer.player_id,
             func.count(GamePlayer.id).label("gp"),
             func.sum(won_case).label("wins"),
+            func.avg(pts_case).label("avg_pts"),
         )
         .join(Game, GamePlayer.game_id == Game.id)
         .group_by(GamePlayer.player_id)
@@ -317,9 +319,19 @@ def get_matchup_quality(db: Session, player_ids: list[int] | None = None, season
     if valid_ids is not None:
         wr_q = wr_q.filter(Game.id.in_(valid_ids))
     win_rates: dict[int, float] = {}
+    avg_points_map: dict[int, float] = {}
     for r in wr_q.all():
         gp = r.gp or 0
         win_rates[r.player_id] = round(int(r.wins or 0) / gp, 4) if gp else 0.0
+        avg_points_map[r.player_id] = round(float(r.avg_pts or 0), 2)
+
+    # Build percentile map: rank by avg_points, normalise to [0, 1]
+    sorted_by_pts = sorted(avg_points_map.keys(), key=avg_points_map.__getitem__, reverse=True)
+    n_players = len(sorted_by_pts)
+    percentile: dict[int, float] = {
+        pid: 1.0 - (i / (n_players - 1)) if n_players > 1 else 1.0
+        for i, pid in enumerate(sorted_by_pts)
+    }
 
     # Step 2: per (player, game) fetch partner + both opponents
     # Join: me → partner (same team, different player) + opp (other team)
@@ -360,23 +372,25 @@ def get_matchup_quality(db: Session, player_ids: list[int] | None = None, season
 
     player_name = {p.id: p.canonical_name for p in db.query(Player).all()}
 
-    top3_ids = set(sorted(win_rates, key=win_rates.get, reverse=True)[:3])
-
     results = []
     for player_id, games_dict in player_games.items():
         total_diff = 0.0
         total_imbalance = 0.0
+        total_partner_advantage = 0.0
+        total_partner_quality = 0.0
+        total_opponent_quality = 0.0
         blowout_wins = blowout_losses = 0
-        vs_top3 = 0
         for g in games_dict.values():
             diff = g["my_pts"] - g["opp_pts"]
             total_diff += diff
             my_team_wr = (win_rates.get(player_id, 0.0) + win_rates.get(g["partner_id"], 0.0)) / 2
             opp_team_wr = sum(win_rates.get(oid, 0.0) for oid in g["opp_ids"]) / len(g["opp_ids"]) if g["opp_ids"] else 0.0
             total_imbalance += my_team_wr - opp_team_wr
-            effective_top3 = top3_ids - {player_id}
-            if any(oid in effective_top3 for oid in g["opp_ids"]):
-                vs_top3 += 1
+            partner_pct = percentile.get(g["partner_id"], 0.5)
+            opp_pct = sum(percentile.get(oid, 0.5) for oid in g["opp_ids"]) / len(g["opp_ids"]) if g["opp_ids"] else 0.5
+            total_partner_quality += partner_pct
+            total_opponent_quality += opp_pct
+            total_partner_advantage += partner_pct - opp_pct
             gap = abs(diff)
             if gap > 6:
                 if diff > 0:
@@ -385,19 +399,15 @@ def get_matchup_quality(db: Session, player_ids: list[int] | None = None, season
                     blowout_losses += 1
         n = len(games_dict)
         blowout_total = blowout_wins + blowout_losses
-        raw_pct = (vs_top3 / n) if n else 0.0
-        # Normalize for players in top3: they have one fewer top-3 opponent available
-        # so divide by the fraction of top3 actually available to them
-        available_top3_count = len(top3_ids - {player_id})
-        normalization = available_top3_count / len(top3_ids) if top3_ids else 1.0
-        normalized_pct_vs_top3 = round(raw_pct / normalization, 4) if normalization else raw_pct
         results.append({
             "player_id": player_id,
             "canonical_name": player_name.get(player_id, f"#{player_id}"),
             "games_played": n,
             "avg_point_diff": round(total_diff / n, 2) if n else 0.0,
             "avg_team_skill_imbalance": round(total_imbalance / n, 4) if n else 0.0,
-            "pct_vs_top3": normalized_pct_vs_top3,
+            "partner_quality": round(total_partner_quality / n, 4) if n else 0.0,
+            "opponent_quality": round(total_opponent_quality / n, 4) if n else 0.0,
+            "partner_advantage": round(total_partner_advantage / n, 4) if n else 0.0,
             "blowout_win_pct": round(blowout_wins / blowout_total, 4) if blowout_total else None,
             "blowout_games": blowout_total,
         })

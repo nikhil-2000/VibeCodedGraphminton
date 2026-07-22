@@ -28,7 +28,9 @@ export type MatchupQualityEntry = {
   games_played: number
   avg_point_diff: number
   avg_team_skill_imbalance: number
-  pct_vs_top3: number
+  partner_quality: number
+  opponent_quality: number
+  partner_advantage: number
   blowout_win_pct: number | null
   blowout_games: number
 }

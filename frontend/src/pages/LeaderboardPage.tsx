@@ -53,12 +53,14 @@ export default function LeaderboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Fairness</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Team Skill Imbalance = avg win rate of your team minus avg win rate of opponents, per game. Positive = your team was consistently stronger on paper.
-            vs Top 3 is normalized for top-3 players (who have one fewer top-3 opponent available).
-            Sorted by composite rank across all three metrics.
-          </p>
+          <CardTitle>Matchup Patterns</CardTitle>
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p><span className="text-foreground">Team Skill Imbalance</span> — avg win rate of your team minus avg win rate of opponents per game. Positive = your team was consistently stronger on paper.</p>
+            <p><span className="text-foreground">Partner Quality (P)</span> — avg percentile of your partners (by avg points).</p>
+            <p><span className="text-foreground">Opponent Quality (O)</span> — avg percentile of your opponents.</p>
+            <p><span className="text-foreground">Advantage (P−O)</span> — partner percentile minus opponent percentile per game. Positive = consistently played with stronger players than you faced.</p>
+            <p className="text-muted-foreground/60">Sorted by composite rank across Team Skill Imbalance and Advantage (P−O).</p>
+          </div>
         </CardHeader>
         <CardContent>
           {loading && fairness.length === 0 && <p className="text-muted-foreground">Loading…</p>}
@@ -66,8 +68,7 @@ export default function LeaderboardPage() {
             const ranked = fairness.map((e) => ({
               ...e,
               _r_imbalance: 0,
-              _r_top3: 0,
-              _r_blowout: 0,
+              _r_advantage: 0,
               _composite: 0,
             }))
 
@@ -80,17 +81,15 @@ export default function LeaderboardPage() {
               sorted.forEach((e, i) => {
                 const entry = arr.find((x) => x.player_id === e.player_id)!
                 if (key === 'avg_team_skill_imbalance') entry._r_imbalance = i + 1
-                if (key === 'pct_vs_top3') entry._r_top3 = i + 1
-                if (key === 'blowout_win_pct') entry._r_blowout = i + 1
+                if (key === 'partner_advantage') entry._r_advantage = i + 1
               })
             }
 
             rank(ranked, 'avg_team_skill_imbalance', true)
-            rank(ranked, 'pct_vs_top3', false)
-            rank(ranked, 'blowout_win_pct', true)
+            rank(ranked, 'partner_advantage', true)
 
             ranked.forEach((e) => {
-              e._composite = (e._r_imbalance + e._r_top3 + e._r_blowout) / 3
+              e._composite = (e._r_imbalance + e._r_advantage) / 2
             })
 
             ranked.sort((a, b) => a._composite - b._composite)
@@ -103,9 +102,9 @@ export default function LeaderboardPage() {
                     <TableHead>Player</TableHead>
                     <TableHead className="text-right">GP</TableHead>
                     <TableHead className="text-right">Team Skill Imbalance</TableHead>
-                    <TableHead className="text-right">vs Top 3</TableHead>
-                    <TableHead className="text-right">Blowout W%</TableHead>
-                    <TableHead className="text-right">Blowout Games</TableHead>
+                    <TableHead className="text-right">Advantage (P−O)</TableHead>
+                    <TableHead className="text-right">Partner Quality (P)</TableHead>
+                    <TableHead className="text-right">Opponent Quality (O)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -121,11 +120,11 @@ export default function LeaderboardPage() {
                       <TableCell className={`text-right font-mono ${e.avg_team_skill_imbalance > 0.02 ? 'text-green-400' : e.avg_team_skill_imbalance < -0.02 ? 'text-red-400' : ''}`}>
                         {e.avg_team_skill_imbalance > 0 ? '+' : ''}{(e.avg_team_skill_imbalance * 100).toFixed(1)}%
                       </TableCell>
-                      <TableCell className="text-right">{(e.pct_vs_top3 * 100).toFixed(0)}%</TableCell>
-                      <TableCell className="text-right">
-                        {e.blowout_win_pct != null ? `${(e.blowout_win_pct * 100).toFixed(0)}%` : '—'}
+                      <TableCell className={`text-right font-mono ${e.partner_advantage > 0.02 ? 'text-green-400' : e.partner_advantage < -0.02 ? 'text-red-400' : ''}`}>
+                        {e.partner_advantage > 0 ? '+' : ''}{(e.partner_advantage * 100).toFixed(1)}%
                       </TableCell>
-                      <TableCell className="text-right text-muted-foreground">{e.blowout_games}</TableCell>
+                      <TableCell className="text-right font-mono text-muted-foreground">{(e.partner_quality * 100).toFixed(1)}%</TableCell>
+                      <TableCell className="text-right font-mono text-muted-foreground">{(e.opponent_quality * 100).toFixed(1)}%</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
