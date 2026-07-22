@@ -5,7 +5,6 @@ import {
   getPartnershipAnomaliesForPlayer,
   getHeadToHeadAnomaliesForPlayer,
 } from '../api/anomalies'
-import { getPlayers } from '../api/players'
 import { getSuggestedGames } from '../api/stats'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
@@ -19,25 +18,27 @@ type Tab = 'partnerships' | 'head-to-head'
 type Direction = 'overplayed' | 'underplayed'
 
 export default function AnomaliesPage() {
-  const { selectedIds } = usePlayerFilter()
+  const { selectedIds, allPlayers } = usePlayerFilter()
   const { selectedSeasonId } = useSeasonFilter()
   const [tab, setTab] = useState<Tab>('partnerships')
   const [direction, setDirection] = useState<Direction>('overplayed')
   const [entries, setEntries] = useState<import('../types').AnomalyEntry[]>([])
   const [overEntries, setOverEntries] = useState<import('../types').AnomalyEntry[]>([])
   const [underEntries, setUnderEntries] = useState<import('../types').AnomalyEntry[]>([])
-  const [playerNames, setPlayerNames] = useState<Record<number, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [focusedPlayerId, setFocusedPlayerId] = useState<number | null>(null)
   const [suggestedGames, setSuggestedGames] = useState<SuggestedGame[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(true)
 
+  const filteredPlayers = allPlayers.filter((p) => selectedIds.includes(p.id))
+  const playerNames = Object.fromEntries(allPlayers.map((p) => [p.id, p.canonical_name]))
+
   useEffect(() => {
-    getPlayers().then((players) =>
-      setPlayerNames(Object.fromEntries(players.map((p) => [p.id, p.canonical_name])))
-    )
-  }, [])
+    if (focusedPlayerId !== null && !selectedIds.includes(focusedPlayerId)) {
+      setFocusedPlayerId(null)
+    }
+  }, [selectedIds, focusedPlayerId])
 
   useEffect(() => {
     setSuggestionsLoading(true)
@@ -90,10 +91,10 @@ export default function AnomaliesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All players</SelectItem>
-            {Object.entries(playerNames)
-              .sort(([, a], [, b]) => a.localeCompare(b))
-              .map(([id, name]) => (
-                <SelectItem key={id} value={id}>{name}</SelectItem>
+            {[...filteredPlayers]
+              .sort((a, b) => a.canonical_name.localeCompare(b.canonical_name))
+              .map((p) => (
+                <SelectItem key={p.id} value={String(p.id)}>{p.canonical_name}</SelectItem>
               ))}
           </SelectContent>
         </Select>
