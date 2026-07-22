@@ -5,9 +5,11 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import type { GameDetail } from '../types'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
+import { usePlayerFilter } from '../context/PlayerFilterContext'
 
 export default function GamesPage() {
   const { selectedSeasonId } = useSeasonFilter()
+  const { selectedIds } = usePlayerFilter()
   const [games, setGames] = useState<GameDetail[]>([])
   const [week, setWeek] = useState('')
   const [loading, setLoading] = useState(true)
@@ -15,13 +17,13 @@ export default function GamesPage() {
 
   const load = () => {
     setLoading(true)
-    getGames({ week: week ? Number(week) : undefined, season_id: selectedSeasonId })
+    getGames({ week: week ? Number(week) : undefined, season_id: selectedSeasonId, player_ids: selectedIds })
       .then(setGames)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [week, selectedSeasonId])
+  useEffect(() => { load() }, [week, selectedSeasonId, selectedIds])
 
   const handleDeleteGame = async (id: number) => {
     await deleteGame(id)

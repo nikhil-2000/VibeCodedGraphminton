@@ -19,6 +19,7 @@ def get_games(
     db: Session,
     week: int | None = None,
     player_id: int | None = None,
+    player_ids: list[int] | None = None,
     team_ids: tuple[int, int] | None = None,
     vs_ids: tuple[int, int] | None = None,
     season_id: int | None = None,
@@ -30,6 +31,15 @@ def get_games(
 
     if season_id is not None:
         ranked = ranked.filter(Game.season_id == season_id)
+
+    if player_ids:
+        excluded = (
+            db.query(GamePlayer.game_id)
+            .filter(GamePlayer.player_id.notin_(player_ids))
+            .distinct()
+            .subquery()
+        )
+        ranked = ranked.filter(Game.id.notin_(excluded))
 
     if week is not None:
         ranked = ranked.filter(_session_rank.c.session == week)
