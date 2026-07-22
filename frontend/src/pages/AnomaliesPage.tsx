@@ -120,21 +120,24 @@ export default function AnomaliesPage() {
         ))}
       </div>
 
-      {loading && <p className="text-muted-foreground">Loading…</p>}
       {error && <p className="text-destructive">{error}</p>}
-      {!loading && !error && focusedPlayerId !== null && (
-        <AnomalyTable entries={entries} playerNames={playerNames} focusedPlayerId={focusedPlayerId} />
-      )}
-      {!loading && !error && focusedPlayerId === null && (
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <h2 className="mb-3 text-sm font-semibold text-green-500">Overplayed</h2>
-            <AnomalyTable entries={overEntries} playerNames={playerNames} />
-          </div>
-          <div>
-            <h2 className="mb-3 text-sm font-semibold text-red-500">Underplayed</h2>
-            <AnomalyTable entries={underEntries} playerNames={playerNames} />
-          </div>
+      {!error && (
+        <div className={loading ? 'pointer-events-none opacity-50 transition-opacity' : 'transition-opacity'}>
+          {focusedPlayerId !== null && (
+            <AnomalyTable entries={entries} playerNames={playerNames} focusedPlayerId={focusedPlayerId} />
+          )}
+          {focusedPlayerId === null && (
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <h2 className="mb-3 text-sm font-semibold text-green-500">Overplayed</h2>
+                <AnomalyTable entries={overEntries} playerNames={playerNames} />
+              </div>
+              <div>
+                <h2 className="mb-3 text-sm font-semibold text-red-500">Underplayed</h2>
+                <AnomalyTable entries={underEntries} playerNames={playerNames} />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
