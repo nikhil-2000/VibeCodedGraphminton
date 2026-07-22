@@ -35,6 +35,13 @@ export type MatchupQualityEntry = {
   blowout_games: number
 }
 
+export type SuggestedGame = {
+  team_a: string[]
+  team_b: string[]
+  score: number
+  fixes: string[]
+}
+
 export type HeadToHeadRecord = {
   opponent_id: number
   games_played: number

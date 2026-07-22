@@ -413,3 +413,147 @@ def get_matchup_quality(db: Session, player_ids: list[int] | None = None, season
         })
 
     return sorted(results, key=lambda r: r["avg_team_skill_imbalance"], reverse=True)
+
+
+def get_suggested_games(
+    db: Session,
+    player_ids: list[int] | None = None,
+    season_id: int | None = None,
+    top_n: int = 5,
+    focus_player_id: int | None = None,
+) -> list[dict[str, Any]]:
+    from itertools import combinations
+    from ..services.anomalies import get_partnership_anomalies, get_head_to_head_anomalies
+
+    valid_ids = _valid_game_ids(player_ids, season_id)
+
+    pts_case = case((GamePlayer.team == "A", Game.team_a_score), else_=Game.team_b_score)
+    wr_q = (
+        db.query(GamePlayer.player_id, func.avg(pts_case).label("avg_pts"))
+        .join(Game, GamePlayer.game_id == Game.id)
+        .group_by(GamePlayer.player_id)
+    )
+    if valid_ids is not None:
+        wr_q = wr_q.filter(Game.id.in_(valid_ids))
+
+    avg_points_map: dict[int, float] = {r.player_id: float(r.avg_pts or 0) for r in wr_q.all()}
+    sorted_by_pts = sorted(avg_points_map.keys(), key=avg_points_map.__getitem__, reverse=True)
+    n_players = len(sorted_by_pts)
+    percentile: dict[int, float] = {
+        pid: 1.0 - (i / (n_players - 1)) if n_players > 1 else 1.0
+        for i, pid in enumerate(sorted_by_pts)
+    }
+
+    partnership_anomalies = get_partnership_anomalies(db, overplayed=False, limit=None, player_ids=player_ids, season_id=season_id)
+    h2h_anomalies = get_head_to_head_anomalies(db, overplayed=False, limit=None, player_ids=player_ids, season_id=season_id)
+
+    def pair_key(a: int, b: int) -> tuple[int, int]:
+        return (min(a, b), max(a, b))
+
+    partner_debt: dict[tuple[int, int], float] = {
+        pair_key(r["player_a_id"], r["player_b_id"]): abs(r["deviation"])
+        for r in partnership_anomalies
+    }
+    h2h_debt: dict[tuple[int, int], float] = {
+        pair_key(r["player_a_id"], r["player_b_id"]): abs(r["deviation"])
+        for r in h2h_anomalies
+    }
+
+    mq = get_matchup_quality(db, player_ids, season_id)
+    pattern_map: dict[int, dict] = {r["player_id"]: r for r in mq}
+
+    FAIRNESS_WEIGHT = 2.0
+    FAIRNESS_THRESHOLD = 0.05
+
+    active_players = sorted(avg_points_map.keys())
+    player_names: dict[int, str] = {
+        p.id: p.canonical_name
+        for p in db.query(Player).filter(Player.id.in_(active_players)).all()
+    }
+
+    scored: list[dict[str, Any]] = []
+
+    if focus_player_id is not None:
+        others = [p for p in active_players if p != focus_player_id]
+        combos = ((focus_player_id, *rest) for rest in combinations(others, 3))
+    else:
+        combos = combinations(active_players, 4)  # type: ignore[assignment]
+
+    for combo in combos:
+        p1, p2, p3, p4 = combo
+        splits = [
+            ((p1, p2), (p3, p4)),
+            ((p1, p3), (p2, p4)),
+            ((p1, p4), (p2, p3)),
+        ]
+        for team_a_ids, team_b_ids in splits:
+            a1, a2 = team_a_ids
+            b1, b2 = team_b_ids
+
+            underplay_debt = (
+                partner_debt.get(pair_key(a1, a2), 0.0)
+                + partner_debt.get(pair_key(b1, b2), 0.0)
+                + h2h_debt.get(pair_key(a1, b1), 0.0)
+                + h2h_debt.get(pair_key(a1, b2), 0.0)
+                + h2h_debt.get(pair_key(a2, b1), 0.0)
+                + h2h_debt.get(pair_key(a2, b2), 0.0)
+            )
+
+            team_a_avg_pct = (percentile.get(a1, 0.5) + percentile.get(a2, 0.5)) / 2
+            team_b_avg_pct = (percentile.get(b1, 0.5) + percentile.get(b2, 0.5)) / 2
+
+            fairness_correction = 0.0
+            for pid in combo:
+                pm = pattern_map.get(pid)
+                if not pm:
+                    continue
+                pa = pm["partner_advantage"]
+                imb = pm["avg_team_skill_imbalance"]
+                on_team_a = pid in (a1, a2)
+                partner_id = (a2 if pid == a1 else a1) if on_team_a else (b2 if pid == b1 else b1)
+                partner_pct = percentile.get(partner_id, 0.5)
+                opp_avg = team_b_avg_pct if on_team_a else team_a_avg_pct
+                my_team_avg = team_a_avg_pct if on_team_a else team_b_avg_pct
+
+                if abs(pa) > FAIRNESS_THRESHOLD:
+                    if (pa > 0 and partner_pct < opp_avg) or (pa < 0 and partner_pct > opp_avg):
+                        fairness_correction += abs(pa) * FAIRNESS_WEIGHT
+                if abs(imb) > FAIRNESS_THRESHOLD:
+                    if (imb > 0 and my_team_avg < opp_avg) or (imb < 0 and my_team_avg > opp_avg):
+                        fairness_correction += abs(imb) * FAIRNESS_WEIGHT
+
+            total_score = underplay_debt + fairness_correction
+            if total_score == 0:
+                continue
+
+            fixes: list[str] = []
+            for x, y in [(a1, a2), (b1, b2)]:
+                if pair_key(x, y) in partner_debt:
+                    fixes.append(f"{player_names.get(x, str(x))} & {player_names.get(y, str(y))} (partnership)")
+            for x, y in [(a1, b1), (a1, b2), (a2, b1), (a2, b2)]:
+                if pair_key(x, y) in h2h_debt:
+                    fixes.append(f"{player_names.get(x, str(x))} vs {player_names.get(y, str(y))} (h2h)")
+
+            scored.append({
+                "team_a": [player_names.get(a1, str(a1)), player_names.get(a2, str(a2))],
+                "team_b": [player_names.get(b1, str(b1)), player_names.get(b2, str(b2))],
+                "score": round(total_score, 4),
+                "fixes": fixes,
+                "_partnerships": {pair_key(a1, a2), pair_key(b1, b2)},
+            })
+
+    scored.sort(key=lambda r: r["score"], reverse=True)
+
+    # Greedy dedup: avoid repeating the same partnership across suggestions
+    used_partnerships: set[tuple[int, int]] = set()
+    result: list[dict[str, Any]] = []
+    for game in scored:
+        game_partnerships: set[tuple[int, int]] = game.pop("_partnerships")
+        if game_partnerships & used_partnerships:
+            continue
+        used_partnerships |= game_partnerships
+        result.append(game)
+        if len(result) == top_n:
+            break
+
+    return result

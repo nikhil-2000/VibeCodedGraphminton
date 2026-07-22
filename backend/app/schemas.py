@@ -74,6 +74,13 @@ class LeaderboardEntry(BaseModel):
     avg_points: float
 
 
+class SuggestedGame(BaseModel):
+    team_a: list[str]
+    team_b: list[str]
+    score: float
+    fixes: list[str]
+
+
 class MatchupQualityEntry(BaseModel):
     player_id: int
     canonical_name: str

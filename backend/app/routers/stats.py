@@ -12,6 +12,7 @@ from ..schemas import (
     HeadToHeadResponse,
     MatchupResponse,
     HeadToHeadBulkEntry,
+    SuggestedGame,
 )
 
 router = APIRouter()
@@ -28,6 +29,17 @@ def player_stats(
         return stats_service.get_player_stats(db, player_id, player_ids or None, season_id)
     except KeyError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/suggested-games", response_model=list[SuggestedGame])
+def suggested_games(
+    player_ids: list[int] = Query(default=[]),
+    season_id: Optional[int] = Query(default=None),
+    top_n: int = Query(default=5, ge=1, le=20),
+    focus_player_id: Optional[int] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    return stats_service.get_suggested_games(db, player_ids or None, season_id, top_n, focus_player_id)
 
 
 @router.get("/leaderboard", response_model=list[LeaderboardEntry])

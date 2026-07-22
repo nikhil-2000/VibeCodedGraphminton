@@ -6,11 +6,14 @@ import {
   getHeadToHeadAnomaliesForPlayer,
 } from '../api/anomalies'
 import { getPlayers } from '../api/players'
+import { getSuggestedGames } from '../api/stats'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
 import AnomalyTable from '../components/AnomalyTable'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { SuggestedGame } from '../types'
 
 type Tab = 'partnerships' | 'head-to-head'
 type Direction = 'overplayed' | 'underplayed'
@@ -27,12 +30,21 @@ export default function AnomaliesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [focusedPlayerId, setFocusedPlayerId] = useState<number | null>(null)
+  const [suggestedGames, setSuggestedGames] = useState<SuggestedGame[]>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(true)
 
   useEffect(() => {
     getPlayers().then((players) =>
       setPlayerNames(Object.fromEntries(players.map((p) => [p.id, p.canonical_name])))
     )
   }, [])
+
+  useEffect(() => {
+    setSuggestionsLoading(true)
+    getSuggestedGames(selectedIds, selectedSeasonId, 5, focusedPlayerId ?? undefined)
+      .then(setSuggestedGames)
+      .finally(() => setSuggestionsLoading(false))
+  }, [selectedIds, selectedSeasonId, focusedPlayerId])
 
   useEffect(() => {
     setLoading(true)
@@ -106,21 +118,6 @@ export default function AnomaliesPage() {
             {t}
           </Button>
         ))}
-        {focusedPlayerId !== null && (
-          <div className="ml-auto flex items-center gap-2">
-            {(['overplayed', 'underplayed'] as Direction[]).map((d) => (
-              <Button
-                key={d}
-                variant={direction === d ? 'secondary' : 'outline'}
-                size="sm"
-                onClick={() => setDirection(d)}
-                className="capitalize"
-              >
-                {d}
-              </Button>
-            ))}
-          </div>
-        )}
       </div>
 
       {loading && <p className="text-muted-foreground">Loading…</p>}
@@ -140,6 +137,41 @@ export default function AnomaliesPage() {
           </div>
         </div>
       )}
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Suggested Games</CardTitle>
+          <p className="text-xs text-muted-foreground">Games that address the most underplayed pairings and matchups.</p>
+        </CardHeader>
+        <CardContent>
+          {suggestionsLoading && <p className="text-muted-foreground text-sm">Loading…</p>}
+          {!suggestionsLoading && suggestedGames.length === 0 && (
+            <p className="text-sm text-muted-foreground">No suggestions available.</p>
+          )}
+          {!suggestionsLoading && suggestedGames.length > 0 && (
+            <div className="space-y-4">
+              {suggestedGames.map((g, i) => (
+                <div key={i} className="rounded-lg border p-3">
+                  <p className="font-medium">
+                    {g.team_a.join(' & ')}
+                    <span className="mx-2 text-muted-foreground">vs</span>
+                    {g.team_b.join(' & ')}
+                  </p>
+                  {g.fixes.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {g.fixes.map((fix, j) => (
+                        <span key={j} className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                          {fix}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

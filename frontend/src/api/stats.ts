@@ -33,3 +33,13 @@ export const getMatchupQuality = (playerIds?: number[], seasonId?: number | null
   const params = qs(playerIdsQs(playerIds), seasonQs(seasonId))
   return apiFetch<import('../types').MatchupQualityEntry[]>(`/stats/matchup-quality${params ? '?' + params : ''}`)
 }
+
+export const getSuggestedGames = (playerIds?: number[], seasonId?: number | null, topN = 5, focusPlayerId?: number) => {
+  const params = qs(
+    playerIdsQs(playerIds),
+    seasonQs(seasonId),
+    `top_n=${topN}`,
+    focusPlayerId != null ? `focus_player_id=${focusPlayerId}` : '',
+  )
+  return apiFetch<import('../types').SuggestedGame[]>(`/stats/suggested-games?${params}`)
+}
