@@ -67,7 +67,7 @@ def get_games(
             .join(gp2, (gp2.game_id == Game.id) & (gp2.player_id == vs_ids[1]) & (gp2.team != gp1.team))
         )
 
-    rows = ranked.distinct().all()
+    rows = ranked.order_by(Game.played_on.desc(), Game.game_number.asc()).distinct().all()
     game_ids = [g.id for g, _ in rows]
 
     # Batch-fetch team members for all returned games (avoids N+1)
