@@ -5,7 +5,7 @@ import PartnershipTable from './PartnershipTable'
 import type { PlayerPartnership } from '../types'
 
 const partnerships: PlayerPartnership[] = [
-  { partner_id: 2, games_together: 5, wins: 4, losses: 1, win_rate: 0.8 },
+  { partner_id: 2, games_together: 5, wins: 4, losses: 1, win_rate: 0.8, avg_points: 18.5 },
 ]
 const playerNames: Record<number, string> = { 2: 'Bob' }
 

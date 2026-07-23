@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { Game, GameDetail } from '../types'
+import type { GameDetail } from '../types'
 
 export interface GamesFilter {
   week?: number

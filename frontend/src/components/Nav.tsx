@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { Sun, Moon } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 import PlayerFilterPopover from './PlayerFilterPopover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
 
 const links = [

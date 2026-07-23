@@ -7,9 +7,12 @@ const game: Game = {
   id: 1,
   played_on: '2024-04-08',
   session: 1,
+  season_id: 1,
   game_number: 1,
   team_a_score: 21,
   team_b_score: 9,
+  team_a: [],
+  team_b: [],
 }
 
 describe('GameCard', () => {

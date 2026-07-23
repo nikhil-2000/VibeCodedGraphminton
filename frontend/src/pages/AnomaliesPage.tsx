@@ -21,7 +21,7 @@ export default function AnomaliesPage() {
   const { selectedIds, allPlayers } = usePlayerFilter()
   const { selectedSeasonId } = useSeasonFilter()
   const [tab, setTab] = useState<Tab>('partnerships')
-  const [direction, setDirection] = useState<Direction>('overplayed')
+  const [direction] = useState<Direction>('overplayed')
   const [entries, setEntries] = useState<import('../types').AnomalyEntry[]>([])
   const [overEntries, setOverEntries] = useState<import('../types').AnomalyEntry[]>([])
   const [underEntries, setUnderEntries] = useState<import('../types').AnomalyEntry[]>([])

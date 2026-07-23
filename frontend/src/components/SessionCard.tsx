@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import PlayerSelect from './PlayerSelect'
 import { validateGames, ingestGames } from '../api/ingest'
-import type { GameRowIn, GameRowError } from '../api/ingest'
+import type { GameRowIn } from '../api/ingest'
 import type { Player } from '../types'
 
 export interface SessionRow {
