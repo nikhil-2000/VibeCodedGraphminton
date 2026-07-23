@@ -41,6 +41,12 @@ export default function GamesPage() {
           <Button variant="ghost" size="sm" onClick={() => setWeek('')}>Clear</Button>
         )}
       </div>
+      <div className="mb-4 flex items-center gap-4 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-1 rounded-full bg-green-500" /> Close (≤3)</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-1 rounded-full bg-yellow-500" /> Comfortable (4–6)</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-1 rounded-full bg-red-500" /> One-sided (&gt;6)</span>
+      </div>
+
       {loading && <p className="text-muted-foreground">Loading…</p>}
       {error && <p className="text-destructive">{error}</p>}
       {Object.entries(bySession).map(([sessionLabel, sessionGames]) => (
