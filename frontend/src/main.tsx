@@ -5,7 +5,7 @@ import './index.css'
 import App from './App.tsx'
 import { SeasonFilterProvider, useSeasonFilter } from './context/SeasonFilterContext.tsx'
 import { PlayerFilterProvider, usePlayerFilter } from './context/PlayerFilterContext.tsx'
-import { getPreferences, updatePreferences, createPreferences } from './api/preferences.ts'
+import { getPreferences, updatePreferences } from './api/preferences.ts'
 import type { UserPreferences } from './api/preferences.ts'
 import { IdentityModal } from './components/IdentityModal.tsx'
 import { PrefsModalContext } from './context/PrefsModalContext.tsx'
@@ -18,8 +18,10 @@ function AppWithPrefs() {
   const { initFromPrefs: initSeason, selectedSeasonId, seasons } = useSeasonFilter()
 
   // Track previous values to detect changes (skip on first load)
+  const presetInitialized = useRef(false)
   const prevPreset = useRef<string | null>(null)
   const prevCustomIds = useRef<number[] | null>(null)
+  const seasonInitialized = useRef(false)
   const prevSeasonId = useRef<number | null | undefined>(undefined)
 
   useEffect(() => {
@@ -41,7 +43,8 @@ function AppWithPrefs() {
   // Persist preset/custom_player_ids changes
   useEffect(() => {
     if (!prefsLoaded) return
-    if (prevPreset.current === null) {
+    if (!presetInitialized.current) {
+      presetInitialized.current = true
       prevPreset.current = activePreset
       prevCustomIds.current = selectedIds
       return
@@ -56,7 +59,8 @@ function AppWithPrefs() {
   // Persist season changes
   useEffect(() => {
     if (!prefsLoaded) return
-    if (prevSeasonId.current === undefined) {
+    if (!seasonInitialized.current) {
+      seasonInitialized.current = true
       prevSeasonId.current = selectedSeasonId
       return
     }
