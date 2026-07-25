@@ -29,6 +29,9 @@ def create_preferences(
     user_id: str = Depends(_get_user_id),
     db: Session = Depends(get_db),
 ):
+    existing = db.query(UserPreferences).filter(UserPreferences.id == user_id).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Preferences already exist")
     prefs = UserPreferences(
         id=user_id,
         player_id=body.player_id,

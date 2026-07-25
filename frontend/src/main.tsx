@@ -28,7 +28,7 @@ function AppWithPrefs() {
         setPrefsLoaded(true)
       })
       .catch((err: Error) => {
-        if (err.message.includes('404') || err.message === 'Preferences not found') {
+        if (err.message === 'Preferences not found') {
           setShowModal(true)
         }
         setPrefsLoaded(true)

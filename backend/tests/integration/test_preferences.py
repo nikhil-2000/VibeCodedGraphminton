@@ -68,6 +68,21 @@ def test_patch_preferences_not_found(client: TestClient):
     assert r.status_code == 404
 
 
+def test_create_preferences_duplicate(client: TestClient):
+    player_id = make_player(client)
+    client.post(
+        "/preferences",
+        json={"player_id": player_id, "preset": "regulars", "custom_player_ids": []},
+        headers={"X-User-ID": USER_ID},
+    )
+    r = client.post(
+        "/preferences",
+        json={"player_id": player_id, "preset": "regulars", "custom_player_ids": []},
+        headers={"X-User-ID": USER_ID},
+    )
+    assert r.status_code == 409
+
+
 def test_create_preferences_missing_header(client: TestClient):
     player_id = make_player(client)
     r = client.post(

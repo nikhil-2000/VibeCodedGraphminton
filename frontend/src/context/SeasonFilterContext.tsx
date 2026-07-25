@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react'
 import { getSeasons } from '../api/seasons'
 import type { UserPreferences } from '../api/preferences'
 import type { Season } from '../types'
@@ -15,18 +15,26 @@ const SeasonFilterContext = createContext<SeasonFilterContextValue | null>(null)
 export function SeasonFilterProvider({ children }: { children: ReactNode }) {
   const [seasons, setSeasons] = useState<Season[]>([])
   const [selectedSeasonId, setSelectedSeasonId] = useState<number | null>(null)
+  const pendingSeasonId = useRef<number | null | undefined>(undefined)
 
   useEffect(() => {
     getSeasons().then((data) => {
       setSeasons(data)
-      if (data.length > 0) {
+      if (pendingSeasonId.current !== undefined) {
+        setSelectedSeasonId(pendingSeasonId.current)
+        pendingSeasonId.current = undefined
+      } else if (data.length > 0) {
         setSelectedSeasonId(data[data.length - 1].id)
       }
     })
   }, [])
 
   const initFromPrefs = (prefs: UserPreferences) => {
-    setSelectedSeasonId(prefs.season_id)
+    if (seasons.length > 0) {
+      setSelectedSeasonId(prefs.season_id)
+    } else {
+      pendingSeasonId.current = prefs.season_id
+    }
   }
 
   return (
