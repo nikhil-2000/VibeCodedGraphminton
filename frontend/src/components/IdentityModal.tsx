@@ -14,9 +14,11 @@ export function IdentityModal({ onComplete }: Props) {
   const { allPlayers } = usePlayerFilter()
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string>('')
 
   const handleConfirm = async () => {
     if (!selectedPlayerId) return
+    setError('')
     setLoading(true)
     try {
       const prefs = await createPreferences({
@@ -26,6 +28,8 @@ export function IdentityModal({ onComplete }: Props) {
         custom_player_ids: [],
       })
       onComplete(prefs)
+    } catch (err) {
+      setError((err as Error).message || 'Failed to save preferences')
     } finally {
       setLoading(false)
     }
@@ -52,6 +56,9 @@ export function IdentityModal({ onComplete }: Props) {
             ))}
           </SelectContent>
         </Select>
+        {error && (
+          <p className="text-sm text-destructive">{error}</p>
+        )}
         <Button onClick={handleConfirm} disabled={!selectedPlayerId || loading}>
           {loading ? 'Saving...' : 'Continue'}
         </Button>
