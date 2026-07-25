@@ -5,7 +5,7 @@ import './index.css'
 import App from './App.tsx'
 import { SeasonFilterProvider, useSeasonFilter } from './context/SeasonFilterContext.tsx'
 import { PlayerFilterProvider, usePlayerFilter } from './context/PlayerFilterContext.tsx'
-import { getPreferences, updatePreferences } from './api/preferences.ts'
+import { getPreferences, updatePreferences, createPreferences } from './api/preferences.ts'
 import type { UserPreferences } from './api/preferences.ts'
 import { IdentityModal } from './components/IdentityModal.tsx'
 import { PrefsModalContext } from './context/PrefsModalContext.tsx'
@@ -13,6 +13,7 @@ import { PrefsModalContext } from './context/PrefsModalContext.tsx'
 function AppWithPrefs() {
   const [showModal, setShowModal] = useState(false)
   const [prefsLoaded, setPrefsLoaded] = useState(false)
+  const [currentPlayerId, setCurrentPlayerId] = useState<number | null>(null)
   const { initFromPrefs: initPlayer, selectedIds, activePreset, allPlayers } = usePlayerFilter()
   const { initFromPrefs: initSeason, selectedSeasonId, seasons } = useSeasonFilter()
 
@@ -24,6 +25,7 @@ function AppWithPrefs() {
   useEffect(() => {
     getPreferences()
       .then((prefs) => {
+        setCurrentPlayerId(prefs.player_id)
         initPlayer(prefs)
         initSeason(prefs)
         setPrefsLoaded(true)
@@ -66,6 +68,7 @@ function AppWithPrefs() {
   const openModal = useCallback(() => setShowModal(true), [])
 
   const handleIdentityComplete = (prefs: UserPreferences) => {
+    setCurrentPlayerId(prefs.player_id)
     // Set season_id to last season after identity is set
     const lastSeasonId = seasons.length > 0 ? seasons[seasons.length - 1].id : null
     const prefsWithSeason = { ...prefs, season_id: lastSeasonId }
@@ -83,6 +86,7 @@ function AppWithPrefs() {
         <IdentityModal
           onComplete={handleIdentityComplete}
           onClose={prefsLoaded ? () => setShowModal(false) : undefined}
+          currentPlayerId={currentPlayerId}
         />
       )}
       <App />
