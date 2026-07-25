@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
-import { Sun, Moon, Trophy, Users, Swords, FileText, CalendarDays, Upload, MoreHorizontal, Settings } from 'lucide-react'
+import { NavLink, useLocation, Link } from 'react-router-dom'
+import { Sun, Moon, Trophy, BarChart2, Swords, FileText, CalendarDays, Upload, MoreHorizontal, Settings } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 import PlayerFilterPopover from './PlayerFilterPopover'
 import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select'
@@ -8,10 +8,9 @@ import { Sheet, SheetContent } from './ui/sheet'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
 import { usePrefsModal } from '../context/PrefsModalContext'
 import { useCurrentUser } from '../context/CurrentUserContext'
+import { useCurrentPlayer } from '../context/CurrentPlayerContext'
 
-const primaryLinks = [
-  { to: '/leaderboard', label: 'Leaderboard', Icon: Trophy },
-  { to: '/players', label: 'Players', Icon: Users },
+const trailingLinks = [
   { to: '/games', label: 'Games', Icon: Swords },
   { to: '/anomalies', label: 'Fixtures', Icon: FileText },
 ]
@@ -89,8 +88,21 @@ export default function Nav() {
   const location = useLocation()
   const [moreOpen, setMoreOpen] = useState(false)
   const { isAdmin } = useCurrentUser()
+  const { currentPlayerId } = useCurrentPlayer()
 
+  const statsTo = currentPlayerId != null ? `/players/${currentPlayerId}` : '/players'
+  const statsIsActive = location.pathname.startsWith('/players')
   const moreIsActive = isAdmin && moreLinks.some((l) => location.pathname.startsWith(l.to))
+
+  const statsDesktopClass = `flex flex-col items-center gap-1 rounded-lg py-3 transition-colors ${
+    statsIsActive
+      ? 'bg-yellow-400 text-gray-950 font-medium'
+      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+  }`
+
+  const statsMobileClass = `flex flex-1 flex-col items-center gap-0.5 py-2 transition-colors ${
+    statsIsActive ? 'text-yellow-400' : 'text-muted-foreground'
+  }`
 
   return (
     <>
@@ -101,7 +113,24 @@ export default function Nav() {
         </div>
 
         <div className="flex flex-col gap-1 px-2">
-          {[...primaryLinks, ...(isAdmin ? moreLinks : [])].map(({ to, label, Icon }) => (
+          <NavLink to="/leaderboard" className={navLinkClass}>
+            <Trophy size={20} />
+            <span className="text-xs">Leaderboard</span>
+          </NavLink>
+
+          <Link to={statsTo} className={statsDesktopClass}>
+            <BarChart2 size={20} />
+            <span className="text-xs">Stats</span>
+          </Link>
+
+          {trailingLinks.map(({ to, label, Icon }) => (
+            <NavLink key={to} to={to} className={navLinkClass}>
+              <Icon size={20} />
+              <span className="text-xs">{label}</span>
+            </NavLink>
+          ))}
+
+          {isAdmin && moreLinks.map(({ to, label, Icon }) => (
             <NavLink key={to} to={to} className={navLinkClass}>
               <Icon size={20} />
               <span className="text-xs">{label}</span>
@@ -116,7 +145,24 @@ export default function Nav() {
 
       {/* Mobile bottom tab bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t border-border bg-card">
-        {primaryLinks.map(({ to, label, Icon }) => (
+        <NavLink
+          to="/leaderboard"
+          className={({ isActive }) =>
+            `flex flex-1 flex-col items-center gap-0.5 py-2 transition-colors ${
+              isActive ? 'text-yellow-400' : 'text-muted-foreground'
+            }`
+          }
+        >
+          <Trophy size={20} />
+          <span className="text-xs">Leaderboard</span>
+        </NavLink>
+
+        <Link to={statsTo} className={statsMobileClass}>
+          <BarChart2 size={20} />
+          <span className="text-xs">Stats</span>
+        </Link>
+
+        {trailingLinks.map(({ to, label, Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -130,6 +176,7 @@ export default function Nav() {
             <span className="text-xs">{label}</span>
           </NavLink>
         ))}
+
         <button
           onClick={() => setMoreOpen(true)}
           className={`flex flex-1 flex-col items-center gap-0.5 py-2 transition-colors ${
