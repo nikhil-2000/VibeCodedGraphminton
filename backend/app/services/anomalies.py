@@ -37,22 +37,23 @@ def _get_player_game_counts(db: Session, valid_game_ids: set[int] | None = None)
     return {row.player_id: row.games for row in rows}
 
 
-def _get_total_games(db: Session, valid_game_ids: set[int] | None = None) -> int:
-    q = db.query(func.count(Game.id))
+def _get_co_appearances(db: Session, valid_game_ids: set[int] | None = None) -> dict[tuple[int, int], int]:
+    """Returns how many games each pair of players both appeared in (any team)."""
+    gp1 = aliased(GamePlayer)
+    gp2 = aliased(GamePlayer)
+    q = (
+        db.query(gp1.player_id.label("a"), gp2.player_id.label("b"), func.count().label("n"))
+        .join(gp2, (gp1.game_id == gp2.game_id) & (gp1.player_id < gp2.player_id))
+        .group_by(gp1.player_id, gp2.player_id)
+    )
     if valid_game_ids is not None:
-        q = q.filter(Game.id.in_(valid_game_ids))
-    return q.scalar() or 0
+        q = q.filter(gp1.game_id.in_(valid_game_ids))
+    return {(r.a, r.b): int(r.n) for r in q.all()}
 
 
 def _get_all_player_pairs(player_counts: dict[int, int]) -> list[tuple[int, int]]:
     ids = sorted(player_counts.keys())
     return [(ids[i], ids[j]) for i in range(len(ids)) for j in range(i + 1, len(ids))]
-
-
-def _expected_frequency(games_a: int, games_b: int, total: int, prob_given_same_game: float) -> float:
-    if total == 0:
-        return 0.0
-    return (games_a / total) * (games_b / total) * total * prob_given_same_game
 
 
 def get_partnership_anomalies(db: Session, overplayed: bool, limit: int | None = 10, player_ids: list[int] | None = None, season_id: int | None = None, focus_player_id: int | None = None) -> list[dict[str, Any]]:
@@ -75,7 +76,7 @@ def get_partnership_anomalies(db: Session, overplayed: bool, limit: int | None =
     actual_counts = {(min(r.a, r.b), max(r.a, r.b)): int(r.n) for r in q.all()}
 
     player_counts = _get_player_game_counts(db, valid_game_ids)
-    total = _get_total_games(db, valid_game_ids)
+    co_appearances = _get_co_appearances(db, valid_game_ids)
     all_pairs = _get_all_player_pairs(player_counts)
 
     results: list[dict[str, Any]] = []
@@ -87,7 +88,7 @@ def get_partnership_anomalies(db: Session, overplayed: bool, limit: int | None =
                 continue
 
         actual = actual_counts.get((a, b), 0)
-        expected = _expected_frequency(player_counts.get(a, 0), player_counts.get(b, 0), total, 1 / 3)
+        expected = co_appearances.get((a, b), 0) / 3
         deviation = actual - expected
 
         if overplayed and deviation <= 0:
@@ -131,7 +132,7 @@ def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int | None 
     actual_counts = {(min(r.a, r.b), max(r.a, r.b)): int(r.n) for r in q.all()}
 
     player_counts = _get_player_game_counts(db, valid_game_ids)
-    total = _get_total_games(db, valid_game_ids)
+    co_appearances = _get_co_appearances(db, valid_game_ids)
     all_pairs = _get_all_player_pairs(player_counts)
 
     results: list[dict[str, Any]] = []
@@ -143,7 +144,7 @@ def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int | None 
                 continue
 
         actual = actual_counts.get((a, b), 0)
-        expected = _expected_frequency(player_counts.get(a, 0), player_counts.get(b, 0), total, 2 / 3)
+        expected = co_appearances.get((a, b), 0) * 2 / 3
         deviation = actual - expected
 
         if overplayed and deviation <= 0:
