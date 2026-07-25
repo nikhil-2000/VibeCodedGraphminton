@@ -47,7 +47,7 @@ function AppWithPrefs() {
     if (prevPreset.current === activePreset && prevCustomIds.current?.join() === customIds.join()) return
     prevPreset.current = activePreset
     prevCustomIds.current = customIds
-    updatePreferences({ preset: activePreset, custom_player_ids: customIds })
+    updatePreferences({ preset: activePreset, custom_player_ids: customIds }).catch(console.error)
   }, [activePreset, selectedIds, prefsLoaded])
 
   // Persist season changes
@@ -59,7 +59,7 @@ function AppWithPrefs() {
     }
     if (prevSeasonId.current === selectedSeasonId) return
     prevSeasonId.current = selectedSeasonId
-    updatePreferences({ season_id: selectedSeasonId })
+    updatePreferences({ season_id: selectedSeasonId }).catch(console.error)
   }, [selectedSeasonId, prefsLoaded])
 
   const handleIdentityComplete = (prefs: UserPreferences) => {
@@ -67,7 +67,7 @@ function AppWithPrefs() {
     const lastSeasonId = seasons.length > 0 ? seasons[seasons.length - 1].id : null
     const prefsWithSeason = { ...prefs, season_id: lastSeasonId }
     if (lastSeasonId !== null) {
-      updatePreferences({ season_id: lastSeasonId })
+      updatePreferences({ season_id: lastSeasonId }).catch(console.error)
     }
     initPlayer(prefsWithSeason)
     initSeason(prefsWithSeason)
@@ -76,7 +76,7 @@ function AppWithPrefs() {
 
   return (
     <>
-      {showModal && allPlayers.length > 0 && (
+      {showModal && allPlayers.length > 0 && seasons.length > 0 && (
         <IdentityModal onComplete={handleIdentityComplete} />
       )}
       <App />
