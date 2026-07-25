@@ -9,6 +9,7 @@ import { getPreferences, updatePreferences } from './api/preferences.ts'
 import type { UserPreferences } from './api/preferences.ts'
 import { IdentityModal } from './components/IdentityModal.tsx'
 import { PrefsModalContext } from './context/PrefsModalContext.tsx'
+import { CurrentUserContext } from './context/CurrentUserContext.tsx'
 
 function AppWithPrefs() {
   const [showModal, setShowModal] = useState(false)
@@ -69,6 +70,11 @@ function AppWithPrefs() {
     updatePreferences({ season_id: selectedSeasonId }).catch(console.error)
   }, [selectedSeasonId, prefsLoaded])
 
+  const currentPlayer = currentPlayerId != null
+    ? allPlayers.find((p) => p.id === currentPlayerId) ?? null
+    : null
+  const isAdmin = currentPlayer?.is_admin ?? false
+
   const openModal = useCallback(() => setShowModal(true), [])
 
   const handleIdentityComplete = (prefs: UserPreferences) => {
@@ -86,14 +92,16 @@ function AppWithPrefs() {
 
   return (
     <PrefsModalContext.Provider value={{ openModal }}>
-      {showModal && allPlayers.length > 0 && seasons.length > 0 && (
-        <IdentityModal
-          onComplete={handleIdentityComplete}
-          onClose={prefsLoaded ? () => setShowModal(false) : undefined}
-          currentPlayerId={currentPlayerId}
-        />
-      )}
-      <App />
+      <CurrentUserContext.Provider value={{ currentPlayer, isAdmin }}>
+        {showModal && allPlayers.length > 0 && seasons.length > 0 && (
+          <IdentityModal
+            onComplete={handleIdentityComplete}
+            onClose={prefsLoaded ? () => setShowModal(false) : undefined}
+            currentPlayerId={currentPlayerId}
+          />
+        )}
+        <App />
+      </CurrentUserContext.Provider>
     </PrefsModalContext.Provider>
   )
 }
