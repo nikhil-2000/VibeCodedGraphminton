@@ -8,9 +8,10 @@ import { usePlayerFilter } from '../context/PlayerFilterContext'
 
 interface Props {
   onComplete: (prefs: UserPreferences) => void
+  onClose?: () => void
 }
 
-export function IdentityModal({ onComplete }: Props) {
+export function IdentityModal({ onComplete, onClose }: Props) {
   const { allPlayers } = usePlayerFilter()
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -36,8 +37,8 @@ export function IdentityModal({ onComplete }: Props) {
   }
 
   return (
-    <Dialog open onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-sm">
+    <Dialog open onOpenChange={(open) => { if (!open) onClose?.() }}>
+      <DialogContent className="sm:max-w-sm" showCloseButton={!!onClose}>
         <DialogHeader>
           <DialogTitle>Who are you?</DialogTitle>
         </DialogHeader>

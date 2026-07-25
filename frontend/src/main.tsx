@@ -1,4 +1,4 @@
-import { StrictMode, useState, useEffect, useRef } from 'react'
+import { StrictMode, useState, useEffect, useRef, useCallback } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
@@ -8,6 +8,7 @@ import { PlayerFilterProvider, usePlayerFilter } from './context/PlayerFilterCon
 import { getPreferences, updatePreferences } from './api/preferences.ts'
 import type { UserPreferences } from './api/preferences.ts'
 import { IdentityModal } from './components/IdentityModal.tsx'
+import { PrefsModalContext } from './context/PrefsModalContext.tsx'
 
 function AppWithPrefs() {
   const [showModal, setShowModal] = useState(false)
@@ -62,6 +63,8 @@ function AppWithPrefs() {
     updatePreferences({ season_id: selectedSeasonId }).catch(console.error)
   }, [selectedSeasonId, prefsLoaded])
 
+  const openModal = useCallback(() => setShowModal(true), [])
+
   const handleIdentityComplete = (prefs: UserPreferences) => {
     // Set season_id to last season after identity is set
     const lastSeasonId = seasons.length > 0 ? seasons[seasons.length - 1].id : null
@@ -75,12 +78,15 @@ function AppWithPrefs() {
   }
 
   return (
-    <>
+    <PrefsModalContext.Provider value={{ openModal }}>
       {showModal && allPlayers.length > 0 && seasons.length > 0 && (
-        <IdentityModal onComplete={handleIdentityComplete} />
+        <IdentityModal
+          onComplete={handleIdentityComplete}
+          onClose={prefsLoaded ? () => setShowModal(false) : undefined}
+        />
       )}
       <App />
-    </>
+    </PrefsModalContext.Provider>
   )
 }
 

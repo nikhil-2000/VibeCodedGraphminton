@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Sun, Moon, Menu, X, CalendarDays } from 'lucide-react'
+import { Sun, Moon, Menu, X, CalendarDays, Settings } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 import PlayerFilterPopover from './PlayerFilterPopover'
 import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
+import { usePrefsModal } from '../context/PrefsModalContext'
 
 const links = [
   { to: '/leaderboard', label: 'Leaderboard' },
@@ -19,6 +20,7 @@ const links = [
 export default function Nav() {
   const { theme, toggle } = useTheme()
   const { seasons, selectedSeasonId, setSelectedSeasonId } = useSeasonFilter()
+  const { openModal } = usePrefsModal()
   const [menuOpen, setMenuOpen] = useState(false)
 
   const seasonSelect = seasons.length > 0 && (
@@ -44,6 +46,26 @@ export default function Nav() {
     </Select>
   )
 
+  const settingsButton = (
+    <button
+      onClick={openModal}
+      className="rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+      aria-label="Settings"
+    >
+      <Settings size={16} />
+    </button>
+  )
+
+  const themeButton = (
+    <button
+      onClick={toggle}
+      className="rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+      aria-label="Toggle theme"
+    >
+      {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+    </button>
+  )
+
   return (
     <nav className="border-b border-border bg-card px-4">
       {/* Desktop */}
@@ -67,13 +89,8 @@ export default function Nav() {
         <div className="ml-auto flex items-center gap-2">
           {seasonSelect}
           <PlayerFilterPopover />
-          <button
-            onClick={toggle}
-            className="rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
+          {settingsButton}
+          {themeButton}
         </div>
       </div>
 
@@ -113,13 +130,8 @@ export default function Nav() {
             </Popover>
           )}
           <PlayerFilterPopover iconOnly />
-          <button
-            onClick={toggle}
-            className="rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
+          {settingsButton}
+          {themeButton}
           <button
             onClick={() => setMenuOpen((v) => !v)}
             className="rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground"
