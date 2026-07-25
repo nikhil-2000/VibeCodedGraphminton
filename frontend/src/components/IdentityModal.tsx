@@ -36,15 +36,15 @@ export function IdentityModal({ onComplete }: Props) {
   }
 
   return (
-    <Dialog open>
-      <DialogContent className="sm:max-w-sm" onInteractOutside={(e) => e.preventDefault()}>
+    <Dialog open onOpenChange={() => {}}>
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Who are you?</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
           Select your name so the app can remember your preferences.
         </p>
-        <Select onValueChange={setSelectedPlayerId} value={selectedPlayerId}>
+        <Select onValueChange={(value) => value !== null && setSelectedPlayerId(value)} value={selectedPlayerId}>
           <SelectTrigger>
             <SelectValue placeholder="Select a player..." />
           </SelectTrigger>
