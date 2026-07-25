@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react'
 import { getPlayers } from '../api/players'
+import type { UserPreferences } from '../api/preferences'
 import type { Player } from '../types'
 
 type Preset = 'everyone' | 'regulars' | 'custom'
@@ -11,6 +12,7 @@ interface PlayerFilterContextValue {
   activePreset: Preset
   setPreset: (preset: 'everyone' | 'regulars') => void
   reloadPlayers: () => void
+  initFromPrefs: (prefs: UserPreferences) => void
 }
 
 const PlayerFilterContext = createContext<PlayerFilterContextValue | null>(null)
@@ -19,15 +21,33 @@ function regularIds(players: Player[]): number[] {
   return players.filter((p) => !p.is_sub).map((p) => p.id)
 }
 
+function idsForPreset(preset: string, players: Player[], customIds: number[]): number[] {
+  if (preset === 'everyone') return players.map((p) => p.id)
+  if (preset === 'regulars') return regularIds(players)
+  return customIds
+}
+
 export function PlayerFilterProvider({ children }: { children: ReactNode }) {
   const [allPlayers, setAllPlayers] = useState<Player[]>([])
   const [selectedIds, setSelectedIdsRaw] = useState<number[]>([])
   const [activePreset, setActivePreset] = useState<Preset>('regulars')
+  const pendingPrefs = useRef<UserPreferences | null>(null)
+
+  const applyPrefs = (players: Player[], prefs: UserPreferences) => {
+    const preset = prefs.preset as Preset
+    setActivePreset(preset)
+    setSelectedIdsRaw(idsForPreset(preset, players, prefs.custom_player_ids))
+  }
 
   const reloadPlayers = () => {
     getPlayers().then((players) => {
       setAllPlayers(players)
-      setSelectedIdsRaw(regularIds(players))
+      if (pendingPrefs.current) {
+        applyPrefs(players, pendingPrefs.current)
+        pendingPrefs.current = null
+      } else {
+        setSelectedIdsRaw(regularIds(players))
+      }
     })
   }
 
@@ -51,8 +71,16 @@ export function PlayerFilterProvider({ children }: { children: ReactNode }) {
     setActivePreset(preset)
   }
 
+  const initFromPrefs = (prefs: UserPreferences) => {
+    if (allPlayers.length > 0) {
+      applyPrefs(allPlayers, prefs)
+    } else {
+      pendingPrefs.current = prefs
+    }
+  }
+
   return (
-    <PlayerFilterContext.Provider value={{ allPlayers, selectedIds, setSelectedIds, activePreset, setPreset, reloadPlayers }}>
+    <PlayerFilterContext.Provider value={{ allPlayers, selectedIds, setSelectedIds, activePreset, setPreset, reloadPlayers, initFromPrefs }}>
       {children}
     </PlayerFilterContext.Provider>
   )
