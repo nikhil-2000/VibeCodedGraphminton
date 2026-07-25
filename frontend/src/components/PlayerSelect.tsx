@@ -36,7 +36,7 @@ export default function PlayerSelect({ value, rawName, onChange, players, onPlay
     setSaving(true)
     setSaveError(null)
     try {
-      const p = await createPlayer({ canonical_name: newName.trim(), is_sub: newIsSub, aliases: [] })
+      const p = await createPlayer({ canonical_name: newName.trim(), is_sub: newIsSub, is_admin: false, aliases: [] })
       onChange(p.id)
       onPlayerCreated()
       setOpen(false)

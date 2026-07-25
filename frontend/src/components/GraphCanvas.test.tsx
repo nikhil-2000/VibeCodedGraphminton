@@ -20,8 +20,8 @@ vi.mock('react-force-graph-2d', () => ({
 }))
 
 const players: Player[] = [
-  { id: 1, canonical_name: 'Alice', is_sub: false, aliases: [] },
-  { id: 2, canonical_name: 'Bob', is_sub: false, aliases: [] },
+  { id: 1, canonical_name: 'Alice', is_sub: false, is_admin: false, aliases: [] },
+  { id: 2, canonical_name: 'Bob', is_sub: false, is_admin: false, aliases: [] },
 ]
 
 const partnerships: Partnership[] = [

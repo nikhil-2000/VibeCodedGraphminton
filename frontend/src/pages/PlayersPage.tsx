@@ -37,7 +37,7 @@ export default function PlayersPage() {
     const aliases = aliasInput.split(',').map((s) => s.trim()).filter(Boolean)
     setSaving(true)
     setSaveError(null)
-    createPlayer({ canonical_name: name.trim(), is_sub: isSub, aliases })
+    createPlayer({ canonical_name: name.trim(), is_sub: isSub, is_admin: false, aliases })
       .then(() => {
         setDialogOpen(false)
         reloadPlayers()
