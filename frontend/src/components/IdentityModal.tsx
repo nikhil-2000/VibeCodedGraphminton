@@ -27,14 +27,30 @@ export function IdentityModal({ onComplete, onClose, currentPlayerId }: Props) {
     setError('')
     setLoading(true)
     try {
-      const prefs = isUpdate
-        ? await updatePreferences({ player_id: Number(selectedPlayerId) })
-        : await createPreferences({
-            player_id: Number(selectedPlayerId),
-            preset: 'regulars',
-            season_id: null,
-            custom_player_ids: [],
-          })
+      let prefs
+      if (isUpdate) {
+        try {
+          prefs = await updatePreferences({ player_id: Number(selectedPlayerId) })
+        } catch (err) {
+          if ((err as Error).message === 'Preferences not found') {
+            prefs = await createPreferences({
+              player_id: Number(selectedPlayerId),
+              preset: 'regulars',
+              season_id: null,
+              custom_player_ids: [],
+            })
+          } else {
+            throw err
+          }
+        }
+      } else {
+        prefs = await createPreferences({
+          player_id: Number(selectedPlayerId),
+          preset: 'regulars',
+          season_id: null,
+          custom_player_ids: [],
+        })
+      }
       onComplete(prefs)
     } catch (err) {
       setError((err as Error).message || 'Failed to save preferences')

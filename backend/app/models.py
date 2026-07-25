@@ -22,6 +22,7 @@ class Player(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     canonical_name: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     is_sub: Mapped[bool] = mapped_column(default=False, nullable=False)
+    is_admin: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     aliases: Mapped[list["PlayerAlias"]] = relationship(
         back_populates="player", cascade="all, delete-orphan"

@@ -6,7 +6,7 @@ from ..schemas import PlayerCreate, PlayerUpdate
 
 
 def create_player(db: Session, data: PlayerCreate) -> Player:
-    player = Player(canonical_name=data.canonical_name, is_sub=data.is_sub)
+    player = Player(canonical_name=data.canonical_name, is_sub=data.is_sub, is_admin=data.is_admin)
     db.add(player)
     try:
         db.flush()
@@ -41,6 +41,8 @@ def update_player(db: Session, player_id: int, data: PlayerUpdate) -> Player:
 
     if data.is_sub is not None:
         player.is_sub = data.is_sub
+    if data.is_admin is not None:
+        player.is_admin = data.is_admin
 
     for alias_str in data.remove_aliases:
         if alias_str == player.canonical_name:
