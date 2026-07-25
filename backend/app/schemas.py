@@ -31,10 +31,12 @@ class PlayerCreate(BaseModel):
     canonical_name: str
     aliases: list[str] = []
     is_sub: bool = False
+    is_admin: bool = False
 
 
 class PlayerUpdate(BaseModel):
     is_sub: Optional[bool] = None
+    is_admin: Optional[bool] = None
     add_aliases: list[str] = []
     remove_aliases: list[str] = []
 
@@ -49,6 +51,7 @@ class PlayerResponse(BaseModel):
     id: int
     canonical_name: str
     is_sub: bool
+    is_admin: bool
     aliases: list[AliasResponse]
     model_config = {"from_attributes": True}
 
