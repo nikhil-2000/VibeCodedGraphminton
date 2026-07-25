@@ -62,7 +62,7 @@ function SeasonRow({ season, onSaved }: { season: Season; onSaved: (s: Season) =
   return (
     <Card>
       <CardContent className="space-y-2 py-4">
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="flex-1" />
           <DatePicker value={startDate} onChange={setStartDate} placeholder="Start date" />
           <DatePicker value={endDate} onChange={setEndDate} placeholder="End date (optional)" />
