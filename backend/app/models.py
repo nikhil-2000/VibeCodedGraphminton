@@ -1,6 +1,6 @@
 from datetime import date
 from typing import Optional
-from sqlalchemy import String, Boolean, ForeignKey, UniqueConstraint
+from sqlalchemy import String, Boolean, ForeignKey, UniqueConstraint, ARRAY, Integer
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from .database import Base
 
@@ -71,3 +71,13 @@ class GamePlayer(Base):
     __table_args__ = (
         UniqueConstraint("game_id", "player_id", name="uq_game_player"),
     )
+
+
+class UserPreferences(Base):
+    __tablename__ = "user_preferences"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)  # UUID
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False)
+    season_id: Mapped[Optional[int]] = mapped_column(ForeignKey("seasons.id"), nullable=True)
+    preset: Mapped[str] = mapped_column(String(20), nullable=False, default="regulars")
+    custom_player_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False, default=list)
