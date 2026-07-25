@@ -76,7 +76,7 @@ class GamePlayer(Base):
 class UserPreferences(Base):
     __tablename__ = "user_preferences"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)  # UUID
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # user identifier
     player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False)
     season_id: Mapped[Optional[int]] = mapped_column(ForeignKey("seasons.id"), nullable=True)
     preset: Mapped[str] = mapped_column(String(20), nullable=False, default="regulars")
