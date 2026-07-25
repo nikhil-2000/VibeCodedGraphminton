@@ -200,3 +200,28 @@ class IngestGamesRequest(BaseModel):
 
 class IngestGamesResponse(BaseModel):
     games_loaded: int
+
+
+# ── User Preferences ───────────────────────────────────────────────────────
+
+class UserPreferencesResponse(BaseModel):
+    id: str
+    player_id: int
+    season_id: Optional[int]
+    preset: str
+    custom_player_ids: list[int]
+    model_config = {"from_attributes": True}
+
+
+class UserPreferencesCreate(BaseModel):
+    player_id: int
+    season_id: Optional[int] = None
+    preset: str = "regulars"
+    custom_player_ids: list[int] = []
+
+
+class UserPreferencesUpdate(BaseModel):
+    player_id: Optional[int] = None
+    season_id: Optional[int] = None
+    preset: Optional[str] = None
+    custom_player_ids: Optional[list[int]] = None
