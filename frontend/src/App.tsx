@@ -10,9 +10,9 @@ import AnomaliesPage from './pages/AnomaliesPage'
 import SeasonsPage from './pages/SeasonsPage'
 export default function App() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen bg-background text-foreground">
         <Nav />
-        <main className="mx-auto max-w-5xl px-4 py-8">
+        <main className="flex-1 overflow-y-auto px-4 py-8 pb-20 md:pb-8">
           <Routes>
             <Route path="/" element={<Navigate to="/leaderboard" replace />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />

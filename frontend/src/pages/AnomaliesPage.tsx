@@ -75,7 +75,7 @@ export default function AnomaliesPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">Anomalies</h1>
+      <h1 className="mb-4 text-2xl font-bold">Fixtures</h1>
 
       <div className="mb-4">
         <Select
