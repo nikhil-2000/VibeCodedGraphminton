@@ -12,7 +12,7 @@ interface Props {
 
 export function IdentityModal({ onComplete }: Props) {
   const { allPlayers } = usePlayerFilter()
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
 
