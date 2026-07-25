@@ -83,13 +83,11 @@ export default function Nav() {
         <div className="flex items-center gap-1">
           {seasons.length > 0 && (
             <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  className={`rounded p-1.5 transition-colors hover:text-foreground ${selectedSeasonId != null ? 'text-yellow-400' : 'text-muted-foreground'}`}
-                  aria-label="Select season"
-                >
-                  <CalendarDays size={16} />
-                </button>
+              <PopoverTrigger
+                className={`rounded p-1.5 transition-colors hover:text-foreground ${selectedSeasonId != null ? 'text-yellow-400' : 'text-muted-foreground'}`}
+                aria-label="Select season"
+              >
+                <CalendarDays size={16} />
               </PopoverTrigger>
               <PopoverContent className="w-44 p-1" align="end">
                 <button
