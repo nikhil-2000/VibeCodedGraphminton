@@ -5,6 +5,7 @@ import { getGamePrediction, type GamePrediction } from '../api/games'
 interface Props {
   game: GameDetail
   onDelete?: (id: number) => void
+  perspectivePlayerId?: number
 }
 
 function stripColour(gap: number): string {
@@ -13,7 +14,7 @@ function stripColour(gap: number): string {
   return 'bg-red-500'
 }
 
-export default function GameCard({ game, onDelete }: Props) {
+export default function GameCard({ game, onDelete, perspectivePlayerId }: Props) {
   const aWon = game.team_a_score > game.team_b_score
   const gap = Math.abs(game.team_a_score - game.team_b_score)
 
@@ -65,7 +66,9 @@ export default function GameCard({ game, onDelete }: Props) {
 
       <div className="flex">
         {/* Colour strip */}
-        <div className={`w-1 shrink-0 ${stripColour(gap)}`} />
+        <div className={`w-1 shrink-0 ${perspectivePlayerId != null
+          ? (game.team_a.some((p) => p.id === perspectivePlayerId) ? aWon : !aWon) ? 'bg-green-500' : 'bg-red-500'
+          : stripColour(gap)}`} />
 
         <div className="flex-1 p-4">
           {/* Header row */}

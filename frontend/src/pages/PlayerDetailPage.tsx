@@ -324,7 +324,7 @@ export default function PlayerDetailPage() {
                   </h3>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                     {sessionGames.map((g) => (
-                      <GameCard key={g.id} game={g} />
+                      <GameCard key={g.id} game={g} perspectivePlayerId={playerId} />
                     ))}
                   </div>
                 </div>

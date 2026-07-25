@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getLeaderboard, getMatchupQuality } from '../api/stats'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
+import { useCurrentUser } from '../context/CurrentUserContext'
 import LeaderboardTable from '../components/LeaderboardTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,7 @@ import type { LeaderboardEntry, MatchupQualityEntry } from '../types'
 export default function LeaderboardPage() {
   const { selectedIds } = usePlayerFilter()
   const { selectedSeasonId } = useSeasonFilter()
+  const { currentPlayer } = useCurrentUser()
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [sortBy, setSortBy] = useState<'win_rate' | 'avg_points'>('avg_points')
   const [fairness, setFairness] = useState<MatchupQualityEntry[]>([])
@@ -47,7 +49,7 @@ export default function LeaderboardPage() {
         <CardContent>
           {loading && entries.length === 0 && <p className="text-muted-foreground">Loading…</p>}
           {error && <p className="text-destructive">{error}</p>}
-          {!error && entries.length > 0 && <LeaderboardTable entries={entries} />}
+          {!error && entries.length > 0 && <LeaderboardTable entries={entries} highlightPlayerId={currentPlayer?.id} />}
         </CardContent>
       </Card>
 
@@ -59,7 +61,7 @@ export default function LeaderboardPage() {
             <p><span className="text-foreground">Partner Quality (P)</span> — avg percentile of your partners (by avg points).</p>
             <p><span className="text-foreground">Opponent Quality (O)</span> — avg percentile of your opponents.</p>
             <p><span className="text-foreground">Advantage (P−O)</span> — partner percentile minus opponent percentile per game. Positive = consistently played with stronger players than you faced.</p>
-            <p className="text-muted-foreground/60">Sorted by composite rank across Team Skill Imbalance and Advantage (P−O).</p>
+            <p className="text-muted-foreground/60">Rank 1 = most favourable matchups — higher rank means you consistently had stronger partners and weaker opponents. Combines Team Skill Imbalance and Advantage (P−O).</p>
           </div>
         </CardHeader>
         <CardContent>

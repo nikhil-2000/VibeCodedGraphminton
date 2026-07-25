@@ -6,9 +6,10 @@ import type { LeaderboardEntry } from '../types'
 
 interface Props {
   entries: LeaderboardEntry[]
+  highlightPlayerId?: number
 }
 
-export default function LeaderboardTable({ entries }: Props) {
+export default function LeaderboardTable({ entries, highlightPlayerId }: Props) {
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -25,7 +26,7 @@ export default function LeaderboardTable({ entries }: Props) {
         </TableHeader>
         <TableBody>
           {entries.map((e, i) => (
-            <TableRow key={e.player_id}>
+            <TableRow key={e.player_id} className={e.player_id === highlightPlayerId ? 'bg-muted/50' : ''}>
               <TableCell className="text-muted-foreground">{i + 1}</TableCell>
               <TableCell className="font-medium">
                 <Link to={`/players/${e.player_id}`} className="hover:text-yellow-400">
