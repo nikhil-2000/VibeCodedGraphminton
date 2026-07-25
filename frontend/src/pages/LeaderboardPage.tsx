@@ -102,10 +102,10 @@ export default function LeaderboardPage() {
                       <TableHead className="text-right w-8">#</TableHead>
                       <TableHead>Player</TableHead>
                       <TableHead className="text-right">GP</TableHead>
-                      <TableHead className="text-right">Advantage (P−O)</TableHead>
-                      <TableHead className="hidden text-right sm:table-cell">Team Skill Imbalance</TableHead>
-                      <TableHead className="hidden text-right sm:table-cell">Partner Quality (P)</TableHead>
-                      <TableHead className="hidden text-right sm:table-cell">Opponent Quality (O)</TableHead>
+                      <TableHead className="text-right">P−O</TableHead>
+                      <TableHead className="text-right">Skill Δ</TableHead>
+                      <TableHead className="text-right">Partner</TableHead>
+                      <TableHead className="text-right">Opponent</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -121,11 +121,11 @@ export default function LeaderboardPage() {
                         <TableCell className={`text-right font-mono ${e.partner_advantage > 0.02 ? 'text-green-400' : e.partner_advantage < -0.02 ? 'text-red-400' : ''}`}>
                           {e.partner_advantage > 0 ? '+' : ''}{(e.partner_advantage * 100).toFixed(1)}%
                         </TableCell>
-                        <TableCell className={`hidden text-right font-mono sm:table-cell ${e.avg_team_skill_imbalance > 0.02 ? 'text-green-400' : e.avg_team_skill_imbalance < -0.02 ? 'text-red-400' : ''}`}>
+                        <TableCell className={`text-right font-mono ${e.avg_team_skill_imbalance > 0.02 ? 'text-green-400' : e.avg_team_skill_imbalance < -0.02 ? 'text-red-400' : ''}`}>
                           {e.avg_team_skill_imbalance > 0 ? '+' : ''}{(e.avg_team_skill_imbalance * 100).toFixed(1)}%
                         </TableCell>
-                        <TableCell className="hidden text-right font-mono text-muted-foreground sm:table-cell">{(e.partner_quality * 100).toFixed(1)}%</TableCell>
-                        <TableCell className="hidden text-right font-mono text-muted-foreground sm:table-cell">{(e.opponent_quality * 100).toFixed(1)}%</TableCell>
+                        <TableCell className="text-right font-mono text-muted-foreground">{(e.partner_quality * 100).toFixed(1)}%</TableCell>
+                        <TableCell className="text-right font-mono text-muted-foreground">{(e.opponent_quality * 100).toFixed(1)}%</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

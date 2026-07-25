@@ -31,8 +31,8 @@ export default function PartnershipTable({ partnerships, playerNames, anomalyMap
             <TableHead className="text-right">GP</TableHead>
             <TableHead className="text-right">Win %</TableHead>
             <TableHead className="text-right">Avg Pts</TableHead>
-            <TableHead className="hidden text-right sm:table-cell">W</TableHead>
-            <TableHead className="hidden text-right sm:table-cell">L</TableHead>
+            <TableHead className="text-right">W</TableHead>
+            <TableHead className="text-right">L</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -49,8 +49,8 @@ export default function PartnershipTable({ partnerships, playerNames, anomalyMap
               <TableCell className="text-right">{p.games_together}</TableCell>
               <TableCell className="text-right">{(p.win_rate * 100).toFixed(1)}%</TableCell>
               <TableCell className="text-right">{p.avg_points.toFixed(1)}</TableCell>
-              <TableCell className="hidden text-right text-green-400 sm:table-cell">{p.wins}</TableCell>
-              <TableCell className="hidden text-right text-red-400 sm:table-cell">{p.losses}</TableCell>
+              <TableCell className="text-right text-green-400">{p.wins}</TableCell>
+              <TableCell className="text-right text-red-400">{p.losses}</TableCell>
             </TableRow>
           ))}
         </TableBody>

@@ -19,8 +19,8 @@ export default function LeaderboardTable({ entries }: Props) {
             <TableHead className="text-right">GP</TableHead>
             <TableHead className="text-right">Win %</TableHead>
             <TableHead className="text-right">Avg Pts</TableHead>
-            <TableHead className="hidden text-right sm:table-cell">W</TableHead>
-            <TableHead className="hidden text-right sm:table-cell">L</TableHead>
+            <TableHead className="text-right">W</TableHead>
+            <TableHead className="text-right">L</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -35,8 +35,8 @@ export default function LeaderboardTable({ entries }: Props) {
               <TableCell className="text-right">{e.games_played}</TableCell>
               <TableCell className="text-right">{(e.win_rate * 100).toFixed(1)}%</TableCell>
               <TableCell className="text-right">{e.avg_points.toFixed(1)}</TableCell>
-              <TableCell className="hidden text-right text-green-400 sm:table-cell">{e.wins}</TableCell>
-              <TableCell className="hidden text-right text-red-400 sm:table-cell">{e.losses}</TableCell>
+              <TableCell className="text-right text-green-400">{e.wins}</TableCell>
+              <TableCell className="text-right text-red-400">{e.losses}</TableCell>
             </TableRow>
           ))}
         </TableBody>

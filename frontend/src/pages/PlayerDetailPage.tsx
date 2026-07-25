@@ -267,8 +267,8 @@ export default function PlayerDetailPage() {
                             <TableHead className="text-right">GP</TableHead>
                             <TableHead className="text-right">Win %</TableHead>
                             <TableHead className="text-right">Avg Pts</TableHead>
-                            <TableHead className="hidden text-right sm:table-cell">W</TableHead>
-                            <TableHead className="hidden text-right sm:table-cell">L</TableHead>
+                            <TableHead className="text-right">W</TableHead>
+                            <TableHead className="text-right">L</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -292,8 +292,8 @@ export default function PlayerDetailPage() {
                                 <TableCell className="text-right">{r.games_played}</TableCell>
                                 <TableCell className="text-right">{(r.wins / r.games_played * 100).toFixed(1)}%</TableCell>
                                 <TableCell className="text-right">{r.avg_points.toFixed(1)}</TableCell>
-                                <TableCell className="hidden text-right text-green-400 sm:table-cell">{r.wins}</TableCell>
-                                <TableCell className="hidden text-right text-red-400 sm:table-cell">{r.losses}</TableCell>
+                                <TableCell className="text-right text-green-400">{r.wins}</TableCell>
+                                <TableCell className="text-right text-red-400">{r.losses}</TableCell>
                               </TableRow>
                             ))}
                         </TableBody>

@@ -39,13 +39,9 @@ export default function SkewPill({ top, mid, bottom, label, topLabel = 'Top thir
           />
         )}
       </div>
-      <div className="relative mt-1.5 h-4 text-xs text-muted-foreground">
-        <span className="absolute left-0 flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-green-500" />{topLabel} — {pct(top)}</span>
-        {mid > 0 && (
-          <span className="absolute flex items-center gap-1" style={{ left: pct(top) }}><span className="inline-block h-2 w-2 rounded-full bg-yellow-500" />Mid — {pct(mid)}</span>
-        )}
-        <span className="absolute right-0 flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-red-500" />{bottomLabel} — {pct(bottom)}</span>
-      </div>
+      <p className="mt-1.5 text-xs text-muted-foreground">
+        <span className="text-green-500">{pct(top)}</span> top · <span className="text-yellow-500">{pct(mid)}</span> mid · <span className="text-red-500">{pct(bottom)}</span> bottom
+      </p>
     </div>
   )
 }

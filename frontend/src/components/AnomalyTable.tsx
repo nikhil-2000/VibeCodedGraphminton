@@ -25,8 +25,8 @@ export default function AnomalyTable({ entries, playerNames, focusedPlayerId }: 
           <TableRow>
             <TableHead>{focusedPlayerId != null ? 'Player' : 'Pairing'}</TableHead>
             <TableHead className="text-right">Deviation</TableHead>
-            <TableHead className="hidden text-right sm:table-cell">Actual</TableHead>
-            <TableHead className="hidden text-right sm:table-cell">Expected</TableHead>
+            <TableHead className="text-right">Actual</TableHead>
+            <TableHead className="text-right">Expected</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -36,8 +36,8 @@ export default function AnomalyTable({ entries, playerNames, focusedPlayerId }: 
               <TableCell className={`text-right font-mono ${e.deviation > 0 ? 'text-green-500' : 'text-red-500'}`}>
                 {e.deviation > 0 ? '+' : ''}{e.deviation.toFixed(2)}
               </TableCell>
-              <TableCell className="hidden text-right sm:table-cell">{e.actual}</TableCell>
-              <TableCell className="hidden text-right text-muted-foreground sm:table-cell">{e.expected.toFixed(2)}</TableCell>
+              <TableCell className="text-right">{e.actual}</TableCell>
+              <TableCell className="text-right text-muted-foreground">{e.expected.toFixed(2)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
