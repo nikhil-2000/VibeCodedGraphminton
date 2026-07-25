@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select'
 import { Sheet, SheetContent } from './ui/sheet'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
 import { usePrefsModal } from '../context/PrefsModalContext'
+import { useCurrentUser } from '../context/CurrentUserContext'
 
 const primaryLinks = [
   { to: '/leaderboard', label: 'Leaderboard', Icon: Trophy },
@@ -19,8 +20,6 @@ const moreLinks = [
   { to: '/seasons', label: 'Seasons', Icon: CalendarDays },
   { to: '/upload', label: 'Upload', Icon: Upload },
 ]
-
-const allLinks = [...primaryLinks, ...moreLinks]
 
 function SeasonSelect() {
   const { seasons, selectedSeasonId, setSelectedSeasonId } = useSeasonFilter()
@@ -89,8 +88,9 @@ function NavControls({ onAction }: { onAction?: () => void }) {
 export default function Nav() {
   const location = useLocation()
   const [moreOpen, setMoreOpen] = useState(false)
+  const { isAdmin } = useCurrentUser()
 
-  const moreIsActive = moreLinks.some((l) => location.pathname.startsWith(l.to))
+  const moreIsActive = isAdmin && moreLinks.some((l) => location.pathname.startsWith(l.to))
 
   return (
     <>
@@ -101,7 +101,7 @@ export default function Nav() {
         </div>
 
         <div className="flex flex-col gap-1 px-2">
-          {allLinks.map(({ to, label, Icon }) => (
+          {[...primaryLinks, ...(isAdmin ? moreLinks : [])].map(({ to, label, Icon }) => (
             <NavLink key={to} to={to} className={navLinkClass}>
               <Icon size={20} />
               <span className="text-xs">{label}</span>
@@ -144,20 +144,24 @@ export default function Nav() {
       {/* More sheet (mobile) */}
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent side="bottom" className="px-2 pb-8 pt-4">
-          <div className="flex flex-col gap-1 mb-3">
-            {moreLinks.map(({ to, label, Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                onClick={() => setMoreOpen(false)}
-                className={navLinkClass}
-              >
-                <Icon size={20} />
-                <span className="text-xs">{label}</span>
-              </NavLink>
-            ))}
-          </div>
-          <hr className="mb-3 border-border" />
+          {isAdmin && (
+            <>
+              <div className="flex flex-col gap-1 mb-3">
+                {moreLinks.map(({ to, label, Icon }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    onClick={() => setMoreOpen(false)}
+                    className={navLinkClass}
+                  >
+                    <Icon size={20} />
+                    <span className="text-xs">{label}</span>
+                  </NavLink>
+                ))}
+              </div>
+              <hr className="mb-3 border-border" />
+            </>
+          )}
           <NavControls onAction={() => setMoreOpen(false)} />
         </SheetContent>
       </Sheet>
