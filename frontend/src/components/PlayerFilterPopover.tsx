@@ -1,14 +1,21 @@
+import { Users } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 
-export default function PlayerFilterPopover() {
+interface Props {
+  iconOnly?: boolean
+}
+
+export default function PlayerFilterPopover({ iconOnly }: Props) {
   const { allPlayers, selectedIds, setSelectedIds, activePreset, setPreset } = usePlayerFilter()
 
   const label =
     activePreset === 'everyone' ? 'Everyone' :
     activePreset === 'regulars' ? 'Regulars' :
     `${selectedIds.length} players`
+
+  const hasCustom = activePreset === 'custom'
 
   const togglePlayer = (id: number) => {
     const next = selectedIds.includes(id)
@@ -19,9 +26,21 @@ export default function PlayerFilterPopover() {
 
   return (
     <Popover>
-      <PopoverTrigger className="rounded border border-border px-2.5 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
-        {label}
-      </PopoverTrigger>
+      {iconOnly ? (
+        <PopoverTrigger
+          className={`relative rounded p-1.5 transition-colors hover:text-foreground ${hasCustom ? 'text-yellow-400' : 'text-muted-foreground'}`}
+          aria-label="Filter players"
+        >
+          <Users size={16} />
+          {hasCustom && (
+            <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-yellow-400" />
+          )}
+        </PopoverTrigger>
+      ) : (
+        <PopoverTrigger className="rounded border border-border px-2.5 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+          {label}
+        </PopoverTrigger>
+      )}
       <PopoverContent className="w-64 p-3" align="end">
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Filter players

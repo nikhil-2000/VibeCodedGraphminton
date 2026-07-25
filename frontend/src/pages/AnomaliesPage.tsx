@@ -128,7 +128,7 @@ export default function AnomaliesPage() {
             <AnomalyTable entries={entries} playerNames={playerNames} focusedPlayerId={focusedPlayerId} />
           )}
           {focusedPlayerId === null && (
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div>
                 <h2 className="mb-3 text-sm font-semibold text-green-500">Overplayed</h2>
                 <AnomalyTable entries={overEntries} playerNames={playerNames} />

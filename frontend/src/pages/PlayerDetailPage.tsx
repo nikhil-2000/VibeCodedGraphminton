@@ -204,7 +204,7 @@ export default function PlayerDetailPage() {
         </p>
       )}
 
-      <div className="mb-8 grid grid-cols-3 gap-3 sm:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Games" value={stats.games_played} />
         <StatCard label="Wins" value={stats.wins} />
         <StatCard label="Losses" value={stats.losses} />
@@ -258,45 +258,47 @@ export default function PlayerDetailPage() {
                 return (
                   <>
                     <SkewPill top={hTop} mid={hMid} bottom={hBot} label="Played against" topLabel="Top third" bottomLabel="Bottom third" />
-                    <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-6" />
-                    <TableHead>Opponent</TableHead>
-                    <TableHead className="text-right">GP</TableHead>
-                    <TableHead className="text-right">W</TableHead>
-                    <TableHead className="text-right">L</TableHead>
-                    <TableHead className="text-right">Win %</TableHead>
-                    <TableHead className="text-right">Avg Pts</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {[...h2hRecords]
-                    .sort((a, b) => (b.wins / b.games_played) - (a.wins / a.games_played))
-                    .map((r) => (
-                      <TableRow key={r.opponent_id}>
-                        <TableCell className="w-6">
-                          {opponentAnomalyMap[r.opponent_id] && (
-                            <span
-                              className={`inline-block h-2 w-2 rounded-full ${opponentAnomalyMap[r.opponent_id] === 'over' ? 'bg-blue-400' : 'bg-orange-400'}`}
-                              title={opponentAnomalyMap[r.opponent_id] === 'over' ? 'Overplayed' : 'Underplayed'}
-                            />
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          <Link to={`/players/${r.opponent_id}`} className="hover:text-yellow-400">
-                            {playerNames[r.opponent_id] ?? r.opponent_id}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="text-right">{r.games_played}</TableCell>
-                        <TableCell className="text-right text-green-400">{r.wins}</TableCell>
-                        <TableCell className="text-right text-red-400">{r.losses}</TableCell>
-                        <TableCell className="text-right">{(r.wins / r.games_played * 100).toFixed(1)}%</TableCell>
-                        <TableCell className="text-right">{r.avg_points.toFixed(1)}</TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-6" />
+                            <TableHead>Opponent</TableHead>
+                            <TableHead className="text-right">GP</TableHead>
+                            <TableHead className="text-right">Win %</TableHead>
+                            <TableHead className="text-right">Avg Pts</TableHead>
+                            <TableHead className="hidden text-right sm:table-cell">W</TableHead>
+                            <TableHead className="hidden text-right sm:table-cell">L</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {[...h2hRecords]
+                            .sort((a, b) => (b.wins / b.games_played) - (a.wins / a.games_played))
+                            .map((r) => (
+                              <TableRow key={r.opponent_id}>
+                                <TableCell className="w-6">
+                                  {opponentAnomalyMap[r.opponent_id] && (
+                                    <span
+                                      className={`inline-block h-2 w-2 rounded-full ${opponentAnomalyMap[r.opponent_id] === 'over' ? 'bg-blue-400' : 'bg-orange-400'}`}
+                                      title={opponentAnomalyMap[r.opponent_id] === 'over' ? 'Overplayed' : 'Underplayed'}
+                                    />
+                                  )}
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                  <Link to={`/players/${r.opponent_id}`} className="hover:text-yellow-400">
+                                    {playerNames[r.opponent_id] ?? r.opponent_id}
+                                  </Link>
+                                </TableCell>
+                                <TableCell className="text-right">{r.games_played}</TableCell>
+                                <TableCell className="text-right">{(r.wins / r.games_played * 100).toFixed(1)}%</TableCell>
+                                <TableCell className="text-right">{r.avg_points.toFixed(1)}</TableCell>
+                                <TableCell className="hidden text-right text-green-400 sm:table-cell">{r.wins}</TableCell>
+                                <TableCell className="hidden text-right text-red-400 sm:table-cell">{r.losses}</TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </>
                 )
               })()
@@ -320,7 +322,7 @@ export default function PlayerDetailPage() {
                   <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     {sessionLabel} — {sessionGames[0].played_on}
                   </h3>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                     {sessionGames.map((g) => (
                       <GameCard key={g.id} game={g} />
                     ))}

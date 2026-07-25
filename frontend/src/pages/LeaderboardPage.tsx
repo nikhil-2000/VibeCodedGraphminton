@@ -95,40 +95,42 @@ export default function LeaderboardPage() {
             ranked.sort((a, b) => a._composite - b._composite)
 
             return (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right w-8">#</TableHead>
-                    <TableHead>Player</TableHead>
-                    <TableHead className="text-right">GP</TableHead>
-                    <TableHead className="text-right">Team Skill Imbalance</TableHead>
-                    <TableHead className="text-right">Advantage (P−O)</TableHead>
-                    <TableHead className="text-right">Partner Quality (P)</TableHead>
-                    <TableHead className="text-right">Opponent Quality (O)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {ranked.map((e, i) => (
-                    <TableRow key={e.player_id}>
-                      <TableCell className="text-right text-muted-foreground font-mono">{i + 1}</TableCell>
-                      <TableCell className="font-medium">
-                        <Link to={`/players/${e.player_id}`} className="hover:text-yellow-400">
-                          {e.canonical_name}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-right">{e.games_played}</TableCell>
-                      <TableCell className={`text-right font-mono ${e.avg_team_skill_imbalance > 0.02 ? 'text-green-400' : e.avg_team_skill_imbalance < -0.02 ? 'text-red-400' : ''}`}>
-                        {e.avg_team_skill_imbalance > 0 ? '+' : ''}{(e.avg_team_skill_imbalance * 100).toFixed(1)}%
-                      </TableCell>
-                      <TableCell className={`text-right font-mono ${e.partner_advantage > 0.02 ? 'text-green-400' : e.partner_advantage < -0.02 ? 'text-red-400' : ''}`}>
-                        {e.partner_advantage > 0 ? '+' : ''}{(e.partner_advantage * 100).toFixed(1)}%
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-muted-foreground">{(e.partner_quality * 100).toFixed(1)}%</TableCell>
-                      <TableCell className="text-right font-mono text-muted-foreground">{(e.opponent_quality * 100).toFixed(1)}%</TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-right w-8">#</TableHead>
+                      <TableHead>Player</TableHead>
+                      <TableHead className="text-right">GP</TableHead>
+                      <TableHead className="text-right">Advantage (P−O)</TableHead>
+                      <TableHead className="hidden text-right sm:table-cell">Team Skill Imbalance</TableHead>
+                      <TableHead className="hidden text-right sm:table-cell">Partner Quality (P)</TableHead>
+                      <TableHead className="hidden text-right sm:table-cell">Opponent Quality (O)</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {ranked.map((e, i) => (
+                      <TableRow key={e.player_id}>
+                        <TableCell className="text-right text-muted-foreground font-mono">{i + 1}</TableCell>
+                        <TableCell className="font-medium">
+                          <Link to={`/players/${e.player_id}`} className="hover:text-yellow-400">
+                            {e.canonical_name}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right">{e.games_played}</TableCell>
+                        <TableCell className={`text-right font-mono ${e.partner_advantage > 0.02 ? 'text-green-400' : e.partner_advantage < -0.02 ? 'text-red-400' : ''}`}>
+                          {e.partner_advantage > 0 ? '+' : ''}{(e.partner_advantage * 100).toFixed(1)}%
+                        </TableCell>
+                        <TableCell className={`hidden text-right font-mono sm:table-cell ${e.avg_team_skill_imbalance > 0.02 ? 'text-green-400' : e.avg_team_skill_imbalance < -0.02 ? 'text-red-400' : ''}`}>
+                          {e.avg_team_skill_imbalance > 0 ? '+' : ''}{(e.avg_team_skill_imbalance * 100).toFixed(1)}%
+                        </TableCell>
+                        <TableCell className="hidden text-right font-mono text-muted-foreground sm:table-cell">{(e.partner_quality * 100).toFixed(1)}%</TableCell>
+                        <TableCell className="hidden text-right font-mono text-muted-foreground sm:table-cell">{(e.opponent_quality * 100).toFixed(1)}%</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )
           })()}
         </CardContent>
