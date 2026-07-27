@@ -25,8 +25,11 @@ def create_player(db: Session, data: PlayerCreate) -> Player:
     return player
 
 
-def get_all_players(db: Session) -> List[Player]:
-    return db.query(Player).all()
+def get_all_players(db: Session, is_sub: Optional[bool] = None) -> List[Player]:
+    q = db.query(Player)
+    if is_sub is not None:
+        q = q.filter(Player.is_sub == is_sub)
+    return q.all()
 
 
 def get_player(db: Session, player_id: int) -> Player:
