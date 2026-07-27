@@ -6,6 +6,7 @@ import App from './App.tsx'
 import { SeasonFilterProvider, useSeasonFilter } from './context/SeasonFilterContext.tsx'
 import { PlayerFilterProvider, usePlayerFilter } from './context/PlayerFilterContext.tsx'
 import { getPreferences, updatePreferences } from './api/preferences.ts'
+import { getAdminToken } from './api/client.ts'
 import type { UserPreferences } from './api/preferences.ts'
 import { IdentityModal } from './components/IdentityModal.tsx'
 import { PrefsModalContext } from './context/PrefsModalContext.tsx'
@@ -74,7 +75,7 @@ function AppWithPrefs() {
   const currentPlayer = currentPlayerId != null
     ? allPlayers.find((p) => p.id === currentPlayerId) ?? null
     : null
-  const isAdmin = currentPlayer?.is_admin ?? false
+  const isAdmin = (currentPlayer?.is_admin ?? false) && !!getAdminToken()
 
   const openModal = useCallback(() => setShowModal(true), [])
 
