@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import require_admin
+from ..deps import get_filter_context
 from ..schemas import PlayerCreate, PlayerUpdate, PlayerResponse, PlayerStatsResponse
 from ..services import players as player_service
 from ..services import stats as stats_service
@@ -48,12 +49,12 @@ def update_player(player_id: int, data: PlayerUpdate, db: Session = Depends(get_
 @router.get("/{player_id}/stats", response_model=PlayerStatsResponse)
 def get_player_stats(
     player_id: int,
-    player_ids: list[int] = Query(default=[]),
-    season_id: Optional[int] = Query(default=None),
+    filters: tuple = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
+    player_ids, season_id = filters
     try:
-        return stats_service.get_player_stats(db, player_id, player_ids or None, season_id)
+        return stats_service.get_player_stats(db, player_id, player_ids, season_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 

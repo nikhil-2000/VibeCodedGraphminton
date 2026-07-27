@@ -161,14 +161,24 @@ def mixed_fixture(client: TestClient):
 def test_leaderboard_player_ids_filter(client: TestClient, mixed_fixture):
     a, b, x, y, s = mixed_fixture["a"], mixed_fixture["b"], mixed_fixture["x"], mixed_fixture["y"], mixed_fixture["s"]
     regular_ids = [a, b, x, y]
-    qs = "&".join(f"player_ids={i}" for i in regular_ids)
 
     # Unfiltered: RegA has 2 games (played in both)
     unfiltered = {e["player_id"]: e for e in client.get("/stats/leaderboard").json()}
     assert unfiltered[a]["games_played"] == 2
 
-    # Filtered to regulars: RegA has 1 game, SubS absent
-    filtered = {e["player_id"]: e for e in client.get(f"/stats/leaderboard?{qs}").json()}
+    # Set up preferences with custom player_ids filter
+    user_id = "test-filter-user"
+    client.post("/preferences", json={
+        "player_id": a,
+        "preset": "custom",
+        "custom_player_ids": regular_ids,
+        "season_id": None,
+    }, headers={"X-User-ID": user_id})
+
+    # Filtered via prefs: RegA has 1 game, SubS absent
+    filtered = {e["player_id"]: e for e in client.get(
+        "/stats/leaderboard", headers={"X-User-ID": user_id}
+    ).json()}
     assert filtered[a]["games_played"] == 1
     assert s not in filtered
 
@@ -176,10 +186,18 @@ def test_leaderboard_player_ids_filter(client: TestClient, mixed_fixture):
 def test_player_stats_player_ids_filter(client: TestClient, mixed_fixture):
     a, s = mixed_fixture["a"], mixed_fixture["s"]
     regular_ids = [mixed_fixture["a"], mixed_fixture["b"], mixed_fixture["x"], mixed_fixture["y"]]
-    qs = "&".join(f"player_ids={i}" for i in regular_ids)
 
     unfiltered = client.get(f"/stats/player/{a}").json()
     assert unfiltered["games_played"] == 2
 
-    filtered = client.get(f"/stats/player/{a}?{qs}").json()
+    # Set up preferences with custom player_ids filter
+    user_id = "test-stats-filter-user"
+    client.post("/preferences", json={
+        "player_id": a,
+        "preset": "custom",
+        "custom_player_ids": regular_ids,
+        "season_id": None,
+    }, headers={"X-User-ID": user_id})
+
+    filtered = client.get(f"/stats/player/{a}", headers={"X-User-ID": user_id}).json()
     assert filtered["games_played"] == 1

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import require_admin
+from ..deps import get_filter_context
 from ..services import games as games_service
 from ..schemas import GameResponse, GameDetailResponse, DeleteSessionResponse, GamePrediction
 
@@ -13,12 +14,12 @@ router = APIRouter()
 def list_games(
     week: Optional[int] = None,
     player_id: Optional[int] = None,
-    player_ids: list[int] = Query(default=[]),
     team: Optional[str] = None,
     vs: Optional[str] = None,
-    season_id: Optional[int] = None,
+    filters: tuple = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
+    player_ids, season_id = filters
     team_ids = None
     vs_ids = None
     if team:
@@ -34,7 +35,7 @@ def list_games(
         except ValueError:
             raise HTTPException(status_code=422, detail="vs must be two comma-separated player IDs")
 
-    return games_service.get_games(db, week=week, player_id=player_id, player_ids=player_ids or None, team_ids=team_ids, vs_ids=vs_ids, season_id=season_id)
+    return games_service.get_games(db, week=week, player_id=player_id, player_ids=player_ids, team_ids=team_ids, vs_ids=vs_ids, season_id=season_id)
 
 
 @router.get("/{game_id}/prediction", response_model=GamePrediction)

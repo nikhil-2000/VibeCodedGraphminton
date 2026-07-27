@@ -7,21 +7,11 @@ export const getPlayers = () =>
 export const getPlayer = (id: number) =>
   apiFetch<Player>(`/players/${id}`)
 
-export const getPlayerStats = (id: number, playerIds?: number[], seasonId?: number | null) => {
-  const params = new URLSearchParams()
-  playerIds?.forEach((pid) => params.append('player_ids', String(pid)))
-  if (seasonId != null) params.set('season_id', String(seasonId))
-  const qs = params.toString()
-  return apiFetch<PlayerStats>(`/players/${id}/stats${qs ? `?${qs}` : ''}`)
-}
+export const getPlayerStats = (id: number) =>
+  apiFetch<PlayerStats>(`/players/${id}/stats`)
 
-export const getPlayerPartnerships = (id: number, playerIds?: number[], seasonId?: number | null) => {
-  const params = new URLSearchParams()
-  playerIds?.forEach((pid) => params.append('player_ids', String(pid)))
-  if (seasonId != null) params.set('season_id', String(seasonId))
-  const qs = params.toString()
-  return apiFetch<PlayerPartnership[]>(`/stats/partnerships/${id}${qs ? `?${qs}` : ''}`)
-}
+export const getPlayerPartnerships = (id: number) =>
+  apiFetch<PlayerPartnership[]>(`/stats/partnerships/${id}`)
 
 export const createPlayer = (data: PlayerCreate) =>
   apiFetch<Player>('/players', {

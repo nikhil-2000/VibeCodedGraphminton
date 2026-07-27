@@ -7,7 +7,6 @@ import {
 } from '../api/anomalies'
 import { getSuggestedGames } from '../api/stats'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
-import { useSeasonFilter } from '../context/SeasonFilterContext'
 import AnomalyTable from '../components/AnomalyTable'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
@@ -19,7 +18,6 @@ type Direction = 'overplayed' | 'underplayed'
 
 export default function AnomaliesPage() {
   const { selectedIds, allPlayers } = usePlayerFilter()
-  const { selectedSeasonId } = useSeasonFilter()
   const [tab, setTab] = useState<Tab>('partnerships')
   const [direction] = useState<Direction>('overplayed')
   const [entries, setEntries] = useState<import('../types').AnomalyEntry[]>([])
@@ -42,10 +40,10 @@ export default function AnomaliesPage() {
 
   useEffect(() => {
     setSuggestionsLoading(true)
-    getSuggestedGames(selectedIds, selectedSeasonId, 5, focusedPlayerId ?? undefined)
+    getSuggestedGames(5, focusedPlayerId ?? undefined)
       .then(setSuggestedGames)
       .finally(() => setSuggestionsLoading(false))
-  }, [selectedIds, selectedSeasonId, focusedPlayerId])
+  }, [focusedPlayerId])
 
   useEffect(() => {
     setLoading(true)
@@ -55,8 +53,8 @@ export default function AnomaliesPage() {
         ? getPartnershipAnomaliesForPlayer
         : getHeadToHeadAnomaliesForPlayer
       Promise.all([
-        fetcher(focusedPlayerId, 'overplayed', selectedIds, selectedSeasonId),
-        fetcher(focusedPlayerId, 'underplayed', selectedIds, selectedSeasonId),
+        fetcher(focusedPlayerId, 'overplayed'),
+        fetcher(focusedPlayerId, 'underplayed'),
       ])
         .then(([over, under]) => setEntries([...over, ...under].sort((a, b) => b.deviation - a.deviation)))
         .catch((e: Error) => setError(e.message))
@@ -64,14 +62,14 @@ export default function AnomaliesPage() {
     } else {
       const fetcher = tab === 'partnerships' ? getPartnershipAnomalies : getHeadToHeadAnomalies
       Promise.all([
-        fetcher('overplayed', 10, selectedIds, selectedSeasonId),
-        fetcher('underplayed', 10, selectedIds, selectedSeasonId),
+        fetcher('overplayed', 10),
+        fetcher('underplayed', 10),
       ])
         .then(([over, under]) => { setOverEntries(over); setUnderEntries(under) })
         .catch((e: Error) => setError(e.message))
         .finally(() => setLoading(false))
     }
-  }, [tab, direction, selectedIds, selectedSeasonId, focusedPlayerId])
+  }, [tab, direction, focusedPlayerId])
 
   return (
     <div>

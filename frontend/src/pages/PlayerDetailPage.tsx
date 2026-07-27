@@ -5,7 +5,6 @@ import { getHeadToHeadAll, getLeaderboard } from '../api/stats'
 import { getPartnershipAnomaliesForPlayer, getHeadToHeadAnomaliesForPlayer } from '../api/anomalies'
 import GameCard from '../components/GameCard'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
-import { useSeasonFilter } from '../context/SeasonFilterContext'
 import { useFilteredGames } from '../hooks/useFilteredGames'
 import StatCard from '../components/StatCard'
 import PartnershipTable from '../components/PartnershipTable'
@@ -22,8 +21,7 @@ export default function PlayerDetailPage() {
   const playerId = Number(id)
 
   const navigate = useNavigate()
-  const { selectedIds, allPlayers, reloadPlayers } = usePlayerFilter()
-  const { selectedSeasonId } = useSeasonFilter()
+  const { allPlayers, reloadPlayers } = usePlayerFilter()
 
   const [player, setPlayer] = useState<Player | null>(null)
   const [stats, setStats] = useState<PlayerStats | null>(null)
@@ -55,14 +53,14 @@ export default function PlayerDetailPage() {
   useEffect(() => {
     Promise.all([
       getPlayer(playerId),
-      getPlayerStats(playerId, selectedIds, selectedSeasonId),
-      getPlayerPartnerships(playerId, selectedIds, selectedSeasonId),
-      getHeadToHeadAll(playerId, selectedIds, selectedSeasonId),
-      getPartnershipAnomaliesForPlayer(playerId, 'overplayed', selectedIds, selectedSeasonId),
-      getPartnershipAnomaliesForPlayer(playerId, 'underplayed', selectedIds, selectedSeasonId),
-      getHeadToHeadAnomaliesForPlayer(playerId, 'overplayed', selectedIds, selectedSeasonId),
-      getHeadToHeadAnomaliesForPlayer(playerId, 'underplayed', selectedIds, selectedSeasonId),
-      getLeaderboard('avg_points', selectedIds, selectedSeasonId),
+      getPlayerStats(playerId),
+      getPlayerPartnerships(playerId),
+      getHeadToHeadAll(playerId),
+      getPartnershipAnomaliesForPlayer(playerId, 'overplayed'),
+      getPartnershipAnomaliesForPlayer(playerId, 'underplayed'),
+      getHeadToHeadAnomaliesForPlayer(playerId, 'overplayed'),
+      getHeadToHeadAnomaliesForPlayer(playerId, 'underplayed'),
+      getLeaderboard('avg_points'),
     ])
       .then(([p, s, partners, h2h, partnerOver, partnerUnder, oppOver, oppUnder, lb]) => {
         setPlayer(p)
@@ -98,7 +96,7 @@ export default function PlayerDetailPage() {
         setBottomIds(new Set(others.slice(others.length - third).map((e) => e.player_id)))
       })
       .catch((e: Error) => setError(e.message))
-  }, [playerId, selectedIds, selectedSeasonId])
+  }, [playerId])
 
   const openEdit = () => {
     if (!player) return
