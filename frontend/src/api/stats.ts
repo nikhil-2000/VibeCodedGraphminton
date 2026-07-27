@@ -1,45 +1,23 @@
 import { apiFetch } from './client'
-import type { LeaderboardEntry, Partnership, HeadToHead } from '../types'
+import type { LeaderboardEntry, Partnership, HeadToHead, MatchupQualityEntry, SuggestedGame, HeadToHeadRecord } from '../types'
 
-const playerIdsQs = (playerIds?: number[]): string =>
-  playerIds?.length ? playerIds.map((id) => `player_ids=${id}`).join('&') : ''
+export const getLeaderboard = (sortBy: 'win_rate' | 'avg_points' = 'win_rate') =>
+  apiFetch<LeaderboardEntry[]>(`/stats/leaderboard?sort_by=${sortBy}`)
 
-const seasonQs = (seasonId?: number | null): string =>
-  seasonId != null ? `season_id=${seasonId}` : ''
+export const getAllPartnerships = () =>
+  apiFetch<Partnership[]>('/stats/partnerships')
 
-const qs = (...parts: string[]) => parts.filter(Boolean).join('&')
+export const getHeadToHead = (playerAId: number, playerBId: number) =>
+  apiFetch<HeadToHead>(`/stats/head-to-head/${playerAId}/${playerBId}`)
 
-export const getLeaderboard = (sortBy: 'win_rate' | 'avg_points' = 'win_rate', playerIds?: number[], seasonId?: number | null) => {
-  const params = qs(`sort_by=${sortBy}`, playerIdsQs(playerIds), seasonQs(seasonId))
-  return apiFetch<LeaderboardEntry[]>(`/stats/leaderboard?${params}`)
-}
+export const getHeadToHeadAll = (playerId: number) =>
+  apiFetch<HeadToHeadRecord[]>(`/stats/head-to-head/${playerId}/all`)
 
-export const getAllPartnerships = (playerIds?: number[], seasonId?: number | null) => {
-  const params = qs(playerIdsQs(playerIds), seasonQs(seasonId))
-  return apiFetch<Partnership[]>(`/stats/partnerships${params ? '?' + params : ''}`)
-}
+export const getMatchupQuality = () =>
+  apiFetch<MatchupQualityEntry[]>('/stats/matchup-quality')
 
-export const getHeadToHead = (playerAId: number, playerBId: number, playerIds?: number[], seasonId?: number | null) => {
-  const params = qs(playerIdsQs(playerIds), seasonQs(seasonId))
-  return apiFetch<HeadToHead>(`/stats/head-to-head/${playerAId}/${playerBId}${params ? '?' + params : ''}`)
-}
-
-export const getHeadToHeadAll = (playerId: number, playerIds?: number[], seasonId?: number | null) => {
-  const params = qs(playerIdsQs(playerIds), seasonQs(seasonId))
-  return apiFetch<import('../types').HeadToHeadRecord[]>(`/stats/head-to-head/${playerId}/all${params ? '?' + params : ''}`)
-}
-
-export const getMatchupQuality = (playerIds?: number[], seasonId?: number | null) => {
-  const params = qs(playerIdsQs(playerIds), seasonQs(seasonId))
-  return apiFetch<import('../types').MatchupQualityEntry[]>(`/stats/matchup-quality${params ? '?' + params : ''}`)
-}
-
-export const getSuggestedGames = (playerIds?: number[], seasonId?: number | null, topN = 5, focusPlayerId?: number) => {
-  const params = qs(
-    playerIdsQs(playerIds),
-    seasonQs(seasonId),
-    `top_n=${topN}`,
-    focusPlayerId != null ? `focus_player_id=${focusPlayerId}` : '',
-  )
-  return apiFetch<import('../types').SuggestedGame[]>(`/stats/suggested-games?${params}`)
+export const getSuggestedGames = (topN = 5, focusPlayerId?: number) => {
+  const params = new URLSearchParams({ top_n: String(topN) })
+  if (focusPlayerId != null) params.set('focus_player_id', String(focusPlayerId))
+  return apiFetch<SuggestedGame[]>(`/stats/suggested-games?${params}`)
 }
