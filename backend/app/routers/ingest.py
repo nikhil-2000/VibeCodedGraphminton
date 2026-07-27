@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from ..database import get_db
+from ..dependencies import require_admin
 from ..services.ingest import resolve_aliases, ingest_csv_file, validate_games, ingest_games
 from ..schemas import IngestGamesRequest, IngestGamesResponse
 
@@ -17,7 +18,7 @@ class IngestResponse(BaseModel):
     errors: list[str]
 
 
-@router.post("/scores", response_model=IngestResponse)
+@router.post("/scores", response_model=IngestResponse, dependencies=[Depends(require_admin)])
 def ingest_scores(request: IngestRequest, db: Session = Depends(get_db)):
     alias_map = resolve_aliases(db)
 
@@ -39,7 +40,7 @@ def ingest_scores(request: IngestRequest, db: Session = Depends(get_db)):
     return IngestResponse(games_loaded=total_loaded, errors=[])
 
 
-@router.post("/games", response_model=IngestGamesResponse)
+@router.post("/games", response_model=IngestGamesResponse, dependencies=[Depends(require_admin)])
 def ingest_games_endpoint(request: IngestGamesRequest, db: Session = Depends(get_db)):
     loaded, errors = ingest_games(db, request.played_on, request.games)
     if errors:

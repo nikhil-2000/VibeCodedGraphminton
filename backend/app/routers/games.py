@@ -2,6 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from ..database import get_db
+from ..dependencies import require_admin
 from ..services import games as games_service
 from ..schemas import GameResponse, GameDetailResponse, DeleteSessionResponse, GamePrediction
 
@@ -52,7 +53,7 @@ def get_game(game_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.delete("/session/{played_on}", response_model=DeleteSessionResponse)
+@router.delete("/session/{played_on}", response_model=DeleteSessionResponse, dependencies=[Depends(require_admin)])
 def delete_session(played_on: str, db: Session = Depends(get_db)):
     try:
         deleted = games_service.delete_session(db, played_on)
@@ -61,7 +62,7 @@ def delete_session(played_on: str, db: Session = Depends(get_db)):
     return DeleteSessionResponse(deleted=deleted)
 
 
-@router.delete("/{game_id}", status_code=204)
+@router.delete("/{game_id}", status_code=204, dependencies=[Depends(require_admin)])
 def delete_game(game_id: int, db: Session = Depends(get_db)):
     try:
         games_service.delete_game(db, game_id)
