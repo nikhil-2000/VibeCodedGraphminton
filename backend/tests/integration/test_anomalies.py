@@ -126,8 +126,15 @@ def test_partnership_anomalies_player_ids_filter(client: TestClient):
     ]})
     assert resp.status_code == 200, resp.json()
 
-    qs = "&".join(f"player_ids={i}" for i in reg_ids)
-    response = client.get(f"/anomalies/partnerships/overplayed?{qs}")
+    user_id = "test-anomaly-filter-user"
+    client.post("/preferences", json={
+        "player_id": reg_ids[0],
+        "preset": "custom",
+        "custom_player_ids": reg_ids,
+        "season_id": None,
+    }, headers={"X-User-ID": user_id})
+
+    response = client.get("/anomalies/partnerships/overplayed", headers={"X-User-ID": user_id})
     assert response.status_code == 200
     data = response.json()
     # sub player should not appear in any anomaly entry
