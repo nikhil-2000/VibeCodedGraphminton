@@ -8,6 +8,7 @@ os.environ.setdefault(
     "DATABASE_URL",
     "postgresql://graphminton:graphminton@localhost:5432/graphminton_test",
 )
+os.environ.setdefault("ADMIN_TOKEN", "test-admin-token")
 
 from app.main import app
 from app.database import get_db, Base
@@ -40,6 +41,7 @@ def client(db):
         yield db
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:
+        c.headers.update({"X-Admin-Token": os.environ["ADMIN_TOKEN"]})
         c.post("/seasons", json={"name": "Test Season", "start_date": "2020-01-01"})
         yield c
     app.dependency_overrides.clear()
