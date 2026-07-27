@@ -2,6 +2,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from ..database import get_db
+from ..dependencies import require_admin
 from ..schemas import PlayerCreate, PlayerUpdate, PlayerResponse, PlayerStatsResponse
 from ..services import players as player_service
 from ..services import stats as stats_service
@@ -57,7 +58,7 @@ def get_player_stats(
         raise HTTPException(status_code=404, detail=str(exc))
 
 
-@router.delete("/{player_id}", status_code=204)
+@router.delete("/{player_id}", status_code=204, dependencies=[Depends(require_admin)])
 def delete_player(player_id: int, db: Session = Depends(get_db)):
     try:
         player_service.delete_player(db, player_id)
