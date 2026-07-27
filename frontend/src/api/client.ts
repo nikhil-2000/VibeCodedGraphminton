@@ -9,7 +9,7 @@ function getUserId(): string {
   return id
 }
 
-function getAdminToken(): string {
+export function getAdminToken(): string {
   return localStorage.getItem('graphminton_admin_token') ?? ''
 }
 
