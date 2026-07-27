@@ -16,7 +16,7 @@ export default function GraphPage() {
 
   useEffect(() => {
     setLoading(true)
-    getAllPartnerships(selectedIds)
+    getAllPartnerships()
       .then((ps) => {
         setPlayers(contextPlayers.filter((p) => selectedIds.includes(p.id)))
         setPartnerships(ps)

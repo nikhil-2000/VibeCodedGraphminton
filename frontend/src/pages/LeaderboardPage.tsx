@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getLeaderboard, getMatchupQuality } from '../api/stats'
-import { usePlayerFilter } from '../context/PlayerFilterContext'
-import { useSeasonFilter } from '../context/SeasonFilterContext'
 import { useCurrentUser } from '../context/CurrentUserContext'
 import LeaderboardTable from '../components/LeaderboardTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,8 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { LeaderboardEntry, MatchupQualityEntry } from '../types'
 
 export default function LeaderboardPage() {
-  const { selectedIds } = usePlayerFilter()
-  const { selectedSeasonId } = useSeasonFilter()
   const { currentPlayer } = useCurrentUser()
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [sortBy, setSortBy] = useState<'win_rate' | 'avg_points'>('avg_points')
@@ -24,13 +20,13 @@ export default function LeaderboardPage() {
     setLoading(true)
     setError(null)
     Promise.all([
-      getLeaderboard(sortBy, selectedIds, selectedSeasonId),
-      getMatchupQuality(selectedIds, selectedSeasonId),
+      getLeaderboard(sortBy),
+      getMatchupQuality(),
     ])
       .then(([lb, fq]) => { setEntries(lb); setFairness(fq) })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [sortBy, selectedIds, selectedSeasonId])
+  }, [sortBy])
 
   return (
     <div className="space-y-6">
