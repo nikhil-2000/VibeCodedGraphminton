@@ -9,6 +9,8 @@ jobs:
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     environment: preview
+    permissions:
+      pull-requests: write
     steps:
       - name: Create Neon branch
         id: neon
