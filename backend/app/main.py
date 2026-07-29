@@ -15,10 +15,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Graph-minton API", lifespan=lifespan)
 
-allowed_origins = os.environ.get("ALLOWED_ORIGINS", "*").split(",")
+allowed_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+allowed_origin_regex = os.environ.get("ALLOWED_ORIGIN_REGEX") or None
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=allowed_origin_regex,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

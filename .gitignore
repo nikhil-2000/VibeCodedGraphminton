@@ -37,5 +37,9 @@ alembic/versions/*.pyc
 # CLAUDE Plugins
 .superpowers/
 
+# Local dev overrides (contain secrets / Neon branch URLs)
+.env.local
+.env.secrets
+
 # Generated
 openapi.json                                                                                                                                                                                                                               
