@@ -13,6 +13,23 @@ jobs:
       - name: Create Neon branch
         id: neon
         run: |
+          # Delete existing branch with this name if it exists (idempotent re-runs)
+          EXISTING=$(curl -sf \
+            "https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches" \
+            -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" | \
+            python3 -c "
+          import sys, json
+          branches = json.load(sys.stdin)['branches']
+          match = next((b for b in branches if b['name'] == 'pr-${{ github.event.pull_request.number }}'), None)
+          print(match['id'] if match else '')
+          ")
+          if [ -n "$EXISTING" ]; then
+            curl -sf -X DELETE \
+              "https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches/${EXISTING}" \
+              -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}"
+            echo "Deleted existing branch pr-${{ github.event.pull_request.number }}"
+          fi
+
           RESPONSE=$(curl -sf -X POST \
             "https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches" \
             -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
