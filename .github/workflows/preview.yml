@@ -150,3 +150,27 @@ jobs:
           else
             echo "No VITE_API_URL env var found for branch ${{ github.head_ref }}, skipping"
           fi
+
+      - name: Delete Vercel preview deployments for this branch
+        run: |
+          DEPLOYMENTS=$(curl -sf \
+            "https://api.vercel.com/v6/deployments?projectId=${{ secrets.VERCEL_PROJECT_ID }}&teamId=${{ secrets.VERCEL_ORG_ID }}&target=preview&limit=50" \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
+            python3 -c "
+          import sys, json
+          deps = json.load(sys.stdin).get('deployments', [])
+          branch = '${{ github.head_ref }}'
+          ids = [d['uid'] for d in deps if d.get('meta', {}).get('githubCommitRef') == branch]
+          print('\n'.join(ids))
+          " 2>/dev/null || true)
+
+          if [ -n "$DEPLOYMENTS" ]; then
+            echo "$DEPLOYMENTS" | while read -r DEP_ID; do
+              curl -sf -X DELETE \
+                "https://api.vercel.com/v13/deployments/${DEP_ID}?teamId=${{ secrets.VERCEL_ORG_ID }}" \
+                -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" && \
+                echo "Deleted Vercel deployment ${DEP_ID}"
+            done
+          else
+            echo "No Vercel preview deployments found for branch ${{ github.head_ref }}, skipping"
+          fi
