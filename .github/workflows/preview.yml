@@ -66,7 +66,7 @@ jobs:
         run: |
           # Remove existing env var for this branch if present (ignore errors)
           EXISTING=$(curl -sf \
-            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env" \
+            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env?gitBranch=${{ github.head_ref }}" \
             -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
             python3 -c "
           import sys, json
@@ -113,7 +113,7 @@ jobs:
               "https://api.vercel.com/v13/deployments?forceNew=1" \
               -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
               -H "Content-Type: application/json" \
-              -d "{\"deploymentId\": \"${DEPLOY_ID}\"}"
+              -d "{\"deploymentId\": \"${DEPLOY_ID}\"}" || true
             echo "Triggered redeploy of ${DEPLOY_ID}"
           else
             echo "No existing deployment found for branch ${{ github.head_ref }} — Vercel will build on next push"
