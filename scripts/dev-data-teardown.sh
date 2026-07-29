@@ -42,4 +42,5 @@ curl -sf -X DELETE \
   -H "Authorization: Bearer ${NEON_API_KEY}" > /dev/null
 
 rm "$ENV_FILE"
-echo "Done. Branch deleted, .env.local removed."
+rm -f "$REPO_ROOT/.env"
+echo "Done. Branch deleted, .env.local and .env removed."

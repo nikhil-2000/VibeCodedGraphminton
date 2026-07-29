@@ -38,6 +38,7 @@ alembic/versions/*.pyc
 .superpowers/
 
 # Local dev overrides (contain secrets / Neon branch URLs)
+.env
 .env.local
 .env.secrets
 
