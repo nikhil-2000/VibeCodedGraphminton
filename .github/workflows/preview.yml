@@ -64,7 +64,7 @@ jobs:
         run: |
           # Remove existing env var for this branch if present (ignore errors)
           EXISTING=$(curl -sf \
-            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env?teamId=${{ secrets.VERCEL_ORG_ID }}" \
+            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env" \
             -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
             python3 -c "
           import sys, json
@@ -76,12 +76,12 @@ jobs:
 
           if [ -n "$EXISTING" ]; then
             curl -sf -X DELETE \
-              "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env/${EXISTING}?teamId=${{ secrets.VERCEL_ORG_ID }}" \
+              "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env/${EXISTING}" \
               -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" || true
           fi
 
           curl -sf -X POST \
-            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env?teamId=${{ secrets.VERCEL_ORG_ID }}" \
+            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env" \
             -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{
@@ -95,7 +95,7 @@ jobs:
       - name: Trigger Vercel redeploy
         run: |
           curl -sf -X POST \
-            "https://api.vercel.com/v13/deployments?teamId=${{ secrets.VERCEL_ORG_ID }}&forceNew=1" \
+            "https://api.vercel.com/v13/deployments?forceNew=1" \
             -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{
@@ -149,7 +149,7 @@ jobs:
       - name: Remove VITE_API_URL from Vercel for this branch
         run: |
           EXISTING=$(curl -sf \
-            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env?teamId=${{ secrets.VERCEL_ORG_ID }}" \
+            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env" \
             -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
             python3 -c "
           import sys, json
@@ -161,7 +161,7 @@ jobs:
 
           if [ -n "$EXISTING" ]; then
             curl -sf -X DELETE \
-              "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env/${EXISTING}?teamId=${{ secrets.VERCEL_ORG_ID }}" \
+              "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env/${EXISTING}" \
               -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}"
             echo "Removed VITE_API_URL for branch ${{ github.head_ref }}"
           else
@@ -171,7 +171,7 @@ jobs:
       - name: Delete Vercel preview deployments for this branch
         run: |
           DEPLOYMENTS=$(curl -sf \
-            "https://api.vercel.com/v6/deployments?projectId=${{ secrets.VERCEL_PROJECT_ID }}&teamId=${{ secrets.VERCEL_ORG_ID }}&target=preview&limit=50" \
+            "https://api.vercel.com/v6/deployments?projectId=${{ secrets.VERCEL_PROJECT_ID }}&target=preview&limit=50" \
             -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
             python3 -c "
           import sys, json
@@ -184,7 +184,7 @@ jobs:
           if [ -n "$DEPLOYMENTS" ]; then
             echo "$DEPLOYMENTS" | while read -r DEP_ID; do
               curl -sf -X DELETE \
-                "https://api.vercel.com/v13/deployments/${DEP_ID}?teamId=${{ secrets.VERCEL_ORG_ID }}" \
+                "https://api.vercel.com/v13/deployments/${DEP_ID}" \
                 -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" && \
                 echo "Deleted Vercel deployment ${DEP_ID}"
             done
