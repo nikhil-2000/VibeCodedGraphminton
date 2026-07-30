@@ -94,30 +94,22 @@ jobs:
               \"gitBranch\": \"${{ github.head_ref }}\"
             }"
 
-      - name: Trigger Vercel redeploy
+      - name: Trigger Vercel rebuild via Vercel CLI
         run: |
-          # Find the latest deployment for this branch and redeploy it
-          DEPLOY_ID=$(curl -sf \
-            "https://api.vercel.com/v6/deployments?projectId=${{ secrets.VERCEL_PROJECT_ID }}&target=preview&limit=10" \
-            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
-            python3 -c "
+          npm install -g vercel@latest --silent
+          vercel redeploy \
+            $(curl -sf \
+              "https://api.vercel.com/v6/deployments?projectId=${{ secrets.VERCEL_PROJECT_ID }}&target=preview&limit=10" \
+              -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
+              python3 -c "
           import sys, json
           deps = json.load(sys.stdin).get('deployments', [])
           branch = '${{ github.head_ref }}'
           match = next((d for d in deps if d.get('meta', {}).get('githubCommitRef') == branch), None)
-          print(match['uid'] if match else '')
-          " 2>/dev/null || true)
-
-          if [ -n "$DEPLOY_ID" ]; then
-            curl -sf -X POST \
-              "https://api.vercel.com/v13/deployments?forceNew=1" \
-              -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
-              -H "Content-Type: application/json" \
-              -d "{\"deploymentId\": \"${DEPLOY_ID}\"}" || true
-            echo "Triggered redeploy of ${DEPLOY_ID}"
-          else
-            echo "No existing deployment found for branch ${{ github.head_ref }} — Vercel will build on next push"
-          fi
+          print(match['url'] if match else '')
+          " 2>/dev/null || true) \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --no-wait || echo "Redeploy skipped — Vercel will build on next push"
 
       - name: Post PR comment
         uses: actions/github-script@v7
