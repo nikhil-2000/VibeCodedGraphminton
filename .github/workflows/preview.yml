@@ -61,55 +61,34 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"clearCache\": \"do_not_clear\"}"
 
-      - name: Set VITE_API_URL on Vercel for this branch
-        id: vercel-env
+      - name: Ensure VITE_API_URL set on Vercel for all previews
         run: |
-          # Remove existing env var for this branch if present (ignore errors)
+          # Check if a project-level preview env var already exists
           EXISTING=$(curl -sf \
-            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env?gitBranch=${{ github.head_ref }}" \
+            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env" \
             -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
             python3 -c "
           import sys, json
           envs = json.load(sys.stdin).get('envs', [])
-          branch = '${{ github.head_ref }}'
-          match = next((e for e in envs if e.get('key') == 'VITE_API_URL' and e.get('gitBranch') == branch), None)
+          match = next((e for e in envs if e.get('key') == 'VITE_API_URL' and 'preview' in e.get('target', []) and not e.get('gitBranch')), None)
           print(match['id'] if match else '')
           " 2>/dev/null || true)
 
-          if [ -n "$EXISTING" ]; then
-            curl -sf -X DELETE \
-              "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env/${EXISTING}" \
-              -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" || true
+          if [ -z "$EXISTING" ]; then
+            curl -sf -X POST \
+              "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env" \
+              -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"key\": \"VITE_API_URL\",
+                \"value\": \"https://vibecodedgraphminton-preview.onrender.com\",
+                \"type\": \"plain\",
+                \"target\": [\"preview\"]
+              }"
+            echo "Created VITE_API_URL project-level preview env var"
+          else
+            echo "VITE_API_URL already set for previews (id: $EXISTING)"
           fi
-
-          curl -sf -X POST \
-            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env" \
-            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"key\": \"VITE_API_URL\",
-              \"value\": \"https://vibecodedgraphminton-preview.onrender.com\",
-              \"type\": \"plain\",
-              \"target\": [\"preview\"],
-              \"gitBranch\": \"${{ github.head_ref }}\"
-            }"
-
-      - name: Trigger Vercel rebuild via Vercel CLI
-        run: |
-          npm install -g vercel@latest --silent
-          vercel redeploy \
-            $(curl -sf \
-              "https://api.vercel.com/v6/deployments?projectId=${{ secrets.VERCEL_PROJECT_ID }}&target=preview&limit=10" \
-              -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
-              python3 -c "
-          import sys, json
-          deps = json.load(sys.stdin).get('deployments', [])
-          branch = '${{ github.head_ref }}'
-          match = next((d for d in deps if d.get('meta', {}).get('githubCommitRef') == branch), None)
-          print(match['url'] if match else '')
-          " 2>/dev/null || true) \
-            --token=${{ secrets.VERCEL_TOKEN }} \
-            --no-wait || echo "Redeploy skipped — Vercel will build on next push"
 
       - name: Post PR comment
         uses: actions/github-script@v7
@@ -148,28 +127,6 @@ jobs:
             echo "Deleted Neon branch pr-${{ github.event.pull_request.number }} (${BRANCH_ID})"
           else
             echo "No Neon branch found for pr-${{ github.event.pull_request.number }}, skipping"
-          fi
-
-      - name: Remove VITE_API_URL from Vercel for this branch
-        run: |
-          EXISTING=$(curl -sf \
-            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env" \
-            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
-            python3 -c "
-          import sys, json
-          envs = json.load(sys.stdin).get('envs', [])
-          branch = '${{ github.head_ref }}'
-          match = next((e for e in envs if e.get('key') == 'VITE_API_URL' and e.get('gitBranch') == branch), None)
-          print(match['id'] if match else '')
-          " 2>/dev/null || true)
-
-          if [ -n "$EXISTING" ]; then
-            curl -sf -X DELETE \
-              "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env/${EXISTING}" \
-              -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}"
-            echo "Removed VITE_API_URL for branch ${{ github.head_ref }}"
-          else
-            echo "No VITE_API_URL env var found for branch ${{ github.head_ref }}, skipping"
           fi
 
       - name: Delete Vercel preview deployments for this branch
