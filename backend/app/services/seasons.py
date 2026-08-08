@@ -1,7 +1,7 @@
 from datetime import date
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from ..models import Season, Game
+from ..models import Season, Game, UserPreferences
 
 
 def get_all_seasons(db: Session) -> list[Season]:
@@ -46,3 +46,17 @@ def update_season(db: Session, season_id: int, name: str | None, start_date: dat
 def get_season_game_counts(db: Session) -> dict[int, int]:
     rows = db.query(Game.season_id, func.count(Game.id)).group_by(Game.season_id).all()
     return {season_id: count for season_id, count in rows}
+
+
+def delete_season(db: Session, season_id: int) -> None:
+    season = db.get(Season, season_id)
+    if not season:
+        raise KeyError(f"Season {season_id} not found")
+    counts = get_season_game_counts(db)
+    if counts.get(season_id, 0) > 0:
+        raise ValueError("Cannot delete a season that has recorded games")
+    db.query(UserPreferences).filter(UserPreferences.season_id == season_id).update(
+        {UserPreferences.season_id: None}
+    )
+    db.delete(season)
+    db.commit()

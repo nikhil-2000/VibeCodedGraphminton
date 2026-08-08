@@ -22,6 +22,7 @@ class SeasonResponse(BaseModel):
     name: str
     start_date: date
     end_date: Optional[date]
+    game_count: int = 0
     model_config = {"from_attributes": True}
 
 

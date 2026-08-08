@@ -446,6 +446,8 @@ def get_suggested_games(
 
     partnership_anomalies = get_partnership_anomalies(db, overplayed=False, limit=None, player_ids=player_ids, season_id=season_id)
     h2h_anomalies = get_head_to_head_anomalies(db, overplayed=False, limit=None, player_ids=player_ids, season_id=season_id)
+    overplayed_partnership_anomalies = get_partnership_anomalies(db, overplayed=True, limit=None, player_ids=player_ids, season_id=season_id)
+    overplayed_h2h_anomalies = get_head_to_head_anomalies(db, overplayed=True, limit=None, player_ids=player_ids, season_id=season_id)
 
     def pair_key(a: int, b: int) -> tuple[int, int]:
         return (min(a, b), max(a, b))
@@ -457,6 +459,14 @@ def get_suggested_games(
     h2h_debt: dict[tuple[int, int], float] = {
         pair_key(r["player_a_id"], r["player_b_id"]): abs(r["deviation"])
         for r in h2h_anomalies
+    }
+    partner_overplay: dict[tuple[int, int], float] = {
+        pair_key(r["player_a_id"], r["player_b_id"]): abs(r["deviation"])
+        for r in overplayed_partnership_anomalies
+    }
+    h2h_overplay: dict[tuple[int, int], float] = {
+        pair_key(r["player_a_id"], r["player_b_id"]): abs(r["deviation"])
+        for r in overplayed_h2h_anomalies
     }
 
     mq = get_matchup_quality(db, player_ids, season_id)
@@ -498,6 +508,14 @@ def get_suggested_games(
                 + h2h_debt.get(pair_key(a2, b1), 0.0)
                 + h2h_debt.get(pair_key(a2, b2), 0.0)
             )
+            overplay_penalty = (
+                partner_overplay.get(pair_key(a1, a2), 0.0)
+                + partner_overplay.get(pair_key(b1, b2), 0.0)
+                + h2h_overplay.get(pair_key(a1, b1), 0.0)
+                + h2h_overplay.get(pair_key(a1, b2), 0.0)
+                + h2h_overplay.get(pair_key(a2, b1), 0.0)
+                + h2h_overplay.get(pair_key(a2, b2), 0.0)
+            )
 
             team_a_avg_pct = (percentile.get(a1, 0.5) + percentile.get(a2, 0.5)) / 2
             team_b_avg_pct = (percentile.get(b1, 0.5) + percentile.get(b2, 0.5)) / 2
@@ -522,8 +540,8 @@ def get_suggested_games(
                     if (imb > 0 and my_team_avg < opp_avg) or (imb < 0 and my_team_avg > opp_avg):
                         fairness_correction += abs(imb) * FAIRNESS_WEIGHT
 
-            total_score = underplay_debt + fairness_correction
-            if total_score == 0:
+            total_score = underplay_debt + fairness_correction - overplay_penalty
+            if total_score <= 0:
                 continue
 
             fixes: list[str] = []
