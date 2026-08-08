@@ -855,6 +855,8 @@ export interface components {
             start_date: string;
             /** End Date */
             end_date: string | null;
+            /** Game Count */
+            game_count: number;
         };
         /** SeasonUpdate */
         SeasonUpdate: {

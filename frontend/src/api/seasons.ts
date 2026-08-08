@@ -16,3 +16,6 @@ export const updateSeason = (id: number, data: SeasonUpdate) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
+
+export const deleteSeason = (id: number): Promise<void> =>
+  apiFetch<void>(`/seasons/${id}`, { method: 'DELETE' })
