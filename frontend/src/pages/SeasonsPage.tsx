@@ -121,9 +121,13 @@ function SeasonRow({
     <Card>
       <CardContent className="space-y-2 py-4">
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="flex-1" />
-          <DatePicker value={startDate} onChange={setStartDate} placeholder="Start date" />
-          <DatePicker value={endDate} onChange={setEndDate} placeholder="End date (optional)" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="min-w-0 flex-1" />
+          <div className="sm:w-44 shrink-0">
+            <DatePicker value={startDate} onChange={setStartDate} placeholder="Start date" />
+          </div>
+          <div className="sm:w-44 shrink-0">
+            <DatePicker value={endDate} onChange={setEndDate} placeholder="End date (optional)" />
+          </div>
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
         <div className="flex gap-2">
