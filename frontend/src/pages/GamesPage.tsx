@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { deleteGame, deleteSession } from '../api/games'
 import GameCard from '../components/GameCard'
+import SessionLeaderboard from '../components/SessionLeaderboard'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useFilteredGames } from '../hooks/useFilteredGames'
@@ -77,6 +78,7 @@ export default function GamesPage() {
               <GameCard key={g.id} game={g} onDelete={isAdmin ? handleDeleteGame : undefined} />
             ))}
           </div>
+          <SessionLeaderboard gameIds={sessionGames.map((g) => g.id)} />
         </div>
       ))}
     </div>

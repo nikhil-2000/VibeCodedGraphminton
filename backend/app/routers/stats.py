@@ -46,11 +46,12 @@ def suggested_games(
 @router.get("/leaderboard", response_model=list[LeaderboardEntry])
 def leaderboard(
     sort_by: Literal["win_rate", "avg_points"] = "win_rate",
+    game_ids: list[int] = Query(default=[]),
     filters: tuple = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
-    return stats_service.get_leaderboard(db, sort_by, player_ids, season_id)
+    return stats_service.get_leaderboard(db, sort_by, player_ids, season_id, game_ids or None)
 
 
 @router.get("/partnerships", response_model=list[PartnershipResponse])
