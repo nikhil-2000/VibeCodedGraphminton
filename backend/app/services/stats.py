@@ -541,7 +541,7 @@ def get_suggested_games(
                         fairness_correction += abs(imb) * FAIRNESS_WEIGHT
 
             total_score = underplay_debt + fairness_correction - overplay_penalty
-            if total_score == 0:
+            if total_score <= 0:
                 continue
 
             fixes: list[str] = []
