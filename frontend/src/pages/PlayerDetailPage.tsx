@@ -16,6 +16,21 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import type { Player, PlayerStats, PlayerPartnership, HeadToHeadRecord, GameDetail } from '../types'
 
+const rivalryStyles: Record<string, string> = {
+  'Bogey Player':    'bg-red-500/20 text-red-400',
+  'Punching Bag':    'bg-green-500/20 text-green-400',
+  'Evenly Matched':  'bg-zinc-500/10 text-muted-foreground',
+  'Untested':        'bg-zinc-500/20 text-zinc-400',
+}
+
+function RivalryBadge({ label }: { label: string }) {
+  return (
+    <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${rivalryStyles[label] ?? 'bg-zinc-500/20 text-zinc-400'}`}>
+      {label}
+    </span>
+  )
+}
+
 export default function PlayerDetailPage() {
   const { id } = useParams<{ id: string }>()
   const playerId = Number(id)
@@ -267,6 +282,7 @@ export default function PlayerDetailPage() {
                             <TableHead className="text-right">Avg Pts</TableHead>
                             <TableHead className="text-right">W</TableHead>
                             <TableHead className="text-right">L</TableHead>
+                            <TableHead>Rivalry</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -292,6 +308,7 @@ export default function PlayerDetailPage() {
                                 <TableCell className="text-right">{r.avg_points.toFixed(1)}</TableCell>
                                 <TableCell className="text-right text-green-400">{r.wins}</TableCell>
                                 <TableCell className="text-right text-red-400">{r.losses}</TableCell>
+                                <TableCell><RivalryBadge label={r.rivalry_label} /></TableCell>
                               </TableRow>
                             ))}
                         </TableBody>

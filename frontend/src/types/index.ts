@@ -48,4 +48,5 @@ export type HeadToHeadRecord = {
   wins: number
   losses: number
   avg_points: number
+  rivalry_label: string
 }

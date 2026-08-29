@@ -114,6 +114,7 @@ class PlayerPartnershipResponse(BaseModel):
     losses: int
     win_rate: float
     avg_points: float
+    chemistry_label: str
 
 
 class HeadToHeadResponse(BaseModel):
@@ -130,6 +131,7 @@ class HeadToHeadBulkEntry(BaseModel):
     wins: int
     losses: int
     avg_points: float
+    rivalry_label: str
 
 
 class MatchupResponse(BaseModel):

@@ -19,6 +19,21 @@ function AnomalyDot({ type }: { type: 'over' | 'under' }) {
   )
 }
 
+const chemistryStyles: Record<string, string> = {
+  'Strong Duo':      'bg-green-500/20 text-green-400',
+  'Underperforming': 'bg-red-500/20 text-red-400',
+  'Reliable':        'bg-zinc-500/10 text-muted-foreground',
+  'Untested':        'bg-zinc-500/20 text-zinc-400',
+}
+
+function ChemistryBadge({ label }: { label: string }) {
+  return (
+    <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${chemistryStyles[label] ?? 'bg-zinc-500/20 text-zinc-400'}`}>
+      {label}
+    </span>
+  )
+}
+
 export default function PartnershipTable({ partnerships, playerNames, anomalyMap }: Props) {
   const sorted = [...partnerships].sort((a, b) => b.win_rate - a.win_rate)
   return (
@@ -33,6 +48,7 @@ export default function PartnershipTable({ partnerships, playerNames, anomalyMap
             <TableHead className="text-right">Avg Pts</TableHead>
             <TableHead className="text-right">W</TableHead>
             <TableHead className="text-right">L</TableHead>
+            <TableHead>Chemistry</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -51,6 +67,7 @@ export default function PartnershipTable({ partnerships, playerNames, anomalyMap
               <TableCell className="text-right">{p.avg_points.toFixed(1)}</TableCell>
               <TableCell className="text-right text-green-400">{p.wins}</TableCell>
               <TableCell className="text-right text-red-400">{p.losses}</TableCell>
+              <TableCell><ChemistryBadge label={p.chemistry_label} /></TableCell>
             </TableRow>
           ))}
         </TableBody>

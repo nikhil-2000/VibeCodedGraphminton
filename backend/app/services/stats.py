@@ -5,6 +5,26 @@ from sqlalchemy.sql import Select
 from ..models import Player, Game, GamePlayer
 
 
+def _classify_chemistry(pair_win_rate: float, player_win_rate: float, games: int, threshold: float = 0.10) -> str:
+    if games < 3:
+        return "Untested"
+    if pair_win_rate >= player_win_rate + threshold:
+        return "Strong Duo"
+    if pair_win_rate <= player_win_rate - threshold:
+        return "Underperforming"
+    return "Reliable"
+
+
+def _classify_rivalry(h2h_win_rate: float, player_win_rate: float, games: int, threshold: float = 0.10) -> str:
+    if games < 3:
+        return "Untested"
+    if h2h_win_rate >= player_win_rate + threshold:
+        return "Punching Bag"
+    if h2h_win_rate <= player_win_rate - threshold:
+        return "Bogey Player"
+    return "Evenly Matched"
+
+
 def _valid_game_ids(player_ids: list[int] | None, season_id: int | None = None) -> "Select[tuple[int]] | None":
     """Returns a Select subquery of game IDs filtered by player_ids and/or season_id.
     Returns None when no filters apply (all games counted)."""
@@ -157,6 +177,7 @@ def get_all_partnerships(db: Session, player_id: int | None = None, player_ids: 
 def get_partnership_for_player(db: Session, player_id: int, player_ids: list[int] | None = None, season_id: int | None = None) -> list[dict[str, Any]]:
     if not db.get(Player, player_id):
         raise KeyError(f"Player {player_id} not found")
+    player_win_rate = get_player_stats(db, player_id, player_ids, season_id)["win_rate"]
     rows = get_all_partnerships(db, player_id, player_ids, season_id)
     result: list[dict[str, Any]] = []
     for r in rows:
@@ -164,6 +185,7 @@ def get_partnership_for_player(db: Session, player_id: int, player_ids: list[int
             "partner_id": r["player_b_id"] if r["player_a_id"] == player_id else r["player_a_id"],
         }
         entry.update({k: v for k, v in r.items() if k not in ("player_a_id", "player_b_id")})
+        entry["chemistry_label"] = _classify_chemistry(r["win_rate"], player_win_rate, r["games_together"])
         result.append(entry)
     return result
 
@@ -213,6 +235,7 @@ def get_head_to_head(db: Session, player_a_id: int, player_b_id: int, player_ids
 
 
 def get_head_to_head_all(db: Session, player_id: int, player_ids: list[int] | None = None, season_id: int | None = None) -> list[dict[str, Any]]:
+    player_win_rate = get_player_stats(db, player_id, player_ids, season_id)["win_rate"]
     valid_ids = _valid_game_ids(player_ids, season_id)
     gp_me = aliased(GamePlayer)
     gp_opp = aliased(GamePlayer)
@@ -246,12 +269,14 @@ def get_head_to_head_all(db: Session, player_id: int, player_ids: list[int] | No
     for row in q.all():
         games = row.games_played or 0
         wins = int(row.wins or 0)
+        h2h_win_rate = round(wins / games, 4) if games else 0.0
         results.append({
             "opponent_id": row.opponent_id,
             "games_played": games,
             "wins": wins,
             "losses": games - wins,
             "avg_points": round(float(row.avg_points or 0), 2),
+            "rivalry_label": _classify_rivalry(h2h_win_rate, player_win_rate, games),
         })
     results.sort(key=lambda r: (r["wins"] / r["games_played"] if r["games_played"] else 0), reverse=True)
     return results
