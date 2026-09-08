@@ -35,7 +35,7 @@ export default function LeaderboardTable({ entries, highlightPlayerId }: Props) 
               </TableCell>
               <TableCell className="text-right">{e.games_played}</TableCell>
               <TableCell className="text-right">{(e.win_rate * 100).toFixed(1)}%</TableCell>
-              <TableCell className="text-right">{e.avg_points.toFixed(1)}</TableCell>
+              <TableCell className="text-right">{e.avg_points.toFixed(2)}</TableCell>
               <TableCell className="text-right text-green-400">{e.wins}</TableCell>
               <TableCell className="text-right text-red-400">{e.losses}</TableCell>
             </TableRow>

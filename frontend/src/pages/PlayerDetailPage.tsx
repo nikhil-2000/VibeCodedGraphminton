@@ -207,7 +207,7 @@ export default function PlayerDetailPage() {
         <StatCard label="Wins" value={stats.wins} />
         <StatCard label="Losses" value={stats.losses} />
         <StatCard label="Win Rate" value={`${(stats.win_rate * 100).toFixed(1)}%`} />
-        <StatCard label="Avg Pts" value={stats.avg_points.toFixed(1)} />
+        <StatCard label="Avg Pts" value={stats.avg_points.toFixed(2)} />
         <StatCard label="Close (≤3)" value={`${gameCloseness.close.wins}–${gameCloseness.close.losses}`} sub={`${gameCloseness.close.wins + gameCloseness.close.losses} games`} />
         <StatCard label="Normal (4–6)" value={`${gameCloseness.normal.wins}–${gameCloseness.normal.losses}`} sub={`${gameCloseness.normal.wins + gameCloseness.normal.losses} games`} />
         <StatCard label="Blowout (7+)" value={`${gameCloseness.blowout.wins}–${gameCloseness.blowout.losses}`} sub={`${gameCloseness.blowout.wins + gameCloseness.blowout.losses} games`} />
@@ -289,7 +289,7 @@ export default function PlayerDetailPage() {
                                 </TableCell>
                                 <TableCell className="text-right">{r.games_played}</TableCell>
                                 <TableCell className="text-right">{(r.wins / r.games_played * 100).toFixed(1)}%</TableCell>
-                                <TableCell className="text-right">{r.avg_points.toFixed(1)}</TableCell>
+                                <TableCell className="text-right">{r.avg_points.toFixed(2)}</TableCell>
                                 <TableCell className="text-right text-green-400">{r.wins}</TableCell>
                                 <TableCell className="text-right text-red-400">{r.losses}</TableCell>
                               </TableRow>

@@ -48,7 +48,7 @@ export default function PartnershipTable({ partnerships, playerNames, anomalyMap
               </TableCell>
               <TableCell className="text-right">{p.games_together}</TableCell>
               <TableCell className="text-right">{(p.win_rate * 100).toFixed(1)}%</TableCell>
-              <TableCell className="text-right">{p.avg_points.toFixed(1)}</TableCell>
+              <TableCell className="text-right">{p.avg_points.toFixed(2)}</TableCell>
               <TableCell className="text-right text-green-400">{p.wins}</TableCell>
               <TableCell className="text-right text-red-400">{p.losses}</TableCell>
             </TableRow>
