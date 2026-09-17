@@ -79,7 +79,8 @@ def get_player_stats(db: Session, player_id: int, player_ids: list[int] | None =
 
 
 def get_leaderboard(db: Session, sort_by: str = "win_rate", player_ids: list[int] | None = None, season_id: int | None = None, game_ids: list[int] | None = None) -> list[dict[str, Any]]:
-    valid_ids = _valid_game_ids(player_ids, season_id)
+    # Season filter on games (no player_ids filter — regulars get credit for sub-week games)
+    season_valid_ids = _valid_game_ids(player_ids=None, season_id=season_id)
     won_case = case(
         ((GamePlayer.team == "A") & (Game.team_a_score > Game.team_b_score), 1),
         ((GamePlayer.team == "B") & (Game.team_b_score > Game.team_a_score), 1),
@@ -102,10 +103,12 @@ def get_leaderboard(db: Session, sort_by: str = "win_rate", player_ids: list[int
         .filter(Player.is_sub == False)
         .group_by(Player.id, Player.canonical_name)
     )
+    if player_ids is not None:
+        q = q.filter(Player.id.in_(player_ids))
     if game_ids is not None:
         q = q.filter(Game.id.in_(game_ids))
-    if valid_ids is not None:
-        q = q.filter(Game.id.in_(valid_ids))
+    if season_valid_ids is not None:
+        q = q.filter(Game.id.in_(season_valid_ids))
     rows = q.all()
 
     entries: list[dict[str, Any]] = []

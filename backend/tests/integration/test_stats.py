@@ -210,6 +210,28 @@ def test_player_stats_include_sub_games(client: TestClient, sub_fixture):
     assert data["games_played"] == 2
 
 
+def test_leaderboard_mini_league_excludes_subs_shows_sub_week_games(client: TestClient, sub_fixture):
+    """
+    With a custom player filter of just regulars [a, b, x, y]:
+    - SubS must not appear
+    - RegA must still have 2 games (sub week counts for individual stats)
+    """
+    a, b, x, y, s = sub_fixture["a"], sub_fixture["b"], sub_fixture["x"], sub_fixture["y"], sub_fixture["s"]
+    user_id = "test-mini-league-user"
+    client.post("/preferences", json={
+        "player_id": a,
+        "preset": "custom",
+        "custom_player_ids": [a, b, x, y],
+        "season_id": None,
+    }, headers={"X-User-ID": user_id})
+
+    entries = {e["player_id"]: e for e in client.get(
+        "/stats/leaderboard", headers={"X-User-ID": user_id}
+    ).json()}
+    assert s not in entries, "SubS should not appear in leaderboard"
+    assert entries[a]["games_played"] == 2, "RegA played in sub week, should count"
+
+
 def test_pairings_leaderboard(client: TestClient, game_fixture):
     response = client.get("/stats/pairings-leaderboard")
     assert response.status_code == 200
