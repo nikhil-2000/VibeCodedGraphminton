@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { getLeaderboard, getMatchupQuality } from '../api/stats'
+import { getLeaderboard, getMatchupQuality, getPairingsLeaderboard } from '../api/stats'
 import { useCurrentUser } from '../context/CurrentUserContext'
 import LeaderboardTable from '../components/LeaderboardTable'
+import PairingsLeaderboardTable from '../components/PairingsLeaderboardTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import type { LeaderboardEntry, MatchupQualityEntry } from '../types'
+import type { LeaderboardEntry, MatchupQualityEntry, PairingsLeaderboardEntry } from '../types'
 
 export default function LeaderboardPage() {
   const { currentPlayer } = useCurrentUser()
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [sortBy, setSortBy] = useState<'win_rate' | 'avg_points'>('avg_points')
+  const [pairings, setPairings] = useState<PairingsLeaderboardEntry[]>([])
+  const [pairingsSortBy, setPairingsSortBy] = useState<'win_rate' | 'avg_points'>('avg_points')
+  const [minGames, setMinGames] = useState(10)
   const [fairness, setFairness] = useState<MatchupQualityEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [pairingsLoading, setPairingsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -27,6 +32,13 @@ export default function LeaderboardPage() {
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
   }, [sortBy])
+
+  useEffect(() => {
+    setPairingsLoading(true)
+    getPairingsLeaderboard(pairingsSortBy)
+      .then(setPairings)
+      .finally(() => setPairingsLoading(false))
+  }, [pairingsSortBy])
 
   return (
     <div className="space-y-6">
@@ -46,6 +58,32 @@ export default function LeaderboardPage() {
           {loading && entries.length === 0 && <p className="text-muted-foreground">Loading…</p>}
           {error && <p className="text-destructive">{error}</p>}
           {!error && entries.length > 0 && <LeaderboardTable entries={entries} highlightPlayerId={currentPlayer?.id} />}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Doubles Leaderboard</CardTitle>
+          <div className="flex gap-2">
+            {([3, 5, 10] as const).map((n) => (
+              <Button key={n} variant={minGames === n ? 'default' : 'outline'} size="sm" onClick={() => setMinGames(n)}>
+                {n}+ GP
+              </Button>
+            ))}
+            <div className="w-px bg-border mx-1" />
+            <Button variant={pairingsSortBy === 'win_rate' ? 'default' : 'outline'} size="sm" onClick={() => setPairingsSortBy('win_rate')}>
+              Win Rate
+            </Button>
+            <Button variant={pairingsSortBy === 'avg_points' ? 'default' : 'outline'} size="sm" onClick={() => setPairingsSortBy('avg_points')}>
+              Avg Points
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {pairingsLoading && pairings.length === 0 && <p className="text-muted-foreground">Loading…</p>}
+          {!pairingsLoading && pairings.length > 0 && (
+            <PairingsLeaderboardTable entries={pairings.filter((e) => e.games_together >= minGames)} />
+          )}
         </CardContent>
       </Card>
 

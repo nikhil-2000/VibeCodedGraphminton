@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { LeaderboardEntry, Partnership, HeadToHead, MatchupQualityEntry, SuggestedGame, HeadToHeadRecord } from '../types'
+import type { LeaderboardEntry, PairingsLeaderboardEntry, Partnership, HeadToHead, MatchupQualityEntry, SuggestedGame, HeadToHeadRecord } from '../types'
 
 export const getLeaderboard = (sortBy: 'win_rate' | 'avg_points' = 'win_rate', gameIds?: number[]) => {
   const params = new URLSearchParams({ sort_by: sortBy })
@@ -9,6 +9,9 @@ export const getLeaderboard = (sortBy: 'win_rate' | 'avg_points' = 'win_rate', g
 
 export const getAllPartnerships = () =>
   apiFetch<Partnership[]>('/stats/partnerships')
+
+export const getPairingsLeaderboard = (sortBy: 'win_rate' | 'avg_points' = 'win_rate') =>
+  apiFetch<PairingsLeaderboardEntry[]>(`/stats/pairings-leaderboard?sort_by=${sortBy}`)
 
 export const getHeadToHead = (playerAId: number, playerBId: number) =>
   apiFetch<HeadToHead>(`/stats/head-to-head/${playerAId}/${playerBId}`)

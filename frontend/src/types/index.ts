@@ -49,3 +49,15 @@ export type HeadToHeadRecord = {
   losses: number
   avg_points: number
 }
+
+export type PairingsLeaderboardEntry = {
+  player_a_id: number
+  player_a_name: string
+  player_b_id: number
+  player_b_name: string
+  games_together: number
+  wins: number
+  losses: number
+  win_rate: number
+  avg_points: number
+}
