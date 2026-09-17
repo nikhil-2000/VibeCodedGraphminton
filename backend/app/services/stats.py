@@ -154,6 +154,64 @@ def get_all_partnerships(db: Session, player_id: int | None = None, player_ids: 
     return results
 
 
+def get_pairings_leaderboard(db: Session, sort_by: str = "win_rate", player_ids: list[int] | None = None, season_id: int | None = None) -> list[dict[str, Any]]:
+    valid_ids = _valid_game_ids(player_ids, season_id)
+    gp1 = aliased(GamePlayer)
+    gp2 = aliased(GamePlayer)
+    pa = aliased(Player)
+    pb = aliased(Player)
+
+    won_case = case(
+        ((gp1.team == "A") & (Game.team_a_score > Game.team_b_score), 1),
+        ((gp1.team == "B") & (Game.team_b_score > Game.team_a_score), 1),
+        else_=0,
+    )
+    points_case = case(
+        (gp1.team == "A", Game.team_a_score),
+        else_=Game.team_b_score,
+    )
+
+    query = (
+        db.query(
+            gp1.player_id.label("player_a_id"),
+            pa.canonical_name.label("player_a_name"),
+            gp2.player_id.label("player_b_id"),
+            pb.canonical_name.label("player_b_name"),
+            func.count().label("games_together"),
+            func.sum(won_case).label("wins"),
+            func.avg(points_case).label("avg_points"),
+        )
+        .join(gp2, (gp1.game_id == gp2.game_id) & (gp1.team == gp2.team) & (gp1.player_id < gp2.player_id))
+        .join(Game, gp1.game_id == Game.id)
+        .join(pa, gp1.player_id == pa.id)
+        .join(pb, gp2.player_id == pb.id)
+        .group_by(gp1.player_id, pa.canonical_name, gp2.player_id, pb.canonical_name)
+    )
+
+    if valid_ids is not None:
+        query = query.filter(Game.id.in_(valid_ids))
+
+    rows = query.all()
+    entries: list[dict[str, Any]] = []
+    for row in rows:
+        games = row.games_together or 0
+        wins = int(row.wins or 0)
+        entries.append({
+            "player_a_id": row.player_a_id,
+            "player_a_name": row.player_a_name,
+            "player_b_id": row.player_b_id,
+            "player_b_name": row.player_b_name,
+            "games_together": games,
+            "wins": wins,
+            "losses": games - wins,
+            "win_rate": round(wins / games, 4) if games else 0.0,
+            "avg_points": round(float(row.avg_points or 0), 2),
+        })
+
+    sort_key = "avg_points" if sort_by == "avg_points" else "win_rate"
+    return sorted(entries, key=lambda e: e[sort_key], reverse=True)
+
+
 def get_partnership_for_player(db: Session, player_id: int, player_ids: list[int] | None = None, season_id: int | None = None) -> list[dict[str, Any]]:
     if not db.get(Player, player_id):
         raise KeyError(f"Player {player_id} not found")

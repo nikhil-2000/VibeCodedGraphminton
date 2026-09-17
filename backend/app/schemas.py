@@ -107,6 +107,18 @@ class PartnershipResponse(BaseModel):
     win_rate: float
 
 
+class PairingsLeaderboardEntry(BaseModel):
+    player_a_id: int
+    player_a_name: str
+    player_b_id: int
+    player_b_name: str
+    games_together: int
+    wins: int
+    losses: int
+    win_rate: float
+    avg_points: float
+
+
 class PlayerPartnershipResponse(BaseModel):
     partner_id: int
     games_together: int

@@ -7,6 +7,7 @@ from ..services import stats as stats_service
 from ..schemas import (
     LeaderboardEntry,
     MatchupQualityEntry,
+    PairingsLeaderboardEntry,
     PartnershipResponse,
     PlayerPartnershipResponse,
     PlayerStatsResponse,
@@ -52,6 +53,16 @@ def leaderboard(
 ):
     player_ids, season_id = filters
     return stats_service.get_leaderboard(db, sort_by, player_ids, season_id, game_ids or None)
+
+
+@router.get("/pairings-leaderboard", response_model=list[PairingsLeaderboardEntry])
+def pairings_leaderboard(
+    sort_by: Literal["win_rate", "avg_points"] = "win_rate",
+    filters: tuple = Depends(get_filter_context),
+    db: Session = Depends(get_db),
+):
+    player_ids, season_id = filters
+    return stats_service.get_pairings_leaderboard(db, sort_by, player_ids, season_id)
 
 
 @router.get("/partnerships", response_model=list[PartnershipResponse])

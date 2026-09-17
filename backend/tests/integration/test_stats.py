@@ -201,3 +201,37 @@ def test_player_stats_player_ids_filter(client: TestClient, mixed_fixture):
 
     filtered = client.get(f"/stats/player/{a}", headers={"X-User-ID": user_id}).json()
     assert filtered["games_played"] == 1
+
+
+def test_pairings_leaderboard(client: TestClient, game_fixture):
+    response = client.get("/stats/pairings-leaderboard")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2  # A+B and X+Y
+    # Each entry has expected fields
+    entry = data[0]
+    assert "player_a_id" in entry
+    assert "player_a_name" in entry
+    assert "player_b_id" in entry
+    assert "player_b_name" in entry
+    assert "games_together" in entry
+    assert "wins" in entry
+    assert "losses" in entry
+    assert "win_rate" in entry
+    assert "avg_points" in entry
+
+
+def test_pairings_leaderboard_sort_by_win_rate(client: TestClient, game_fixture):
+    data = client.get("/stats/pairings-leaderboard?sort_by=win_rate").json()
+    # A+B won (win_rate=1.0) should be first
+    assert data[0]["win_rate"] >= data[1]["win_rate"]
+    names_a = {data[0]["player_a_name"], data[0]["player_b_name"]}
+    assert names_a == {"PlayerA", "PlayerB"}
+
+
+def test_pairings_leaderboard_sort_by_avg_points(client: TestClient, game_fixture):
+    data = client.get("/stats/pairings-leaderboard?sort_by=avg_points").json()
+    # A+B scored 21, X+Y scored 9 — A+B first
+    assert data[0]["avg_points"] >= data[1]["avg_points"]
+    assert data[0]["avg_points"] == 21.0
+    assert data[1]["avg_points"] == 9.0
