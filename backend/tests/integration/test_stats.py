@@ -140,10 +140,12 @@ def test_matchup(client: TestClient, two_games):
 
 
 @pytest.fixture
-def mixed_fixture(client: TestClient):
+def sub_fixture(client: TestClient):
     """
-    Game 1 (regulars only): RegA+RegB beat RegX+RegY 21-9
-    Game 2 (includes sub):  RegA+SubS beat RegB+RegY 21-15
+    Two games:
+      Game 1 (regulars only, 08-04-2024): RegA+RegB beat RegX+RegY 21-9
+      Game 2 (has sub, 08-04-2024):       RegA+SubS beat RegB+RegY 21-15
+    RegA plays in both; SubS is a sub.
     """
     a = _create_player(client, "RegA")
     b = _create_player(client, "RegB")
@@ -158,49 +160,54 @@ def mixed_fixture(client: TestClient):
     return {"a": a, "b": b, "x": x, "y": y, "s": s}
 
 
-def test_leaderboard_player_ids_filter(client: TestClient, mixed_fixture):
-    a, b, x, y, s = mixed_fixture["a"], mixed_fixture["b"], mixed_fixture["x"], mixed_fixture["y"], mixed_fixture["s"]
-    regular_ids = [a, b, x, y]
-
-    # Unfiltered: RegA has 2 games (played in both)
-    unfiltered = {e["player_id"]: e for e in client.get("/stats/leaderboard").json()}
-    assert unfiltered[a]["games_played"] == 2
-
-    # Set up preferences with custom player_ids filter
-    user_id = "test-filter-user"
-    client.post("/preferences", json={
-        "player_id": a,
-        "preset": "custom",
-        "custom_player_ids": regular_ids,
-        "season_id": None,
-    }, headers={"X-User-ID": user_id})
-
-    # Filtered via prefs: RegA has 1 game, SubS absent
-    filtered = {e["player_id"]: e for e in client.get(
-        "/stats/leaderboard", headers={"X-User-ID": user_id}
-    ).json()}
-    assert filtered[a]["games_played"] == 1
-    assert s not in filtered
+def test_leaderboard_excludes_subs(client: TestClient, sub_fixture):
+    """Subs never appear on the leaderboard."""
+    s = sub_fixture["s"]
+    entries = client.get("/stats/leaderboard").json()
+    player_ids_on_board = [e["player_id"] for e in entries]
+    assert s not in player_ids_on_board
 
 
-def test_player_stats_player_ids_filter(client: TestClient, mixed_fixture):
-    a, s = mixed_fixture["a"], mixed_fixture["s"]
-    regular_ids = [mixed_fixture["a"], mixed_fixture["b"], mixed_fixture["x"], mixed_fixture["y"]]
+def test_leaderboard_regular_counts_sub_week_games(client: TestClient, sub_fixture):
+    """Regulars get credit for games played in sub weeks (RegA played 2 games)."""
+    a = sub_fixture["a"]
+    entries = {e["player_id"]: e for e in client.get("/stats/leaderboard").json()}
+    assert entries[a]["games_played"] == 2
 
-    unfiltered = client.get(f"/stats/player/{a}").json()
-    assert unfiltered["games_played"] == 2
 
-    # Set up preferences with custom player_ids filter
-    user_id = "test-stats-filter-user"
-    client.post("/preferences", json={
-        "player_id": a,
-        "preset": "custom",
-        "custom_player_ids": regular_ids,
-        "season_id": None,
-    }, headers={"X-User-ID": user_id})
+def test_partnerships_exclude_sub_games(client: TestClient, sub_fixture):
+    """Partnerships involving a sub should not appear."""
+    s = sub_fixture["s"]
+    data = client.get("/stats/partnerships").json()
+    for p in data:
+        assert s not in (p["player_a_id"], p["player_b_id"]), \
+            f"SubS appeared in partnership: {p}"
 
-    filtered = client.get(f"/stats/player/{a}", headers={"X-User-ID": user_id}).json()
-    assert filtered["games_played"] == 1
+
+def test_partnerships_regular_only_game_counts(client: TestClient, sub_fixture):
+    """RegA+RegB partnership only counts game 1 (not game 2 which had SubS)."""
+    a, b = sub_fixture["a"], sub_fixture["b"]
+    resp = client.get(f"/stats/partnerships/{a}/{b}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["games_together"] == 1
+
+
+def test_head_to_head_excludes_sub_games(client: TestClient, sub_fixture):
+    """H2H between RegA and RegB only counts game 2... but game 2 has SubS so it's excluded."""
+    a, b = sub_fixture["a"], sub_fixture["b"]
+    # Game 1: RegA+RegB on same team — not h2h
+    # Game 2: RegA+SubS vs RegB+RegY — excluded (has sub)
+    # Result: 0 h2h games
+    data = client.get(f"/stats/head-to-head/{a}/{b}").json()
+    assert data["games_played"] == 0
+
+
+def test_player_stats_include_sub_games(client: TestClient, sub_fixture):
+    """Individual player stats count all games including sub weeks."""
+    a = sub_fixture["a"]
+    data = client.get(f"/stats/player/{a}").json()
+    assert data["games_played"] == 2
 
 
 def test_pairings_leaderboard(client: TestClient, game_fixture):
