@@ -29,6 +29,35 @@ def _valid_game_id_set(db: Session, player_ids: list[int] | None, season_id: int
     return all_ids
 
 
+def _regular_only_game_id_set(db: Session, player_ids: list[int] | None, season_id: int | None = None) -> set[int]:
+    """Set of game IDs containing no sub players. Always returns a set (never None)."""
+    from ..models import Player
+    sub_ids = {row.id for row in db.query(Player.id).filter(Player.is_sub == True).all()}
+    sub_game_ids = {
+        row.game_id
+        for row in db.query(GamePlayer.game_id)
+        .filter(GamePlayer.player_id.in_(sub_ids))
+        .distinct()
+        .all()
+    } if sub_ids else set()
+
+    q = db.query(Game.id)
+    if season_id is not None:
+        q = q.filter(Game.season_id == season_id)
+    all_ids = {row.id for row in q.all()} - sub_game_ids
+
+    if player_ids:
+        excluded = {
+            row.game_id
+            for row in db.query(GamePlayer.game_id)
+            .filter(GamePlayer.player_id.notin_(player_ids))
+            .distinct()
+            .all()
+        }
+        return all_ids - excluded
+    return all_ids
+
+
 def _get_player_game_counts(db: Session, valid_game_ids: set[int] | None = None) -> dict[int, int]:
     q = db.query(GamePlayer.player_id, func.count().label("games")).group_by(GamePlayer.player_id)
     if valid_game_ids is not None:
@@ -49,7 +78,7 @@ def _get_all_player_pairs(player_counts: dict[int, int]) -> list[tuple[int, int]
 
 
 def get_partnership_anomalies(db: Session, overplayed: bool, limit: int | None = 10, player_ids: list[int] | None = None, season_id: int | None = None, focus_player_id: int | None = None) -> list[dict[str, Any]]:
-    valid_game_ids = _valid_game_id_set(db, player_ids, season_id)
+    valid_game_ids = _regular_only_game_id_set(db, player_ids, season_id)
     gp1 = aliased(GamePlayer)
     gp2 = aliased(GamePlayer)
 
@@ -62,13 +91,12 @@ def get_partnership_anomalies(db: Session, overplayed: bool, limit: int | None =
         .join(gp2, (gp1.game_id == gp2.game_id) & (gp1.team == gp2.team) & (gp1.player_id < gp2.player_id))
         .group_by(gp1.player_id, gp2.player_id)
     )
-    if valid_game_ids is not None:
-        q = q.filter(gp1.game_id.in_(valid_game_ids))
+    q = q.filter(gp1.game_id.in_(valid_game_ids))
 
     actual_counts = {(min(r.a, r.b), max(r.a, r.b)): int(r.n) for r in q.all()}
 
     player_counts = _get_player_game_counts(db, valid_game_ids)
-    total_games = len(valid_game_ids) if valid_game_ids is not None else db.query(func.count(Game.id)).scalar() or 0
+    total_games = len(valid_game_ids)
     all_pairs = _get_all_player_pairs(player_counts)
 
     results: list[dict[str, Any]] = []
@@ -105,7 +133,7 @@ def get_partnership_anomalies(db: Session, overplayed: bool, limit: int | None =
 
 
 def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int | None = 10, player_ids: list[int] | None = None, season_id: int | None = None, focus_player_id: int | None = None) -> list[dict[str, Any]]:
-    valid_game_ids = _valid_game_id_set(db, player_ids, season_id)
+    valid_game_ids = _regular_only_game_id_set(db, player_ids, season_id)
     gp1 = aliased(GamePlayer)
     gp2 = aliased(GamePlayer)
 
@@ -118,13 +146,12 @@ def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int | None 
         .join(gp2, (gp1.game_id == gp2.game_id) & (gp1.team != gp2.team) & (gp1.player_id < gp2.player_id))
         .group_by(gp1.player_id, gp2.player_id)
     )
-    if valid_game_ids is not None:
-        q = q.filter(gp1.game_id.in_(valid_game_ids))
+    q = q.filter(gp1.game_id.in_(valid_game_ids))
 
     actual_counts = {(min(r.a, r.b), max(r.a, r.b)): int(r.n) for r in q.all()}
 
     player_counts = _get_player_game_counts(db, valid_game_ids)
-    total_games = len(valid_game_ids) if valid_game_ids is not None else db.query(func.count(Game.id)).scalar() or 0
+    total_games = len(valid_game_ids)
     all_pairs = _get_all_player_pairs(player_counts)
 
     results: list[dict[str, Any]] = []
