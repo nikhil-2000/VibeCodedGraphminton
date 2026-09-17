@@ -15,7 +15,7 @@ export default function LeaderboardPage() {
   const [sortBy, setSortBy] = useState<'win_rate' | 'avg_points'>('avg_points')
   const [pairings, setPairings] = useState<PairingsLeaderboardEntry[]>([])
   const [pairingsSortBy, setPairingsSortBy] = useState<'win_rate' | 'avg_points'>('avg_points')
-  const [minGames, setMinGames] = useState(3)
+  const [minGames, setMinGames] = useState(10)
   const [fairness, setFairness] = useState<MatchupQualityEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [pairingsLoading, setPairingsLoading] = useState(true)
