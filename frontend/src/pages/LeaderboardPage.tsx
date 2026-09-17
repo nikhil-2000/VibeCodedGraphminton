@@ -63,7 +63,7 @@ export default function LeaderboardPage() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Pairings Leaderboard</CardTitle>
+          <CardTitle>Doubles Leaderboard</CardTitle>
           <div className="flex gap-2">
             {([3, 5, 10] as const).map((n) => (
               <Button key={n} variant={minGames === n ? 'default' : 'outline'} size="sm" onClick={() => setMinGames(n)}>
