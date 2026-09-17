@@ -15,6 +15,7 @@ export default function LeaderboardPage() {
   const [sortBy, setSortBy] = useState<'win_rate' | 'avg_points'>('avg_points')
   const [pairings, setPairings] = useState<PairingsLeaderboardEntry[]>([])
   const [pairingsSortBy, setPairingsSortBy] = useState<'win_rate' | 'avg_points'>('avg_points')
+  const [minGames, setMinGames] = useState(3)
   const [fairness, setFairness] = useState<MatchupQualityEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [pairingsLoading, setPairingsLoading] = useState(true)
@@ -64,6 +65,12 @@ export default function LeaderboardPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Pairings Leaderboard</CardTitle>
           <div className="flex gap-2">
+            {([3, 5, 10] as const).map((n) => (
+              <Button key={n} variant={minGames === n ? 'default' : 'outline'} size="sm" onClick={() => setMinGames(n)}>
+                {n}+ GP
+              </Button>
+            ))}
+            <div className="w-px bg-border mx-1" />
             <Button variant={pairingsSortBy === 'win_rate' ? 'default' : 'outline'} size="sm" onClick={() => setPairingsSortBy('win_rate')}>
               Win Rate
             </Button>
@@ -74,7 +81,9 @@ export default function LeaderboardPage() {
         </CardHeader>
         <CardContent>
           {pairingsLoading && pairings.length === 0 && <p className="text-muted-foreground">Loading…</p>}
-          {!pairingsLoading && pairings.length > 0 && <PairingsLeaderboardTable entries={pairings} />}
+          {!pairingsLoading && pairings.length > 0 && (
+            <PairingsLeaderboardTable entries={pairings.filter((e) => e.games_together >= minGames)} />
+          )}
         </CardContent>
       </Card>
 
