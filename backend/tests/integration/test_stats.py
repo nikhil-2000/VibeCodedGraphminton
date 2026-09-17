@@ -232,6 +232,16 @@ def test_leaderboard_mini_league_excludes_subs_shows_sub_week_games(client: Test
     assert entries[a]["games_played"] == 2, "RegA played in sub week, should count"
 
 
+def test_suggested_games_exclude_sub_players(client: TestClient, sub_fixture):
+    """Sub players must not appear in suggested games."""
+    data = client.get("/stats/suggested-games").json()
+    for suggestion in data:
+        assert "SubS" not in suggestion["team_a"], \
+            f"SubS appeared in team_a of suggested game: {suggestion}"
+        assert "SubS" not in suggestion["team_b"], \
+            f"SubS appeared in team_b of suggested game: {suggestion}"
+
+
 def test_pairings_leaderboard(client: TestClient, game_fixture):
     response = client.get("/stats/pairings-leaderboard")
     assert response.status_code == 200
