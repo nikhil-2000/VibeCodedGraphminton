@@ -62,21 +62,25 @@ export default function LeaderboardPage() {
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Doubles Leaderboard</CardTitle>
-          <div className="flex gap-2">
-            {([3, 5, 10] as const).map((n) => (
-              <Button key={n} variant={minGames === n ? 'default' : 'outline'} size="sm" onClick={() => setMinGames(n)}>
-                {n}+ GP
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex gap-2">
+              {([3, 5, 10] as const).map((n) => (
+                <Button key={n} variant={minGames === n ? 'default' : 'outline'} size="sm" onClick={() => setMinGames(n)}>
+                  {n}+ GP
+                </Button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-px h-6 bg-border hidden [@media(min-width:400px)]:block" />
+              <Button variant={pairingsSortBy === 'win_rate' ? 'default' : 'outline'} size="sm" onClick={() => setPairingsSortBy('win_rate')}>
+                Win Rate
               </Button>
-            ))}
-            <div className="w-px bg-border mx-1" />
-            <Button variant={pairingsSortBy === 'win_rate' ? 'default' : 'outline'} size="sm" onClick={() => setPairingsSortBy('win_rate')}>
-              Win Rate
-            </Button>
-            <Button variant={pairingsSortBy === 'avg_points' ? 'default' : 'outline'} size="sm" onClick={() => setPairingsSortBy('avg_points')}>
-              Avg Points
-            </Button>
+              <Button variant={pairingsSortBy === 'avg_points' ? 'default' : 'outline'} size="sm" onClick={() => setPairingsSortBy('avg_points')}>
+                Avg Points
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
