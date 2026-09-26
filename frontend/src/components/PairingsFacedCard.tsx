@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { PairingsFacedEntry, PairingsLeaderboardEntry } from '../types'
 
 interface Props {
+  playerId: number
   facedEntries: PairingsFacedEntry[]
   allPairings: PairingsLeaderboardEntry[]
   topN?: number
@@ -38,9 +39,14 @@ function PairingRow({ entry }: { entry: PairingsFacedEntry }) {
   )
 }
 
-export default function PairingsFacedCard({ facedEntries, allPairings, topN = 5 }: Props) {
+export default function PairingsFacedCard({ playerId: _playerId, facedEntries, allPairings, topN = 5 }: Props) {
   const facedKeys = new Set(
-    facedEntries.map((e) => `${e.pair_player_a_id}-${e.pair_player_b_id}`)
+    facedEntries.map((e) => {
+      const [lo, hi] = e.pair_player_a_id < e.pair_player_b_id
+        ? [e.pair_player_a_id, e.pair_player_b_id]
+        : [e.pair_player_b_id, e.pair_player_a_id]
+      return `${lo}-${hi}`
+    })
   )
 
   const mostFaced = facedEntries.slice(0, topN)
