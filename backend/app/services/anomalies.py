@@ -6,6 +6,7 @@ from ..models import Game, GamePlayer
 
 MIN_GAMES_THRESHOLD = 3
 DEVIATION_RATIO_THRESHOLD = 0.20
+MIN_ABSOLUTE_DEVIATION = 2.0
 
 
 def _valid_game_id_set(db: Session, player_ids: list[int] | None, season_id: int | None = None) -> set[int] | None:
@@ -87,6 +88,8 @@ def get_partnership_anomalies(db: Session, overplayed: bool, limit: int | None =
             continue
         if not overplayed and deviation >= 0:
             continue
+        if abs(deviation) < MIN_ABSOLUTE_DEVIATION:
+            continue
         if actual > 0 and abs(deviation) / actual < DEVIATION_RATIO_THRESHOLD:
             continue
 
@@ -142,6 +145,8 @@ def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int | None 
         if overplayed and deviation <= 0:
             continue
         if not overplayed and deviation >= 0:
+            continue
+        if abs(deviation) < MIN_ABSOLUTE_DEVIATION:
             continue
         if actual > 0 and abs(deviation) / actual < DEVIATION_RATIO_THRESHOLD:
             continue
