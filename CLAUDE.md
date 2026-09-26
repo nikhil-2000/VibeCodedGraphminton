@@ -20,6 +20,27 @@ docker compose up          # start DB + backend
 cd frontend && npm run dev  # start frontend
 ```
 
+### Database setup
+
+**Preferred: Neon branching (real data)**
+
+Branches prod data into an isolated Neon DB — best for dev since the app needs real match data to be useful.
+
+Requires `.env.secrets` with `NEON_API_KEY`, `NEON_PROJECT_ID`, `NEON_PASSWORD` (see `.env.example`).
+
+```bash
+./scripts/dev-data-setup.sh    # creates Neon branch, writes .env.local
+docker compose up
+# when done:
+./scripts/dev-data-teardown.sh # deletes branch, removes .env.local
+```
+
+**Alternative: local postgres (empty DB)**
+
+Set only `ADMIN_TOKEN` in `.env.secrets`, then `docker compose up`. DB starts empty — you'll need to ingest data manually via the upload page.
+
+> **Known gap**: no seed script for mock data. Goal is to remove the dependency on Neon branching by adding a script that loads a few weeks of fixture data into a fresh local DB.
+
 ### Backend tests
 ```bash
 # Integration tests require a running test DB (docker compose up db)
@@ -57,7 +78,4 @@ Stored in the DB. Each player has a canonical name + zero or more aliases. All a
 
 ## Roadmap (remaining)
 
-1. Anomaly detection improvements (player-focused view — in progress)
-2. User preferences persistence + backend filtering
-3. Mobile UX improvements
-4. Auth and multi-user support
+1. Multi-user support — user identity and preferences currently stored in localStorage; needs proper server-side accounts
