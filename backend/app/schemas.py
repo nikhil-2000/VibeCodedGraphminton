@@ -155,6 +155,15 @@ class PairingsFacedEntry(BaseModel):
     win_rate: float
 
 
+class VsPairingsLeaderboardEntry(BaseModel):
+    player_id: int
+    canonical_name: str
+    games_faced: int
+    wins: int
+    losses: int
+    win_rate: float
+
+
 class MatchupResponse(BaseModel):
     pair_a: list[int]
     pair_b: list[int]

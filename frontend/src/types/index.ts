@@ -72,3 +72,12 @@ export type PairingsFacedEntry = {
   losses: number
   win_rate: number
 }
+
+export type VsPairingsLeaderboardEntry = {
+  player_id: number
+  canonical_name: string
+  games_faced: number
+  wins: number
+  losses: number
+  win_rate: number
+}
