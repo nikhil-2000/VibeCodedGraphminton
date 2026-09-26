@@ -62,15 +62,15 @@ export default function LeaderboardPage() {
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Doubles Leaderboard</CardTitle>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {([3, 5, 10] as const).map((n) => (
               <Button key={n} variant={minGames === n ? 'default' : 'outline'} size="sm" onClick={() => setMinGames(n)}>
                 {n}+ GP
               </Button>
             ))}
-            <div className="w-px bg-border mx-1" />
+            <div className="w-px bg-border mx-1 hidden sm:block" />
             <Button variant={pairingsSortBy === 'win_rate' ? 'default' : 'outline'} size="sm" onClick={() => setPairingsSortBy('win_rate')}>
               Win Rate
             </Button>
