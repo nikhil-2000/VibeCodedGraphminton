@@ -21,7 +21,8 @@ def anomaly_seed(client: TestClient):
     d = _create_player(client, "AnoD")
 
     # Each date is a separate file (single-date-per-file rule)
-    for date in ["08-04-2024", "15-04-2024", "22-04-2024", "29-04-2024"]:
+    # 7 weeks ensures all deviations exceed MIN_ABSOLUTE_DEVIATION=2.0
+    for date in ["08-04-2024", "15-04-2024", "22-04-2024", "29-04-2024", "06-05-2024", "13-05-2024", "20-05-2024"]:
         client.post("/ingest/scores", json={"files": [
             f"Date,GameNo,A,B,PtsAB,X,Y,PtsXY\n"
             f"{date},1,AnoA,AnoB,21,AnoC,AnoD,9\n"
@@ -108,6 +109,26 @@ def test_head_to_head_focus_player_underplayed(client: TestClient, anomaly_seed)
     data = response.json()
     for row in data:
         assert row["player_a_id"] == a or row["player_b_id"] == a
+
+
+def test_small_absolute_deviation_filtered_out(client: TestClient):
+    """Pairs with |deviation| < 2.0 must not appear regardless of ratio."""
+    for name in ["SmA", "SmB", "SmC", "SmD"]:
+        client.post("/players", json={"canonical_name": name, "is_sub": False, "aliases": []})
+
+    # 2 games: SmA+SmB always partner → expected=0.67, deviation=+1.33 (below floor)
+    for date in ["01-06-2024", "08-06-2024"]:
+        client.post("/ingest/scores", json={"files": [
+            f"Date,GameNo,A,B,PtsAB,X,Y,PtsXY\n"
+            f"{date},1,SmA,SmB,21,SmC,SmD,9\n"
+        ]})
+
+    for endpoint in ["/anomalies/partnerships/overplayed", "/anomalies/partnerships/underplayed",
+                     "/anomalies/head-to-head/overplayed", "/anomalies/head-to-head/underplayed"]:
+        response = client.get(f"{endpoint}?limit=100")
+        assert response.status_code == 200
+        for row in response.json():
+            assert abs(row["deviation"]) >= 2.0, f"{endpoint} returned deviation {row['deviation']}"
 
 
 def test_partnership_anomalies_player_ids_filter(client: TestClient):
