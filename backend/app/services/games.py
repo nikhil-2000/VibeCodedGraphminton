@@ -1,7 +1,8 @@
 from typing import Any
 from sqlalchemy.orm import Session, aliased
-from sqlalchemy import func, select, case
+from sqlalchemy import func, select
 from ..models import Game, GamePlayer, Player
+from ._common import points_for_case, valid_game_ids
 
 
 # Session rank subquery: ranks each distinct played_on date chronologically (1, 2, 3, …)
@@ -155,69 +156,77 @@ def _game_summary(game: Game, session: int | None = None) -> dict[str, Any]:
     }
 
 
-def get_game_prediction(db: Session, game_id: int) -> dict[str, Any]:
+def get_game_prediction(
+    db: Session,
+    game_id: int,
+    player_ids: list[int] | None = None,
+    season_id: int | None = None,
+) -> dict[str, Any]:
+    """Predict a game's score from how its players have performed in games in scope.
+
+    Honours the active season/roster filters, so a prediction shown alongside a
+    filtered view is built from the same games the rest of that view reports on.
+    """
     game = db.get(Game, game_id)
     if not game:
         raise KeyError(f"Game {game_id} not found")
 
-    a_ids = [r.player_id for r in db.query(GamePlayer.player_id).filter(
-        GamePlayer.game_id == game_id, GamePlayer.team == "A"
-    ).all()]
-    b_ids = [r.player_id for r in db.query(GamePlayer.player_id).filter(
-        GamePlayer.game_id == game_id, GamePlayer.team == "B"
-    ).all()]
+    valid_ids = valid_game_ids(player_ids, season_id)
 
-    def _avg_with_partner(pid: int, partner_id: int) -> float | None:
-        gpa = aliased(GamePlayer)
-        gpb = aliased(GamePlayer)
-        pts = case((gpa.team == "A", Game.team_a_score), else_=Game.team_b_score)
-        result = (
-            db.query(func.avg(pts))
-            .join(gpa, (gpa.game_id == Game.id) & (gpa.player_id == pid))
-            .join(gpb, (gpb.game_id == Game.id) & (gpb.player_id == partner_id) & (gpb.team == gpa.team))
-            .scalar()
-        )
-        return float(result) if result is not None else None
+    def _team_ids(team: str) -> list[int]:
+        return [
+            r.player_id
+            for r in db.query(GamePlayer.player_id)
+            .filter(GamePlayer.game_id == game_id, GamePlayer.team == team)
+            .all()
+        ]
 
-    def _avg_vs_opponent(pid: int, opp_id: int) -> float | None:
+    a_ids = _team_ids("A")
+    b_ids = _team_ids("B")
+
+    def _avg_points_with(pid: int, other_id: int, same_team: bool) -> float | None:
+        """pid's average score in games shared with other_id, as partner or opponent."""
         gpa = aliased(GamePlayer)
         gpo = aliased(GamePlayer)
-        pts = case((gpa.team == "A", Game.team_a_score), else_=Game.team_b_score)
-        result = (
-            db.query(func.avg(pts))
+        team_predicate = (gpo.team == gpa.team) if same_team else (gpo.team != gpa.team)
+        q = (
+            db.query(func.avg(points_for_case(gpa)))
             .join(gpa, (gpa.game_id == Game.id) & (gpa.player_id == pid))
-            .join(gpo, (gpo.game_id == Game.id) & (gpo.player_id == opp_id) & (gpo.team != gpa.team))
-            .scalar()
+            .join(gpo, (gpo.game_id == Game.id) & (gpo.player_id == other_id) & team_predicate)
         )
+        if valid_ids is not None:
+            q = q.filter(Game.id.in_(valid_ids))
+        result = q.scalar()
         return float(result) if result is not None else None
 
     def _overall_avg(pid: int) -> float:
-        pts = case((GamePlayer.team == "A", Game.team_a_score), else_=Game.team_b_score)
-        result = (
-            db.query(func.avg(pts))
+        q = (
+            db.query(func.avg(points_for_case()))
+            .select_from(GamePlayer)
             .join(Game, GamePlayer.game_id == Game.id)
             .filter(GamePlayer.player_id == pid)
-            .scalar()
         )
-        return float(result or 0)
+        if valid_ids is not None:
+            q = q.filter(Game.id.in_(valid_ids))
+        return float(q.scalar() or 0)
 
     def _expected_for_player(pid: int, partner_id: int, opp1_id: int, opp2_id: int) -> float:
         scores = [
-            _avg_with_partner(pid, partner_id),
-            _avg_vs_opponent(pid, opp1_id),
-            _avg_vs_opponent(pid, opp2_id),
+            _avg_points_with(pid, partner_id, same_team=True),
+            _avg_points_with(pid, opp1_id, same_team=False),
+            _avg_points_with(pid, opp2_id, same_team=False),
         ]
         valid = [s for s in scores if s is not None]
         return sum(valid) / len(valid) if valid else _overall_avg(pid)
 
-    exp_a = (
-        _expected_for_player(a_ids[0], a_ids[1], b_ids[0], b_ids[1])
-        + _expected_for_player(a_ids[1], a_ids[0], b_ids[0], b_ids[1])
-    ) / 2
-    exp_b = (
-        _expected_for_player(b_ids[0], b_ids[1], a_ids[0], a_ids[1])
-        + _expected_for_player(b_ids[1], b_ids[0], a_ids[0], a_ids[1])
-    ) / 2
+    def _expected_for_team(team: list[int], opponents: list[int]) -> float:
+        return (
+            _expected_for_player(team[0], team[1], opponents[0], opponents[1])
+            + _expected_for_player(team[1], team[0], opponents[0], opponents[1])
+        ) / 2
+
+    exp_a = _expected_for_team(a_ids, b_ids)
+    exp_b = _expected_for_team(b_ids, a_ids)
 
     actual_winner = "A" if game.team_a_score > game.team_b_score else "B"
     expected_winner = "A" if exp_a >= exp_b else "B"
