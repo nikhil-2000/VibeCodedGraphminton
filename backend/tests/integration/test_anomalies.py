@@ -110,34 +110,30 @@ def test_head_to_head_focus_player_underplayed(client: TestClient, anomaly_seed)
         assert row["player_a_id"] == a or row["player_b_id"] == a
 
 
-def test_partnership_anomalies_player_ids_filter(client: TestClient):
-    """Sub game partnerships should not appear when filtered to regulars."""
-    # Create 4 regulars and 1 sub
+def test_anomalies_exclude_sub_games_by_default(client: TestClient):
+    """Sub partnerships should never appear in anomalies — no filter needed."""
     reg_ids = []
     for name in ["AnoRegA", "AnoRegB", "AnoRegX", "AnoRegY"]:
         reg_ids.append(client.post("/players", json={"canonical_name": name, "is_sub": False, "aliases": []}).json()["id"])
     sub_id = client.post("/players", json={"canonical_name": "AnoSubS", "is_sub": True, "aliases": []}).json()["id"]
 
-    # Ingest 3 games: 2 regulars-only, 1 with sub
-    resp = client.post("/ingest/scores", json={"files": [
-        "09-04-2024,1,AnoRegA,AnoRegB,21,AnoRegX,AnoRegY,9\n"
-        "09-04-2024,2,AnoRegA,AnoRegB,21,AnoRegX,AnoRegY,15\n"
-        "09-04-2024,3,AnoRegA,AnoSubS,21,AnoRegX,AnoRegY,10\n"
+    # 4 games: 3 regulars-only (to build up overplayed AnoRegA+AnoRegB), 1 with sub
+    for date in ["09-04-2024", "16-04-2024", "23-04-2024"]:
+        client.post("/ingest/scores", json={"files": [
+            f"{date},1,AnoRegA,AnoRegB,21,AnoRegX,AnoRegY,9\n"
+        ]})
+    client.post("/ingest/scores", json={"files": [
+        "30-04-2024,1,AnoRegA,AnoSubS,21,AnoRegX,AnoRegY,9\n"
     ]})
-    assert resp.status_code == 200, resp.json()
 
-    user_id = "test-anomaly-filter-user"
-    client.post("/preferences", json={
-        "player_id": reg_ids[0],
-        "preset": "custom",
-        "custom_player_ids": reg_ids,
-        "season_id": None,
-    }, headers={"X-User-ID": user_id})
-
-    response = client.get("/anomalies/partnerships/overplayed", headers={"X-User-ID": user_id})
-    assert response.status_code == 200
-    data = response.json()
-    # sub player should not appear in any anomaly entry
-    for entry in data:
-        assert entry["player_a_id"] != sub_id
-        assert entry["player_b_id"] != sub_id
+    # Without any filter — sub should never appear
+    for endpoint in [
+        "/anomalies/partnerships/overplayed",
+        "/anomalies/partnerships/underplayed",
+        "/anomalies/head-to-head/overplayed",
+        "/anomalies/head-to-head/underplayed",
+    ]:
+        data = client.get(endpoint).json()
+        for entry in data:
+            assert entry["player_a_id"] != sub_id, f"Sub appeared in {endpoint}: {entry}"
+            assert entry["player_b_id"] != sub_id, f"Sub appeared in {endpoint}: {entry}"
