@@ -235,7 +235,7 @@ export default function PlayerDetailPage() {
         <StatCard label="Normal (4–6)" value={`${gameCloseness.normal.wins}–${gameCloseness.normal.losses}`} sub={`${gameCloseness.normal.wins + gameCloseness.normal.losses} games`} />
         <StatCard label="Blowout (7+)" value={`${gameCloseness.blowout.wins}–${gameCloseness.blowout.losses}`} sub={`${gameCloseness.blowout.wins + gameCloseness.blowout.losses} games`} />
         <StatCard label="vs Top 3 pair" value={vsTop3Pct} sub={top3Names || undefined} />
-        <StatCard label="vs Bot 3 pair" value={vsBottom3Pct} sub={bottom3Names || undefined} />
+        <StatCard label="vs Bottom 3 pair" value={vsBottom3Pct} sub={bottom3Names || undefined} />
       </div>
 
       <div className="mb-3 flex items-center gap-4 text-xs text-muted-foreground">
