@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import type { PairingsFacedEntry, PairingsLeaderboardEntry } from '../types'
+import type { PairingsFacedEntry } from '../types'
 
 interface Props {
   playerId: number
   facedEntries: PairingsFacedEntry[]
-  allPairings: PairingsLeaderboardEntry[]
   topN?: number
 }
 
@@ -39,29 +38,10 @@ function PairingRow({ entry }: { entry: PairingsFacedEntry }) {
   )
 }
 
-export default function PairingsFacedCard({ playerId: _playerId, facedEntries, allPairings, topN = 5 }: Props) {
-  const facedKeys = new Set(
-    facedEntries.map((e) => {
-      const [lo, hi] = e.pair_player_a_id < e.pair_player_b_id
-        ? [e.pair_player_a_id, e.pair_player_b_id]
-        : [e.pair_player_b_id, e.pair_player_a_id]
-      return `${lo}-${hi}`
-    })
-  )
-
+export default function PairingsFacedCard({ playerId: _playerId, facedEntries, topN = 5 }: Props) {
   const mostFaced = facedEntries.slice(0, topN)
-  const leastFaced = facedEntries.length > topN
-    ? facedEntries.slice(topN).slice(-topN)
-    : []
 
-  const neverFaced = allPairings.filter((p) => {
-    const key = p.player_a_id < p.player_b_id
-      ? `${p.player_a_id}-${p.player_b_id}`
-      : `${p.player_b_id}-${p.player_a_id}`
-    return !facedKeys.has(key)
-  })
-
-  if (facedEntries.length === 0 && neverFaced.length === 0) {
+  if (mostFaced.length === 0) {
     return (
       <Card className="mt-6">
         <CardHeader><CardTitle>Pairings Faced</CardTitle></CardHeader>
@@ -70,91 +50,28 @@ export default function PairingsFacedCard({ playerId: _playerId, facedEntries, a
     )
   }
 
-  const tableHeader = (
-    <TableHeader>
-      <TableRow>
-        <TableHead>Pairing</TableHead>
-        <TableHead className="text-right">GP</TableHead>
-        <TableHead className="text-right">Win %</TableHead>
-        <TableHead className="text-right">W</TableHead>
-        <TableHead className="text-right">L</TableHead>
-      </TableRow>
-    </TableHeader>
-  )
-
   return (
     <Card className="mt-6">
       <CardHeader><CardTitle>Pairings Faced</CardTitle></CardHeader>
-      <CardContent className="space-y-6">
-        {mostFaced.length > 0 && (
-          <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Most Faced
-            </h3>
-            <div className="overflow-x-auto">
-              <Table>
-                {tableHeader}
-                <TableBody>
-                  {mostFaced.map((e) => (
-                    <PairingRow key={`${e.pair_player_a_id}-${e.pair_player_b_id}`} entry={e} />
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        )}
-
-        {leastFaced.length > 0 && (
-          <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Least Faced
-            </h3>
-            <div className="overflow-x-auto">
-              <Table>
-                {tableHeader}
-                <TableBody>
-                  {leastFaced.map((e) => (
-                    <PairingRow key={`${e.pair_player_a_id}-${e.pair_player_b_id}`} entry={e} />
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        )}
-
-        {neverFaced.length > 0 && (
-          <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Never Faced
-            </h3>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Pairing</TableHead>
-                    <TableHead className="text-right text-muted-foreground">GP (together)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {neverFaced.map((p) => (
-                    <TableRow key={`${p.player_a_id}-${p.player_b_id}`} className="opacity-50">
-                      <TableCell className="font-medium">
-                        <Link to={`/players/${p.player_a_id}`} className="hover:text-yellow-400">
-                          {p.player_a_name}
-                        </Link>
-                        {' & '}
-                        <Link to={`/players/${p.player_b_id}`} className="hover:text-yellow-400">
-                          {p.player_b_name}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground">{p.games_together}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        )}
+      <CardContent>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Pairing</TableHead>
+                <TableHead className="text-right">GP</TableHead>
+                <TableHead className="text-right">Win %</TableHead>
+                <TableHead className="text-right">W</TableHead>
+                <TableHead className="text-right">L</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {mostFaced.map((e) => (
+                <PairingRow key={`${e.pair_player_a_id}-${e.pair_player_b_id}`} entry={e} />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )

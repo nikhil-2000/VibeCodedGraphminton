@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getPlayer, getPlayerStats, getPlayerPartnerships, deletePlayer, updatePlayer } from '../api/players'
-import { getHeadToHeadAll, getLeaderboard, getPairingsFaced, getPairingsLeaderboard } from '../api/stats'
+import { getHeadToHeadAll, getLeaderboard, getPairingsFaced } from '../api/stats'
 import { getPartnershipAnomaliesForPlayer, getHeadToHeadAnomaliesForPlayer } from '../api/anomalies'
 import GameCard from '../components/GameCard'
 import PairingsFacedCard from '../components/PairingsFacedCard'
@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import type { Player, PlayerStats, PlayerPartnership, HeadToHeadRecord, GameDetail, PairingsFacedEntry, PairingsLeaderboardEntry } from '../types'
+import type { Player, PlayerStats, PlayerPartnership, HeadToHeadRecord, GameDetail, PairingsFacedEntry } from '../types'
 
 export default function PlayerDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -29,7 +29,6 @@ export default function PlayerDetailPage() {
   const [partnerships, setPartnerships] = useState<PlayerPartnership[]>([])
   const [h2hRecords, setH2hRecords] = useState<HeadToHeadRecord[]>([])
   const [pairingsFaced, setPairingsFaced] = useState<PairingsFacedEntry[]>([])
-  const [allPairings, setAllPairings] = useState<PairingsLeaderboardEntry[]>([])
   const [partnerAnomalyMap, setPartnerAnomalyMap] = useState<Record<number, 'over' | 'under'>>({})
   const [opponentAnomalyMap, setOpponentAnomalyMap] = useState<Record<number, 'over' | 'under'>>({})
   const { games } = useFilteredGames({ player_id: playerId })
@@ -65,9 +64,8 @@ export default function PlayerDetailPage() {
       getHeadToHeadAnomaliesForPlayer(playerId, 'underplayed'),
       getLeaderboard('avg_points'),
       getPairingsFaced(playerId),
-      getPairingsLeaderboard(),
     ])
-      .then(([p, s, partners, h2h, partnerOver, partnerUnder, oppOver, oppUnder, lb, faced, pairings]) => {
+      .then(([p, s, partners, h2h, partnerOver, partnerUnder, oppOver, oppUnder, lb, faced]) => {
         setPlayer(p)
         setStats(s)
         setPartnerships(partners)
@@ -100,7 +98,6 @@ export default function PlayerDetailPage() {
         setTopIds(new Set(others.slice(0, third).map((e) => e.player_id)))
         setBottomIds(new Set(others.slice(others.length - third).map((e) => e.player_id)))
         setPairingsFaced(faced)
-        setAllPairings(pairings)
       })
       .catch((e: Error) => setError(e.message))
   }, [playerId])
@@ -311,7 +308,7 @@ export default function PlayerDetailPage() {
         </CardContent>
       </Card>
 
-      <PairingsFacedCard playerId={playerId} facedEntries={pairingsFaced} allPairings={allPairings} />
+      <PairingsFacedCard playerId={playerId} facedEntries={pairingsFaced} />
 
       <Card className="mt-6">
         <CardHeader><CardTitle>Games</CardTitle></CardHeader>
