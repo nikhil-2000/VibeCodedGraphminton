@@ -177,8 +177,12 @@ export default function PlayerDetailPage() {
   )
 
   const lbOthers = leaderboard.filter((e) => e.player_id !== playerId)
-  const top3Ids = new Set(lbOthers.slice(0, 3).map((e) => e.player_id))
-  const bottom3Ids = new Set(lbOthers.slice(-3).map((e) => e.player_id))
+  const top3Entries = lbOthers.slice(0, 3)
+  const bottom3Entries = lbOthers.slice(-3)
+  const top3Ids = new Set(top3Entries.map((e) => e.player_id))
+  const bottom3Ids = new Set(bottom3Entries.map((e) => e.player_id))
+  const top3Names = top3Entries.map((e) => e.canonical_name).join(', ')
+  const bottom3Names = bottom3Entries.map((e) => e.canonical_name).join(', ')
   const totalFacedGames = pairingsFaced.reduce((sum, e) => sum + e.games_faced, 0)
   const vsTop3Games = pairingsFaced
     .filter((e) => top3Ids.has(e.pair_player_a_id) && top3Ids.has(e.pair_player_b_id))
@@ -221,7 +225,7 @@ export default function PlayerDetailPage() {
         </p>
       )}
 
-      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <StatCard label="Games" value={stats.games_played} />
         <StatCard label="Wins" value={stats.wins} />
         <StatCard label="Losses" value={stats.losses} />
@@ -230,8 +234,8 @@ export default function PlayerDetailPage() {
         <StatCard label="Close (≤3)" value={`${gameCloseness.close.wins}–${gameCloseness.close.losses}`} sub={`${gameCloseness.close.wins + gameCloseness.close.losses} games`} />
         <StatCard label="Normal (4–6)" value={`${gameCloseness.normal.wins}–${gameCloseness.normal.losses}`} sub={`${gameCloseness.normal.wins + gameCloseness.normal.losses} games`} />
         <StatCard label="Blowout (7+)" value={`${gameCloseness.blowout.wins}–${gameCloseness.blowout.losses}`} sub={`${gameCloseness.blowout.wins + gameCloseness.blowout.losses} games`} />
-        <StatCard label="vs Top 3 pair" value={vsTop3Pct} />
-        <StatCard label="vs Bot 3 pair" value={vsBottom3Pct} />
+        <StatCard label="vs Top 3 pair" value={vsTop3Pct} sub={top3Names || undefined} />
+        <StatCard label="vs Bot 3 pair" value={vsBottom3Pct} sub={bottom3Names || undefined} />
       </div>
 
       <div className="mb-3 flex items-center gap-4 text-xs text-muted-foreground">
