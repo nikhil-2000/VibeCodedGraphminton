@@ -174,6 +174,18 @@ export default function PlayerDetailPage() {
     }
   )
 
+  const top3Ids = new Set(Array.from(topIds).slice(0, 3))
+  const bottom3Ids = new Set(Array.from(bottomIds).slice(0, 3))
+  const totalFacedGames = pairingsFaced.reduce((sum, e) => sum + e.games_faced, 0)
+  const vsTop3Games = pairingsFaced
+    .filter((e) => top3Ids.has(e.pair_player_a_id) && top3Ids.has(e.pair_player_b_id))
+    .reduce((sum, e) => sum + e.games_faced, 0)
+  const vsBottom3Games = pairingsFaced
+    .filter((e) => bottom3Ids.has(e.pair_player_a_id) && bottom3Ids.has(e.pair_player_b_id))
+    .reduce((sum, e) => sum + e.games_faced, 0)
+  const vsTop3Pct = totalFacedGames > 0 ? `${((vsTop3Games / totalFacedGames) * 100).toFixed(1)}%` : '—'
+  const vsBottom3Pct = totalFacedGames > 0 ? `${((vsBottom3Games / totalFacedGames) * 100).toFixed(1)}%` : '—'
+
   if (error) return <p className="text-destructive">{error}</p>
   if (!player || !stats) return <p className="text-muted-foreground">Loading…</p>
 
@@ -215,6 +227,8 @@ export default function PlayerDetailPage() {
         <StatCard label="Close (≤3)" value={`${gameCloseness.close.wins}–${gameCloseness.close.losses}`} sub={`${gameCloseness.close.wins + gameCloseness.close.losses} games`} />
         <StatCard label="Normal (4–6)" value={`${gameCloseness.normal.wins}–${gameCloseness.normal.losses}`} sub={`${gameCloseness.normal.wins + gameCloseness.normal.losses} games`} />
         <StatCard label="Blowout (7+)" value={`${gameCloseness.blowout.wins}–${gameCloseness.blowout.losses}`} sub={`${gameCloseness.blowout.wins + gameCloseness.blowout.losses} games`} />
+        <StatCard label="vs Top 3 pair" value={vsTop3Pct} />
+        <StatCard label="vs Bot 3 pair" value={vsBottom3Pct} />
       </div>
 
       <div className="mb-3 flex items-center gap-4 text-xs text-muted-foreground">
