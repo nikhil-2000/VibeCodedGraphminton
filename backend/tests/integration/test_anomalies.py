@@ -58,8 +58,8 @@ def test_overplayed_head_to_head(client: TestClient, anomaly_seed):
     assert response.status_code == 200
     data = response.json()
     assert len(data) > 0
-    # All cross-team pairs face each other 4 times — top result should have actual == 4
-    assert data[0]["actual"] == 4
+    # All cross-team pairs face each other every week — top result should have actual == 7
+    assert data[0]["actual"] == 7
 
 
 def test_underplayed_head_to_head(client: TestClient, anomaly_seed):
