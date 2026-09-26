@@ -8,18 +8,12 @@ from ._common import (
     normalize_pair,
     points_against_case,
     points_for_case,
+    scoped_to_games as _scoped,
     valid_game_ids,
     win_record,
     winner_from_perspective,
     won_case,
 )
-
-
-def _scoped(query, valid_ids):
-    """Restrict a query to the games left in scope by the active filters."""
-    if valid_ids is None:
-        return query
-    return query.filter(Game.id.in_(valid_ids))
 
 
 def _percentile_by_avg_points(avg_points_map: dict[int, float]) -> dict[int, float]:
