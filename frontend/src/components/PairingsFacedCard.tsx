@@ -44,7 +44,7 @@ export default function PairingsFacedCard({ playerId: _playerId, facedEntries, t
   if (mostFaced.length === 0) {
     return (
       <Card className="mt-6">
-        <CardHeader><CardTitle>Pairings Faced</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Most Faced Pairings</CardTitle></CardHeader>
         <CardContent><p className="text-muted-foreground">No data yet.</p></CardContent>
       </Card>
     )
@@ -52,7 +52,7 @@ export default function PairingsFacedCard({ playerId: _playerId, facedEntries, t
 
   return (
     <Card className="mt-6">
-      <CardHeader><CardTitle>Pairings Faced</CardTitle></CardHeader>
+      <CardHeader><CardTitle>Most Faced Pairings</CardTitle></CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
           <Table>
