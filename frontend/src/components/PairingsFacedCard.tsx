@@ -51,7 +51,7 @@ export default function PairingsFacedCard({ playerId: _playerId, facedEntries, a
 
   const mostFaced = facedEntries.slice(0, topN)
   const leastFaced = facedEntries.length > topN
-    ? facedEntries.slice(-topN)
+    ? facedEntries.slice(topN).slice(-topN)
     : []
 
   const neverFaced = allPairings.filter((p) => {
