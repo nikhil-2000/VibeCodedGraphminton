@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import type { Player, PlayerStats, PlayerPartnership, HeadToHeadRecord, GameDetail, PairingsFacedEntry } from '../types'
+import type { Player, PlayerStats, PlayerPartnership, HeadToHeadRecord, GameDetail, PairingsFacedEntry, LeaderboardEntry } from '../types'
 
 export default function PlayerDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -34,6 +34,7 @@ export default function PlayerDetailPage() {
   const { games } = useFilteredGames({ player_id: playerId })
   const [topIds, setTopIds] = useState<Set<number>>(new Set())
   const [bottomIds, setBottomIds] = useState<Set<number>>(new Set())
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const playerNames = Object.fromEntries(allPlayers.map((p) => [p.id, p.canonical_name]))
@@ -97,6 +98,7 @@ export default function PlayerDetailPage() {
         const third = Math.ceil(others.length / 3)
         setTopIds(new Set(others.slice(0, third).map((e) => e.player_id)))
         setBottomIds(new Set(others.slice(others.length - third).map((e) => e.player_id)))
+        setLeaderboard(lb)
         setPairingsFaced(faced)
       })
       .catch((e: Error) => setError(e.message))
@@ -174,8 +176,9 @@ export default function PlayerDetailPage() {
     }
   )
 
-  const top3Ids = new Set(Array.from(topIds).slice(0, 3))
-  const bottom3Ids = new Set(Array.from(bottomIds).slice(0, 3))
+  const lbOthers = leaderboard.filter((e) => e.player_id !== playerId)
+  const top3Ids = new Set(lbOthers.slice(0, 3).map((e) => e.player_id))
+  const bottom3Ids = new Set(lbOthers.slice(-3).map((e) => e.player_id))
   const totalFacedGames = pairingsFaced.reduce((sum, e) => sum + e.games_faced, 0)
   const vsTop3Games = pairingsFaced
     .filter((e) => top3Ids.has(e.pair_player_a_id) && top3Ids.has(e.pair_player_b_id))
