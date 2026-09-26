@@ -8,6 +8,7 @@ from ..schemas import (
     LeaderboardEntry,
     MatchupQualityEntry,
     PairingsLeaderboardEntry,
+    PairingsFacedEntry,
     PartnershipResponse,
     PlayerPartnershipResponse,
     PlayerStatsResponse,
@@ -106,6 +107,16 @@ def head_to_head_all(
 ):
     player_ids, season_id = filters
     return stats_service.get_head_to_head_all(db, player_id, player_ids, season_id)
+
+
+@router.get("/pairings-faced/{player_id}", response_model=list[PairingsFacedEntry])
+def pairings_faced(
+    player_id: int,
+    filters: tuple = Depends(get_filter_context),
+    db: Session = Depends(get_db),
+):
+    player_ids, season_id = filters
+    return stats_service.get_pairings_faced(db, player_id, player_ids, season_id)
 
 
 @router.get("/head-to-head/{player_a_id}/{player_b_id}", response_model=HeadToHeadResponse)

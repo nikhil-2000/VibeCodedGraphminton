@@ -144,6 +144,17 @@ class HeadToHeadBulkEntry(BaseModel):
     avg_points: float
 
 
+class PairingsFacedEntry(BaseModel):
+    pair_player_a_id: int
+    pair_player_a_name: str
+    pair_player_b_id: int
+    pair_player_b_name: str
+    games_faced: int
+    wins: int
+    losses: int
+    win_rate: float
+
+
 class MatchupResponse(BaseModel):
     pair_a: list[int]
     pair_b: list[int]

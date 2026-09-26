@@ -315,6 +315,76 @@ def get_head_to_head_all(db: Session, player_id: int, player_ids: list[int] | No
     return results
 
 
+def _normalize_pair(a: int, b: int) -> tuple[int, int]:
+    return (a, b) if a <= b else (b, a)
+
+
+def get_pairings_faced(
+    db: Session,
+    player_id: int,
+    player_ids: list[int] | None = None,
+    season_id: int | None = None,
+) -> list[dict[str, Any]]:
+    valid_ids = _valid_game_ids(player_ids, season_id)
+    gp_me = aliased(GamePlayer)
+    gp_opp1 = aliased(GamePlayer)
+    gp_opp2 = aliased(GamePlayer)
+    p1 = aliased(Player)
+    p2 = aliased(Player)
+
+    won_case = case(
+        ((gp_me.team == "A") & (Game.team_a_score > Game.team_b_score), 1),
+        ((gp_me.team == "B") & (Game.team_b_score > Game.team_a_score), 1),
+        else_=0,
+    )
+
+    q = (
+        db.query(
+            gp_opp1.player_id.label("opp1_id"),
+            p1.canonical_name.label("opp1_name"),
+            gp_opp2.player_id.label("opp2_id"),
+            p2.canonical_name.label("opp2_name"),
+            func.count().label("games_faced"),
+            func.sum(won_case).label("wins"),
+        )
+        .join(gp_opp1, (gp_opp1.game_id == gp_me.game_id) & (gp_opp1.team != gp_me.team))
+        .join(
+            gp_opp2,
+            (gp_opp2.game_id == gp_me.game_id)
+            & (gp_opp2.team == gp_opp1.team)
+            & (gp_opp2.player_id > gp_opp1.player_id),
+        )
+        .join(Game, gp_me.game_id == Game.id)
+        .join(p1, p1.id == gp_opp1.player_id)
+        .join(p2, p2.id == gp_opp2.player_id)
+        .filter(gp_me.player_id == player_id)
+        .group_by(gp_opp1.player_id, p1.canonical_name, gp_opp2.player_id, p2.canonical_name)
+    )
+    if valid_ids is not None:
+        q = q.filter(Game.id.in_(valid_ids))
+
+    results = []
+    for row in q.all():
+        games = row.games_faced or 0
+        wins = int(row.wins or 0)
+        a_id, b_id = _normalize_pair(row.opp1_id, row.opp2_id)
+        a_name = row.opp1_name if row.opp1_id == a_id else row.opp2_name
+        b_name = row.opp2_name if row.opp2_id == b_id else row.opp1_name
+        results.append({
+            "pair_player_a_id": a_id,
+            "pair_player_a_name": a_name,
+            "pair_player_b_id": b_id,
+            "pair_player_b_name": b_name,
+            "games_faced": games,
+            "wins": wins,
+            "losses": games - wins,
+            "win_rate": round(wins / games, 4) if games else 0.0,
+        })
+
+    results.sort(key=lambda r: r["games_faced"], reverse=True)
+    return results
+
+
 def get_matchup(db: Session, pair_a: tuple[int, int], pair_b: tuple[int, int], player_ids: list[int] | None = None, season_id: int | None = None) -> dict[str, Any]:
     valid_ids = _valid_game_ids(player_ids, season_id)
     gp_a1 = aliased(GamePlayer)

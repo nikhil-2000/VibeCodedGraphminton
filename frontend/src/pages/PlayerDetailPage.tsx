@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getPlayer, getPlayerStats, getPlayerPartnerships, deletePlayer, updatePlayer } from '../api/players'
-import { getHeadToHeadAll, getLeaderboard } from '../api/stats'
+import { getHeadToHeadAll, getLeaderboard, getPairingsFaced } from '../api/stats'
 import { getPartnershipAnomaliesForPlayer, getHeadToHeadAnomaliesForPlayer } from '../api/anomalies'
 import GameCard from '../components/GameCard'
+import PairingsFacedCard from '../components/PairingsFacedCard'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 import { useFilteredGames } from '../hooks/useFilteredGames'
 import StatCard from '../components/StatCard'
@@ -14,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import type { Player, PlayerStats, PlayerPartnership, HeadToHeadRecord, GameDetail } from '../types'
+import type { Player, PlayerStats, PlayerPartnership, HeadToHeadRecord, GameDetail, PairingsFacedEntry, LeaderboardEntry } from '../types'
 
 export default function PlayerDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -27,11 +28,13 @@ export default function PlayerDetailPage() {
   const [stats, setStats] = useState<PlayerStats | null>(null)
   const [partnerships, setPartnerships] = useState<PlayerPartnership[]>([])
   const [h2hRecords, setH2hRecords] = useState<HeadToHeadRecord[]>([])
+  const [pairingsFaced, setPairingsFaced] = useState<PairingsFacedEntry[]>([])
   const [partnerAnomalyMap, setPartnerAnomalyMap] = useState<Record<number, 'over' | 'under'>>({})
   const [opponentAnomalyMap, setOpponentAnomalyMap] = useState<Record<number, 'over' | 'under'>>({})
   const { games } = useFilteredGames({ player_id: playerId })
   const [topIds, setTopIds] = useState<Set<number>>(new Set())
   const [bottomIds, setBottomIds] = useState<Set<number>>(new Set())
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const playerNames = Object.fromEntries(allPlayers.map((p) => [p.id, p.canonical_name]))
@@ -61,8 +64,9 @@ export default function PlayerDetailPage() {
       getHeadToHeadAnomaliesForPlayer(playerId, 'overplayed'),
       getHeadToHeadAnomaliesForPlayer(playerId, 'underplayed'),
       getLeaderboard('avg_points'),
+      getPairingsFaced(playerId),
     ])
-      .then(([p, s, partners, h2h, partnerOver, partnerUnder, oppOver, oppUnder, lb]) => {
+      .then(([p, s, partners, h2h, partnerOver, partnerUnder, oppOver, oppUnder, lb, faced]) => {
         setPlayer(p)
         setStats(s)
         setPartnerships(partners)
@@ -94,6 +98,8 @@ export default function PlayerDetailPage() {
         const third = Math.ceil(others.length / 3)
         setTopIds(new Set(others.slice(0, third).map((e) => e.player_id)))
         setBottomIds(new Set(others.slice(others.length - third).map((e) => e.player_id)))
+        setLeaderboard(lb)
+        setPairingsFaced(faced)
       })
       .catch((e: Error) => setError(e.message))
   }, [playerId])
@@ -170,6 +176,23 @@ export default function PlayerDetailPage() {
     }
   )
 
+  const lbOthers = leaderboard.filter((e) => e.player_id !== playerId)
+  const top3Entries = lbOthers.slice(0, 3)
+  const bottom3Entries = lbOthers.slice(-3)
+  const top3Ids = new Set(top3Entries.map((e) => e.player_id))
+  const bottom3Ids = new Set(bottom3Entries.map((e) => e.player_id))
+  const top3Names = top3Entries.map((e) => e.canonical_name).join(', ')
+  const bottom3Names = bottom3Entries.map((e) => e.canonical_name).join(', ')
+  const totalFacedGames = pairingsFaced.reduce((sum, e) => sum + e.games_faced, 0)
+  const vsTop3Games = pairingsFaced
+    .filter((e) => top3Ids.has(e.pair_player_a_id) && top3Ids.has(e.pair_player_b_id))
+    .reduce((sum, e) => sum + e.games_faced, 0)
+  const vsBottom3Games = pairingsFaced
+    .filter((e) => bottom3Ids.has(e.pair_player_a_id) && bottom3Ids.has(e.pair_player_b_id))
+    .reduce((sum, e) => sum + e.games_faced, 0)
+  const vsTop3Pct = totalFacedGames > 0 ? `${((vsTop3Games / totalFacedGames) * 100).toFixed(1)}%` : '—'
+  const vsBottom3Pct = totalFacedGames > 0 ? `${((vsBottom3Games / totalFacedGames) * 100).toFixed(1)}%` : '—'
+
   if (error) return <p className="text-destructive">{error}</p>
   if (!player || !stats) return <p className="text-muted-foreground">Loading…</p>
 
@@ -202,7 +225,7 @@ export default function PlayerDetailPage() {
         </p>
       )}
 
-      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <StatCard label="Games" value={stats.games_played} />
         <StatCard label="Wins" value={stats.wins} />
         <StatCard label="Losses" value={stats.losses} />
@@ -211,6 +234,8 @@ export default function PlayerDetailPage() {
         <StatCard label="Close (≤3)" value={`${gameCloseness.close.wins}–${gameCloseness.close.losses}`} sub={`${gameCloseness.close.wins + gameCloseness.close.losses} games`} />
         <StatCard label="Normal (4–6)" value={`${gameCloseness.normal.wins}–${gameCloseness.normal.losses}`} sub={`${gameCloseness.normal.wins + gameCloseness.normal.losses} games`} />
         <StatCard label="Blowout (7+)" value={`${gameCloseness.blowout.wins}–${gameCloseness.blowout.losses}`} sub={`${gameCloseness.blowout.wins + gameCloseness.blowout.losses} games`} />
+        <StatCard label="vs Top 3 pair" value={vsTop3Pct} sub={top3Names || undefined} />
+        <StatCard label="vs Bottom 3 pair" value={vsBottom3Pct} sub={bottom3Names || undefined} />
       </div>
 
       <div className="mb-3 flex items-center gap-4 text-xs text-muted-foreground">
@@ -303,6 +328,8 @@ export default function PlayerDetailPage() {
             }
         </CardContent>
       </Card>
+
+      <PairingsFacedCard playerId={playerId} facedEntries={pairingsFaced} />
 
       <Card className="mt-6">
         <CardHeader><CardTitle>Games</CardTitle></CardHeader>
