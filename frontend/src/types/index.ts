@@ -61,3 +61,14 @@ export type PairingsLeaderboardEntry = {
   win_rate: number
   avg_points: number
 }
+
+export type PairingsFacedEntry = {
+  pair_player_a_id: number
+  pair_player_a_name: string
+  pair_player_b_id: number
+  pair_player_b_name: string
+  games_faced: number
+  wins: number
+  losses: number
+  win_rate: number
+}
