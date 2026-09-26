@@ -16,6 +16,7 @@ from ..schemas import (
     MatchupResponse,
     HeadToHeadBulkEntry,
     SuggestedGame,
+    VsPairingsLeaderboardEntry,
 )
 
 router = APIRouter()
@@ -64,6 +65,17 @@ def pairings_leaderboard(
 ):
     player_ids, season_id = filters
     return stats_service.get_pairings_leaderboard(db, sort_by, player_ids, season_id)
+
+
+@router.get("/vs-pairings-leaderboard", response_model=list[VsPairingsLeaderboardEntry])
+def vs_pairings_leaderboard(
+    pair_player_ids: list[int] = Query(default=[]),
+    sort_by: Literal["games_faced", "win_rate"] = "games_faced",
+    filters: tuple = Depends(get_filter_context),
+    db: Session = Depends(get_db),
+):
+    player_ids, season_id = filters
+    return stats_service.get_vs_pairings_leaderboard(db, pair_player_ids, sort_by, player_ids, season_id)
 
 
 @router.get("/partnerships", response_model=list[PartnershipResponse])

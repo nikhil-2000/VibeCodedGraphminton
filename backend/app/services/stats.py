@@ -385,6 +385,74 @@ def get_pairings_faced(
     return results
 
 
+def get_vs_pairings_leaderboard(
+    db: Session,
+    pair_player_ids: list[int],
+    sort_by: str = "games_faced",
+    player_ids: list[int] | None = None,
+    season_id: int | None = None,
+) -> list[dict[str, Any]]:
+    """Rank all players by how many games they played against pairs composed entirely of pair_player_ids."""
+    if not pair_player_ids:
+        return []
+
+    valid_ids = _valid_game_ids(player_ids, season_id)
+    gp_me = aliased(GamePlayer)
+    gp_opp1 = aliased(GamePlayer)
+    gp_opp2 = aliased(GamePlayer)
+
+    won_case = case(
+        ((gp_me.team == "A") & (Game.team_a_score > Game.team_b_score), 1),
+        ((gp_me.team == "B") & (Game.team_b_score > Game.team_a_score), 1),
+        else_=0,
+    )
+
+    q = (
+        db.query(
+            gp_me.player_id.label("player_id"),
+            Player.canonical_name,
+            func.count().label("games_faced"),
+            func.sum(won_case).label("wins"),
+        )
+        .join(Player, Player.id == gp_me.player_id)
+        .join(gp_opp1, (gp_opp1.game_id == gp_me.game_id) & (gp_opp1.team != gp_me.team))
+        .join(
+            gp_opp2,
+            (gp_opp2.game_id == gp_me.game_id)
+            & (gp_opp2.team == gp_opp1.team)
+            & (gp_opp2.player_id > gp_opp1.player_id),
+        )
+        .join(Game, gp_me.game_id == Game.id)
+        .filter(
+            gp_opp1.player_id.in_(pair_player_ids),
+            gp_opp2.player_id.in_(pair_player_ids),
+        )
+        .group_by(gp_me.player_id, Player.canonical_name)
+    )
+    if valid_ids is not None:
+        q = q.filter(Game.id.in_(valid_ids))
+
+    results = []
+    for row in q.all():
+        games = row.games_faced or 0
+        wins = int(row.wins or 0)
+        results.append({
+            "player_id": row.player_id,
+            "canonical_name": row.canonical_name,
+            "games_faced": games,
+            "wins": wins,
+            "losses": games - wins,
+            "win_rate": round(wins / games, 4) if games else 0.0,
+        })
+
+    if sort_by == "win_rate":
+        results.sort(key=lambda r: r["win_rate"], reverse=True)
+    else:
+        results.sort(key=lambda r: r["games_faced"], reverse=True)
+
+    return results
+
+
 def get_matchup(db: Session, pair_a: tuple[int, int], pair_b: tuple[int, int], player_ids: list[int] | None = None, season_id: int | None = None) -> dict[str, Any]:
     valid_ids = _valid_game_ids(player_ids, season_id)
     gp_a1 = aliased(GamePlayer)
