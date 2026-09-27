@@ -42,7 +42,9 @@ export default function PlayerDetailPage() {
   type LeaderboardKind = 'games' | 'wins' | 'losses' | 'win_rate' | 'avg_points' | 'close' | 'normal' | 'blowout' | 'vs_top3' | 'vs_bottom3'
   const [statsDialog, setStatsDialog] = useState<LeaderboardKind | null>(null)
   const [closenessLeaderboard, setClosenessLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [closenessLeaderboardError, setClosenessLeaderboardError] = useState<string | null>(null)
   const [vsLeaderboard, setVsLeaderboard] = useState<VsPairingsLeaderboardEntry[]>([])
+  const [vsLeaderboardError, setVsLeaderboardError] = useState<string | null>(null)
   const [vsSort, setVsSort] = useState<'games_faced' | 'win_rate'>('games_faced')
   const [closenessSort, setClosenessSort] = useState<'win_rate' | 'avg_points'>('win_rate')
 
@@ -178,7 +180,11 @@ export default function PlayerDetailPage() {
       .map((g) => g.id)
 
   const fetchClosenessLeaderboard = (bucket: 'close' | 'normal' | 'blowout', sort: 'win_rate' | 'avg_points') => {
-    getLeaderboard(sort, getClosenessGameIds(bucket)).then(setClosenessLeaderboard).catch(() => {})
+    setClosenessLeaderboardError(null)
+    setClosenessLeaderboard([])
+    getLeaderboard(sort, getClosenessGameIds(bucket))
+      .then(setClosenessLeaderboard)
+      .catch(() => setClosenessLeaderboardError('Failed to load leaderboard'))
   }
 
   const openClosenessDialog = (bucket: 'close' | 'normal' | 'blowout') => {
@@ -224,8 +230,12 @@ export default function PlayerDetailPage() {
   const top3OverlapsBottom3 = [...top3Ids].some((id) => bottom3Ids.has(id))
 
   const fetchVsLeaderboard = (kind: 'vs_top3' | 'vs_bottom3', sort: 'games_faced' | 'win_rate') => {
+    setVsLeaderboardError(null)
+    setVsLeaderboard([])
     const ids = kind === 'vs_top3' ? [...top3Ids] : [...bottom3Ids]
-    getVsPairingsLeaderboard(ids, sort).then(setVsLeaderboard).catch(() => {})
+    getVsPairingsLeaderboard(ids, sort)
+      .then(setVsLeaderboard)
+      .catch(() => setVsLeaderboardError('Failed to load leaderboard'))
   }
 
   const dialogEntries = useMemo(() => {
@@ -292,8 +302,8 @@ export default function PlayerDetailPage() {
         <StatCard label="Close (≤3)" value={`${gameCloseness.close.wins}–${gameCloseness.close.losses}`} sub={`${gameCloseness.close.wins + gameCloseness.close.losses} games`} onLeaderboardClick={() => openClosenessDialog('close')} />
         <StatCard label="Normal (4–6)" value={`${gameCloseness.normal.wins}–${gameCloseness.normal.losses}`} sub={`${gameCloseness.normal.wins + gameCloseness.normal.losses} games`} onLeaderboardClick={() => openClosenessDialog('normal')} />
         <StatCard label="Blowout (7+)" value={`${gameCloseness.blowout.wins}–${gameCloseness.blowout.losses}`} sub={`${gameCloseness.blowout.wins + gameCloseness.blowout.losses} games`} onLeaderboardClick={() => openClosenessDialog('blowout')} />
-        <StatCard label="vs Top 3 pair" value={vsTop3Pct} sub={top3Names || undefined} onLeaderboardClick={top3OverlapsBottom3 ? undefined : () => { setVsSort('games_faced'); fetchVsLeaderboard('vs_top3', 'games_faced'); setStatsDialog('vs_top3') }} />
-        <StatCard label="vs Bottom 3 pair" value={vsBottom3Pct} sub={bottom3Names || undefined} onLeaderboardClick={top3OverlapsBottom3 ? undefined : () => { setVsSort('games_faced'); fetchVsLeaderboard('vs_bottom3', 'games_faced'); setStatsDialog('vs_bottom3') }} />
+        <StatCard label="vs Top 3 pair" value={vsTop3Pct} sub={top3Names || undefined} onLeaderboardClick={top3OverlapsBottom3 ? undefined : () => { setVsSort('games_faced'); fetchVsLeaderboard('vs_top3', 'games_faced'); setStatsDialog('vs_top3') }} disabledReason={top3OverlapsBottom3 ? 'Top 3 and Bottom 3 overlap — not enough players for distinct tiers' : undefined} />
+        <StatCard label="vs Bottom 3 pair" value={vsBottom3Pct} sub={bottom3Names || undefined} onLeaderboardClick={top3OverlapsBottom3 ? undefined : () => { setVsSort('games_faced'); fetchVsLeaderboard('vs_bottom3', 'games_faced'); setStatsDialog('vs_bottom3') }} disabledReason={top3OverlapsBottom3 ? 'Top 3 and Bottom 3 overlap — not enough players for distinct tiers' : undefined} />
       </div>
 
       <div className="mb-3 flex items-center gap-4 text-xs text-muted-foreground">
@@ -439,6 +449,9 @@ export default function PlayerDetailPage() {
                   </Button>
                 ))}
               </div>
+              {vsLeaderboardError ? (
+                <p className="text-sm text-destructive">{vsLeaderboardError}</p>
+              ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -467,6 +480,7 @@ export default function PlayerDetailPage() {
                   </TableBody>
                 </Table>
               </div>
+              )}
             </div>
           ) : statsDialog && ['close', 'normal', 'blowout'].includes(statsDialog) ? (
             <div>
@@ -485,7 +499,10 @@ export default function PlayerDetailPage() {
                   </Button>
                 ))}
               </div>
-              <LeaderboardTable entries={closenessLeaderboard} highlightPlayerId={playerId} />
+              {closenessLeaderboardError
+                ? <p className="text-sm text-destructive">{closenessLeaderboardError}</p>
+                : <LeaderboardTable entries={closenessLeaderboard} highlightPlayerId={playerId} />
+              }
             </div>
           ) : (
             <LeaderboardTable entries={dialogEntries} highlightPlayerId={playerId} />
