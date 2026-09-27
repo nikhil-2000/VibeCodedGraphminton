@@ -41,7 +41,7 @@ def list_games(
 @router.get("/{game_id}/prediction", response_model=GamePrediction)
 def get_game_prediction(
     game_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
