@@ -63,15 +63,6 @@ def winner_from_perspective(game: Game, team: str) -> bool:
     return game.team_b_score > game.team_a_score
 
 
-def scoped_to_games(query, valid_ids):
-    """Restrict a query to the games left in scope by the active filters.
-
-    `valid_ids` is whatever `valid_game_ids` returned, so None means "no filters
-    active" and the query passes through untouched.
-    """
-    if valid_ids is None:
-        return query
-    return query.filter(Game.id.in_(valid_ids))
 
 
 def valid_game_ids(player_ids: list[int] | None, season_id: int | None = None) -> "Select[tuple[int]] | None":

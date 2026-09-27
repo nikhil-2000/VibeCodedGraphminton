@@ -2,7 +2,7 @@ from typing import Any
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy import func, select
 from ..models import Game, GamePlayer, Player
-from ._common import points_for_case, scoped_to_games, valid_game_ids
+from ._common import points_for_case, valid_game_ids
 
 
 # Session rank subquery: ranks each distinct played_on date chronologically (1, 2, 3, …)
@@ -189,23 +189,23 @@ def get_game_prediction(
         gpa = aliased(GamePlayer)
         gpo = aliased(GamePlayer)
         team_predicate = (gpo.team == gpa.team) if same_team else (gpo.team != gpa.team)
-        q = scoped_to_games(
+        q = (
             db.query(func.avg(points_for_case(gpa)))
             .join(gpa, (gpa.game_id == Game.id) & (gpa.player_id == pid))
-            .join(gpo, (gpo.game_id == Game.id) & (gpo.player_id == other_id) & team_predicate),
-            valid_ids,
+            .join(gpo, (gpo.game_id == Game.id) & (gpo.player_id == other_id) & team_predicate)
         )
+        q = q.filter(Game.id.in_(valid_ids)) if valid_ids is not None else q
         result = q.scalar()
         return float(result) if result is not None else None
 
     def _overall_avg(pid: int) -> float:
-        q = scoped_to_games(
+        q = (
             db.query(func.avg(points_for_case()))
             .select_from(GamePlayer)
             .join(Game, GamePlayer.game_id == Game.id)
-            .filter(GamePlayer.player_id == pid),
-            valid_ids,
+            .filter(GamePlayer.player_id == pid)
         )
+        q = q.filter(Game.id.in_(valid_ids)) if valid_ids is not None else q
         return float(q.scalar() or 0)
 
     def _expected_for_player(pid: int, partner_id: int, opp1_id: int, opp2_id: int) -> float:
