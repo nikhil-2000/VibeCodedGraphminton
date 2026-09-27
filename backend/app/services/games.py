@@ -191,8 +191,7 @@ def get_game_prediction(
         .join(gpb, (gpb.game_id == Game.id) & (gpb.team == gpa.team) & gpb.player_id.in_(all_ids) & (gpb.player_id != gpa.player_id))
         .group_by(gpa.player_id, gpb.player_id)
     )
-    if valid_ids is not None:
-        q_partner = q_partner.filter(Game.id.in_(valid_ids))
+    q_partner = q_partner.filter(Game.id.in_(valid_ids)) if valid_ids is not None else q_partner
     partner_avg: dict[tuple[int, int], float] = {
         (pid, partner): float(avg) for pid, partner, avg in q_partner.all() if avg is not None
     }
@@ -206,8 +205,7 @@ def get_game_prediction(
         .join(gpd, (gpd.game_id == Game.id) & (gpd.team != gpc.team) & gpd.player_id.in_(all_ids))
         .group_by(gpc.player_id, gpd.player_id)
     )
-    if valid_ids is not None:
-        q_opp = q_opp.filter(Game.id.in_(valid_ids))
+    q_opp = q_opp.filter(Game.id.in_(valid_ids)) if valid_ids is not None else q_opp
     opp_avg: dict[tuple[int, int], float] = {
         (pid, opp): float(avg) for pid, opp, avg in q_opp.all() if avg is not None
     }
@@ -219,8 +217,7 @@ def get_game_prediction(
         .filter(GamePlayer.player_id.in_(all_ids))
         .group_by(GamePlayer.player_id)
     )
-    if valid_ids is not None:
-        q_overall = q_overall.filter(Game.id.in_(valid_ids))
+    q_overall = q_overall.filter(Game.id.in_(valid_ids)) if valid_ids is not None else q_overall
     overall_avg: dict[int, float] = {pid: float(avg or 0) for pid, avg in q_overall.all()}
 
     def _expected_for_player(pid: int, partner_id: int, opp1_id: int, opp2_id: int) -> float:
