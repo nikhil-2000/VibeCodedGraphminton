@@ -218,6 +218,13 @@ def get_game_prediction(
         return sum(valid) / len(valid) if valid else _overall_avg(pid)
 
     def _expected_for_team(team: list[int], opponents: list[int]) -> float:
+        # Badminton is always 2-a-side; the ingest enforces this.  If somehow a
+        # game record is corrupted (partial ingest, manual DB edit) we want a
+        # clear error rather than a silent IndexError → 500.
+        assert len(team) == 2 and len(opponents) == 2, (
+            f"Expected 2 players per side, got {len(team)} vs {len(opponents)} "
+            f"for game {game_id}"
+        )
         return (
             _expected_for_player(team[0], team[1], opponents[0], opponents[1])
             + _expected_for_player(team[1], team[0], opponents[0], opponents[1])

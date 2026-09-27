@@ -422,3 +422,55 @@ def test_matchup_second_pair_wins(client: TestClient, h2h_fixture):
     assert data["pair_a_wins"] == 1
     assert data["pair_b_wins"] == 1
     assert data["games_played"] == 2
+
+
+# ---------------------------------------------------------------------------
+# get_matchup_quality — score orientation test
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def matchup_quality_fixture(client: TestClient):
+    """A+B beat X+Y 21–9. Winner avg_point_diff should be positive, losers negative."""
+    a = _create_player(client, "MQA")
+    b = _create_player(client, "MQB")
+    x = _create_player(client, "MQX")
+    y = _create_player(client, "MQY")
+    _ingest(client,
+        "Date,GameNo,A,B,PtsAB,X,Y,PtsXY\n"
+        "08-04-2024,1,MQA,MQB,21,MQX,MQY,9\n"
+    )
+    return {"a": a, "b": b, "x": x, "y": y}
+
+
+def test_matchup_quality_point_diff_orientation(client: TestClient, matchup_quality_fixture):
+    """Winners have positive avg_point_diff; losers have negative.
+
+    This validates that points_for_case and points_against_case are oriented
+    correctly after the refactor — a swap would flip all signs.
+    """
+    r = client.get("/stats/matchup-quality")
+    assert r.status_code == 200
+    rows = {e["player_id"]: e for e in r.json()}
+
+    a_id = matchup_quality_fixture["a"]
+    x_id = matchup_quality_fixture["x"]
+
+    assert rows[a_id]["avg_point_diff"] > 0, "Winner should have positive avg_point_diff"
+    assert rows[x_id]["avg_point_diff"] < 0, "Loser should have negative avg_point_diff"
+    # Sanity-check the magnitude (~21-9 = 12)
+    assert abs(rows[a_id]["avg_point_diff"]) == pytest.approx(12.0, abs=0.5)
+
+
+def test_matchup_quality_my_pts_are_own_teams_score(client: TestClient, matchup_quality_fixture):
+    """Each player's avg_point_diff == their own team's score minus opponents' score.
+
+    21–9 = +12 for winners, 9–21 = -12 for losers.
+    The diff should not be zero (which would mean my_pts == opp_pts, indicating an inversion).
+    """
+    r = client.get("/stats/matchup-quality")
+    assert r.status_code == 200
+    for entry in r.json():
+        assert entry["avg_point_diff"] != 0.0, (
+            f"Player {entry['canonical_name']} has avg_point_diff=0, "
+            "possible points_for/against inversion"
+        )
