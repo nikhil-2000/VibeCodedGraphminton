@@ -232,17 +232,8 @@ export default function PlayerDetailPage() {
   const fetchVsLeaderboard = (kind: 'vs_top3' | 'vs_bottom3', sort: 'games_faced' | 'win_rate') => {
     setVsLeaderboardError(null)
     setVsLeaderboard([])
-    const pool = kind === 'vs_top3' ? top3Ids : bottom3Ids
-    // Only pass players who actually appeared together as a pair against this player.
-    // This matches the stat card's calculation (pairingsFaced filters for both IDs in the pool)
-    // and avoids counting games where any 2-of-3 pool members happened to pair up.
-    const relevantIds = new Set(
-      pairingsFaced
-        .filter(e => pool.has(e.pair_player_a_id) && pool.has(e.pair_player_b_id))
-        .flatMap(e => [e.pair_player_a_id, e.pair_player_b_id])
-    )
-    if (relevantIds.size === 0) return
-    getVsPairingsLeaderboard([...relevantIds], sort)
+    const ids = kind === 'vs_top3' ? [...top3Ids] : [...bottom3Ids]
+    getVsPairingsLeaderboard(ids, sort)
       .then(setVsLeaderboard)
       .catch(() => setVsLeaderboardError('Failed to load leaderboard'))
   }
