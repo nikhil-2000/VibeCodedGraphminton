@@ -125,7 +125,7 @@ def _is_significant(deviation: float, actual: int, overplayed: bool) -> bool:
     return True
 
 
-def get_partnership_anomalies(db: Session, overplayed: bool, limit: int | None = 10, player_ids: list[int] | None = None, season_id: int | None = None, focus_player_id: int | None = None) -> list[dict[str, Any]]:
+def get_partnership_anomalies(db: Session, overplayed: bool | None, limit: int | None = 10, player_ids: list[int] | None = None, season_id: int | None = None, focus_player_id: int | None = None) -> list[dict[str, Any]]:
     return _get_anomalies(
         db,
         same_team=True,
@@ -138,7 +138,7 @@ def get_partnership_anomalies(db: Session, overplayed: bool, limit: int | None =
     )
 
 
-def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int | None = 10, player_ids: list[int] | None = None, season_id: int | None = None, focus_player_id: int | None = None) -> list[dict[str, Any]]:
+def get_head_to_head_anomalies(db: Session, overplayed: bool | None, limit: int | None = 10, player_ids: list[int] | None = None, season_id: int | None = None, focus_player_id: int | None = None) -> list[dict[str, Any]]:
     return _get_anomalies(
         db,
         same_team=False,
@@ -149,26 +149,3 @@ def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int | None 
         season_id=season_id,
         focus_player_id=focus_player_id,
     )
-
-
-def get_player_anomalies(
-    db: Session,
-    player_id: int,
-    player_ids: list[int] | None = None,
-    season_id: int | None = None,
-) -> dict[str, list[dict[str, Any]]]:
-    """All significant anomalies for a single player — both directions, both types — in two lists."""
-    return {
-        "partnerships": _get_anomalies(
-            db, same_team=True, prob_given_same_game=P_PARTNER,
-            overplayed=None, limit=None,
-            player_ids=player_ids, season_id=season_id,
-            focus_player_id=player_id,
-        ),
-        "head_to_head": _get_anomalies(
-            db, same_team=False, prob_given_same_game=P_OPPONENT,
-            overplayed=None, limit=None,
-            player_ids=player_ids, season_id=season_id,
-            focus_player_id=player_id,
-        ),
-    }

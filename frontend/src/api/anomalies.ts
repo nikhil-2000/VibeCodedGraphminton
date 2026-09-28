@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { AnomalyEntry, PlayerAnomalies } from '../types'
+import type { AnomalyEntry } from '../types'
 
 export const getPartnershipAnomalies = (type: 'overplayed' | 'underplayed', limit = 20) =>
   apiFetch<AnomalyEntry[]>(`/anomalies/partnerships/${type}?limit=${limit}`)
@@ -7,11 +7,8 @@ export const getPartnershipAnomalies = (type: 'overplayed' | 'underplayed', limi
 export const getHeadToHeadAnomalies = (type: 'overplayed' | 'underplayed', limit = 20) =>
   apiFetch<AnomalyEntry[]>(`/anomalies/head-to-head/${type}?limit=${limit}`)
 
-export const getPartnershipAnomaliesForPlayer = (playerId: number, type: 'overplayed' | 'underplayed') =>
-  apiFetch<AnomalyEntry[]>(`/anomalies/partnerships/${type}/${playerId}`)
+export const getPartnershipAnomaliesForPlayer = (playerId: number) =>
+  apiFetch<AnomalyEntry[]>(`/anomalies/partnerships/${playerId}`)
 
-export const getHeadToHeadAnomaliesForPlayer = (playerId: number, type: 'overplayed' | 'underplayed') =>
-  apiFetch<AnomalyEntry[]>(`/anomalies/head-to-head/${type}/${playerId}`)
-
-export const getPlayerAnomalies = (playerId: number) =>
-  apiFetch<PlayerAnomalies>(`/anomalies/player/${playerId}`)
+export const getHeadToHeadAnomaliesForPlayer = (playerId: number) =>
+  apiFetch<AnomalyEntry[]>(`/anomalies/head-to-head/${playerId}`)

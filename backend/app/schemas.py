@@ -204,11 +204,6 @@ class AnomalyEntry(BaseModel):
     deviation: float
 
 
-class PlayerAnomalies(BaseModel):
-    partnerships: list[AnomalyEntry]
-    head_to_head: list[AnomalyEntry]
-
-
 # ── Game Deletion ──────────────────────────────────────────────────────────
 
 class DeleteSessionResponse(BaseModel):

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getPlayerAnomalies } from '../api/anomalies'
+import { getPartnershipAnomaliesForPlayer, getHeadToHeadAnomaliesForPlayer } from '../api/anomalies'
 import type { AnomalyEntry, Player } from '../types'
 
 interface SlotProps {
@@ -37,13 +37,14 @@ function PlayerCard({ player, attendingIds, playerNames }: PlayerCardProps) {
   useEffect(() => {
     setLoading(true)
     setFetchError(false)
-    getPlayerAnomalies(player.id)
-      .then(({ partnerships: p, head_to_head: h }) => {
-        setPartnerships(p)
-        setHeadToHead(h)
-      })
-      .catch(() => setFetchError(true))
-      .finally(() => setLoading(false))
+    Promise.all([
+      getPartnershipAnomaliesForPlayer(player.id),
+      getHeadToHeadAnomaliesForPlayer(player.id),
+    ]).then(([p, h]) => {
+      setPartnerships(p)
+      setHeadToHead(h)
+    }).catch(() => setFetchError(true))
+    .finally(() => setLoading(false))
   }, [player.id])
 
   const pick = (entries: AnomalyEntry[], seek: boolean) => {
