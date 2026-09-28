@@ -12,8 +12,7 @@ const playerNames: Record<number, string> = { 1: 'Alice', 2: 'Bob' }
 describe('AnomalyTable', () => {
   it('renders player names', () => {
     render(<AnomalyTable entries={entries} playerNames={playerNames} />)
-    expect(screen.getByText('Alice')).toBeInTheDocument()
-    expect(screen.getByText('Bob')).toBeInTheDocument()
+    expect(screen.getByText('Alice & Bob')).toBeInTheDocument()
   })
 
   it('renders actual count', () => {
