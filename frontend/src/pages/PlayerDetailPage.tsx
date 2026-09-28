@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getPlayer, getPlayerStats, getPlayerPartnerships, deletePlayer, updatePlayer } from '../api/players'
+import { getPlayer, getPlayerStats, getPlayerPartnerships, getPlayerUpsetStats, deletePlayer, updatePlayer } from '../api/players'
+import type { PlayerUpsetStats } from '../api/players'
 import { getHeadToHeadAll, getLeaderboard, getPairingsFaced, getVsPairingsLeaderboard } from '../api/stats'
 import { getPartnershipAnomaliesForPlayer, getHeadToHeadAnomaliesForPlayer } from '../api/anomalies'
 import GameCard from '../components/GameCard'
@@ -27,6 +28,7 @@ export default function PlayerDetailPage() {
 
   const [player, setPlayer] = useState<Player | null>(null)
   const [stats, setStats] = useState<PlayerStats | null>(null)
+  const [upsetStats, setUpsetStats] = useState<PlayerUpsetStats | null>(null)
   const [partnerships, setPartnerships] = useState<PlayerPartnership[]>([])
   const [h2hRecords, setH2hRecords] = useState<HeadToHeadRecord[]>([])
   const [pairingsFaced, setPairingsFaced] = useState<PairingsFacedEntry[]>([])
@@ -113,6 +115,10 @@ export default function PlayerDetailPage() {
         setPairingsFaced(faced)
       })
       .catch((e: Error) => setError(e.message))
+  }, [playerId])
+
+  useEffect(() => {
+    getPlayerUpsetStats(playerId).then(setUpsetStats).catch(() => {})
   }, [playerId])
 
   const openEdit = () => {
@@ -295,10 +301,10 @@ export default function PlayerDetailPage() {
 
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <StatCard label="Games" value={stats.games_played} onLeaderboardClick={() => setStatsDialog('games')} />
-        <StatCard label="Wins" value={stats.wins} onLeaderboardClick={() => setStatsDialog('wins')} />
-        <StatCard label="Losses" value={stats.losses} onLeaderboardClick={() => setStatsDialog('losses')} />
+        <StatCard label="Record" value={`${stats.wins}–${stats.losses}`} onLeaderboardClick={() => setStatsDialog('wins')} />
         <StatCard label="Win Rate" value={`${(stats.win_rate * 100).toFixed(1)}%`} onLeaderboardClick={() => setStatsDialog('win_rate')} />
         <StatCard label="Avg Pts" value={stats.avg_points.toFixed(2)} onLeaderboardClick={() => setStatsDialog('avg_points')} />
+        <StatCard label="Upset Record" value={upsetStats ? `${upsetStats.upset_wins}–${upsetStats.upset_losses}` : '—'} sub={upsetStats ? `${upsetStats.underdog_games} underdog games` : undefined} />
         <StatCard label="Close (≤3)" value={`${gameCloseness.close.wins}–${gameCloseness.close.losses}`} sub={`${gameCloseness.close.wins + gameCloseness.close.losses} games`} onLeaderboardClick={() => openClosenessDialog('close')} />
         <StatCard label="Normal (4–6)" value={`${gameCloseness.normal.wins}–${gameCloseness.normal.losses}`} sub={`${gameCloseness.normal.wins + gameCloseness.normal.losses} games`} onLeaderboardClick={() => openClosenessDialog('normal')} />
         <StatCard label="Blowout (7+)" value={`${gameCloseness.blowout.wins}–${gameCloseness.blowout.losses}`} sub={`${gameCloseness.blowout.wins + gameCloseness.blowout.losses} games`} onLeaderboardClick={() => openClosenessDialog('blowout')} />

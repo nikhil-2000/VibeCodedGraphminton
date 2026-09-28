@@ -624,3 +624,71 @@ def get_suggested_games(
             break
 
     return result
+
+
+def get_player_upset_stats(
+    db: Session,
+    player_id: int,
+    player_ids: list[int] | None = None,
+    season_id: int | None = None,
+) -> dict[str, Any]:
+    if not db.get(Player, player_id):
+        raise KeyError(f"Player {player_id} not found")
+
+    valid_ids = valid_game_ids(player_ids, season_id)
+
+    # Build a map of each player's career avg_points (scoped to active filters)
+    avg_map = _avg_points_by_player(db, valid_ids)
+
+    # Subquery: all game IDs this player participated in (filtered)
+    my_games_sq = db.query(GamePlayer.game_id).filter(GamePlayer.player_id == player_id).join(Game, GamePlayer.game_id == Game.id)
+    if valid_ids is not None:
+        my_games_sq = my_games_sq.filter(Game.id.in_(valid_ids))
+
+    # Fetch all (game_id, team, player_id, score_a, score_b) rows for those games
+    gp_q = (
+        db.query(GamePlayer.game_id, GamePlayer.player_id, GamePlayer.team,
+                 Game.team_a_score, Game.team_b_score)
+        .join(Game, GamePlayer.game_id == Game.id)
+        .filter(GamePlayer.game_id.in_(my_games_sq))
+    )
+    if valid_ids is not None:
+        gp_q = gp_q.filter(Game.id.in_(valid_ids))
+
+    rows = gp_q.all()
+    if not rows:
+        return {"player_id": player_id, "upset_wins": 0, "upset_losses": 0, "underdog_games": 0}
+
+    # Group rows by game_id
+    games_data: dict[int, dict] = defaultdict(lambda: {"A": [], "B": [], "score_a": 0, "score_b": 0})
+    my_team: dict[int, str] = {}
+    for row in rows:
+        g = games_data[row.game_id]
+        g[row.team].append(avg_map.get(row.player_id, 0.0))
+        g["score_a"] = row.team_a_score
+        g["score_b"] = row.team_b_score
+        if row.player_id == player_id:
+            my_team[row.game_id] = row.team
+
+    upset_wins = upset_losses = 0
+    for gid, g in games_data.items():
+        team = my_team.get(gid)
+        if team is None:
+            continue
+        exp_a = sum(g["A"]) / len(g["A"]) if g["A"] else 0.0
+        exp_b = sum(g["B"]) / len(g["B"]) if g["B"] else 0.0
+        expected_winner = "A" if exp_a >= exp_b else "B"
+        if team == expected_winner:
+            continue  # player was favoured — not an underdog game
+        actual_winner = "A" if g["score_a"] > g["score_b"] else "B"
+        if actual_winner == team:
+            upset_wins += 1
+        else:
+            upset_losses += 1
+
+    return {
+        "player_id": player_id,
+        "upset_wins": upset_wins,
+        "upset_losses": upset_losses,
+        "underdog_games": upset_wins + upset_losses,
+    }

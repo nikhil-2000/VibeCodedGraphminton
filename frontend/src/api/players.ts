@@ -10,6 +10,16 @@ export const getPlayer = (id: number) =>
 export const getPlayerStats = (id: number) =>
   apiFetch<PlayerStats>(`/players/${id}/stats`)
 
+export interface PlayerUpsetStats {
+  player_id: number
+  upset_wins: number
+  upset_losses: number
+  underdog_games: number
+}
+
+export const getPlayerUpsetStats = (id: number) =>
+  apiFetch<PlayerUpsetStats>(`/players/${id}/upset-stats`)
+
 export const getPlayerPartnerships = (id: number) =>
   apiFetch<PlayerPartnership[]>(`/stats/partnerships/${id}`)
 
