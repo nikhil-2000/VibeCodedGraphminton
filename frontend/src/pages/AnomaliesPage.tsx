@@ -8,6 +8,7 @@ import {
 import { getSuggestedGames } from '../api/stats'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 import AnomalyTable from '../components/AnomalyTable'
+import SquadGuidePanel from '../components/SquadGuidePanel'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -49,14 +50,9 @@ export default function AnomaliesPage() {
     setLoading(true)
     setError(null)
     if (focusedPlayerId !== null) {
-      const fetcher = tab === 'partnerships'
-        ? getPartnershipAnomaliesForPlayer
-        : getHeadToHeadAnomaliesForPlayer
-      Promise.all([
-        fetcher(focusedPlayerId, 'overplayed'),
-        fetcher(focusedPlayerId, 'underplayed'),
-      ])
-        .then(([over, under]) => setEntries([...over, ...under].sort((a, b) => b.deviation - a.deviation)))
+      const fetcher = tab === 'partnerships' ? getPartnershipAnomaliesForPlayer : getHeadToHeadAnomaliesForPlayer
+      fetcher(focusedPlayerId)
+        .then((all) => setEntries([...all].sort((a, b) => b.deviation - a.deviation)))
         .catch((e: Error) => setError(e.message))
         .finally(() => setLoading(false))
     } else {
@@ -174,6 +170,12 @@ export default function AnomaliesPage() {
           )}
         </CardContent>
       </Card>
+
+      {focusedPlayerId === null && (
+        <div className="mt-8">
+          <SquadGuidePanel attendingPlayers={filteredPlayers} playerNames={playerNames} />
+        </div>
+      )}
     </div>
   )
 }

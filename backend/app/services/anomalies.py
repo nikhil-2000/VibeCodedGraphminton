@@ -55,6 +55,31 @@ def _pair_counts(db: Session, same_team: bool, valid_game_ids: set[int] | None) 
     return {normalize_pair(r.a, r.b): int(r.n) for r in q.all()}
 
 
+def _is_significant(deviation: float, actual: int, overplayed: bool) -> bool:
+    """Filter out deviations too small, or too small relative to the pair's games, to matter."""
+    if overplayed and deviation <= 0:
+        return False
+    if not overplayed and deviation >= 0:
+        return False
+    if abs(deviation) < MIN_ABSOLUTE_DEVIATION:
+        return False
+    if actual > 0 and abs(deviation) / actual < DEVIATION_RATIO_THRESHOLD:
+        return False
+    return True
+
+
+def _build_scope(
+    db: Session,
+    player_ids: list[int] | None,
+    season_id: int | None,
+) -> tuple[set[int] | None, dict[tuple[int, int], bool], dict[int, int], int]:
+    """Shared setup: valid game IDs, pair counts for both team types, player game counts, total games."""
+    valid_game_ids = valid_game_id_set(db, player_ids, season_id)
+    player_counts = _get_player_game_counts(db, valid_game_ids)
+    total_games = total_games_in_scope(db, valid_game_ids)
+    return valid_game_ids, player_counts, total_games
+
+
 def _get_anomalies(
     db: Session,
     same_team: bool,
@@ -63,22 +88,13 @@ def _get_anomalies(
     limit: int | None,
     player_ids: list[int] | None,
     season_id: int | None,
-    focus_player_id: int | None,
 ) -> list[dict[str, Any]]:
-    """Pairs that played together (or against each other) far more or less than chance.
-
-    `same_team` picks partnerships vs head-to-head; everything downstream —
-    the expectation model, the significance thresholds, sorting and limiting —
-    is identical for both.
-    """
-    valid_game_ids = valid_game_id_set(db, player_ids, season_id)
+    """Top-N significant pairs globally, filtered to one direction."""
+    valid_game_ids, player_counts, total_games = _build_scope(db, player_ids, season_id)
     actual_counts = _pair_counts(db, same_team, valid_game_ids)
-    player_counts = _get_player_game_counts(db, valid_game_ids)
-    total_games = total_games_in_scope(db, valid_game_ids)
 
     results: list[dict[str, Any]] = []
     for a, b in _get_all_player_pairs(player_counts):
-        # Underplay is only meaningful once both players have enough games to judge.
         if not overplayed and (
             player_counts.get(a, 0) < MIN_GAMES_THRESHOLD or player_counts.get(b, 0) < MIN_GAMES_THRESHOLD
         ):
@@ -100,45 +116,93 @@ def _get_anomalies(
         })
 
     results.sort(key=lambda r: r["deviation"], reverse=overplayed)
-    if focus_player_id is not None:
-        results = [r for r in results if focus_player_id in (r["player_a_id"], r["player_b_id"])]
     return results if limit is None else results[:limit]
 
 
-def _is_significant(deviation: float, actual: int, overplayed: bool) -> bool:
-    """Filter out deviations too small, or too small relative to the pair's games, to matter."""
-    if overplayed and deviation <= 0:
-        return False
-    if not overplayed and deviation >= 0:
-        return False
-    if abs(deviation) < MIN_ABSOLUTE_DEVIATION:
-        return False
-    if actual > 0 and abs(deviation) / actual < DEVIATION_RATIO_THRESHOLD:
-        return False
-    return True
+def _get_player_anomalies(
+    db: Session,
+    same_team: bool,
+    prob_given_same_game: float,
+    player_id: int,
+    player_ids: list[int] | None,
+    season_id: int | None,
+) -> list[dict[str, Any]]:
+    """All significant pairs involving player_id, both directions, sorted by deviation desc."""
+    valid_game_ids, player_counts, total_games = _build_scope(db, player_ids, season_id)
+    actual_counts = _pair_counts(db, same_team, valid_game_ids)
+
+    results: list[dict[str, Any]] = []
+    for a, b in _get_all_player_pairs(player_counts):
+        if player_id not in (a, b):
+            continue
+
+        actual = actual_counts.get((a, b), 0)
+        expected = _expected_frequency(player_counts[a], player_counts[b], total_games, prob_given_same_game)
+        deviation = actual - expected
+
+        enough_games = (
+            player_counts.get(a, 0) >= MIN_GAMES_THRESHOLD
+            and player_counts.get(b, 0) >= MIN_GAMES_THRESHOLD
+        )
+        is_over = _is_significant(deviation, actual, overplayed=True)
+        is_under = enough_games and _is_significant(deviation, actual, overplayed=False)
+
+        if not (is_over or is_under):
+            continue
+
+        results.append({
+            "player_a_id": a,
+            "player_b_id": b,
+            "actual": actual,
+            "expected": round(expected, 2),
+            "deviation": round(deviation, 2),
+        })
+
+    results.sort(key=lambda r: r["deviation"], reverse=True)
+    return results
 
 
-def get_partnership_anomalies(db: Session, overplayed: bool, limit: int | None = 10, player_ids: list[int] | None = None, season_id: int | None = None, focus_player_id: int | None = None) -> list[dict[str, Any]]:
-    return _get_anomalies(
-        db,
-        same_team=True,
-        prob_given_same_game=P_PARTNER,
-        overplayed=overplayed,
-        limit=limit,
-        player_ids=player_ids,
-        season_id=season_id,
-        focus_player_id=focus_player_id,
-    )
+def get_partnership_anomalies(
+    db: Session,
+    overplayed: bool,
+    limit: int | None = 10,
+    player_ids: list[int] | None = None,
+    season_id: int | None = None,
+) -> list[dict[str, Any]]:
+    return _get_anomalies(db, same_team=True, prob_given_same_game=P_PARTNER,
+                          overplayed=overplayed, limit=limit,
+                          player_ids=player_ids, season_id=season_id)
 
 
-def get_head_to_head_anomalies(db: Session, overplayed: bool, limit: int | None = 10, player_ids: list[int] | None = None, season_id: int | None = None, focus_player_id: int | None = None) -> list[dict[str, Any]]:
-    return _get_anomalies(
-        db,
-        same_team=False,
-        prob_given_same_game=P_OPPONENT,
-        overplayed=overplayed,
-        limit=limit,
-        player_ids=player_ids,
-        season_id=season_id,
-        focus_player_id=focus_player_id,
-    )
+def get_head_to_head_anomalies(
+    db: Session,
+    overplayed: bool,
+    limit: int | None = 10,
+    player_ids: list[int] | None = None,
+    season_id: int | None = None,
+) -> list[dict[str, Any]]:
+    return _get_anomalies(db, same_team=False, prob_given_same_game=P_OPPONENT,
+                          overplayed=overplayed, limit=limit,
+                          player_ids=player_ids, season_id=season_id)
+
+
+def get_partnership_anomalies_for_player(
+    db: Session,
+    player_id: int,
+    player_ids: list[int] | None = None,
+    season_id: int | None = None,
+) -> list[dict[str, Any]]:
+    return _get_player_anomalies(db, same_team=True, prob_given_same_game=P_PARTNER,
+                                 player_id=player_id,
+                                 player_ids=player_ids, season_id=season_id)
+
+
+def get_head_to_head_anomalies_for_player(
+    db: Session,
+    player_id: int,
+    player_ids: list[int] | None = None,
+    season_id: int | None = None,
+) -> list[dict[str, Any]]:
+    return _get_player_anomalies(db, same_team=False, prob_given_same_game=P_OPPONENT,
+                                 player_id=player_id,
+                                 player_ids=player_ids, season_id=season_id)

@@ -7,8 +7,8 @@ export const getPartnershipAnomalies = (type: 'overplayed' | 'underplayed', limi
 export const getHeadToHeadAnomalies = (type: 'overplayed' | 'underplayed', limit = 20) =>
   apiFetch<AnomalyEntry[]>(`/anomalies/head-to-head/${type}?limit=${limit}`)
 
-export const getPartnershipAnomaliesForPlayer = (playerId: number, type: 'overplayed' | 'underplayed') =>
-  apiFetch<AnomalyEntry[]>(`/anomalies/partnerships/${type}/${playerId}`)
+export const getPartnershipAnomaliesForPlayer = (playerId: number) =>
+  apiFetch<AnomalyEntry[]>(`/anomalies/partnerships/${playerId}`)
 
-export const getHeadToHeadAnomaliesForPlayer = (playerId: number, type: 'overplayed' | 'underplayed') =>
-  apiFetch<AnomalyEntry[]>(`/anomalies/head-to-head/${type}/${playerId}`)
+export const getHeadToHeadAnomaliesForPlayer = (playerId: number) =>
+  apiFetch<AnomalyEntry[]>(`/anomalies/head-to-head/${playerId}`)

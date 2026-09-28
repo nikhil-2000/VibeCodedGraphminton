@@ -27,8 +27,8 @@ describe('GameCard', () => {
     expect(screen.getByText('2024-04-08')).toBeInTheDocument()
   })
 
-  it('renders session number', () => {
+  it('renders game number', () => {
     render(<GameCard game={game} />)
-    expect(screen.getByText('Session 1')).toBeInTheDocument()
+    expect(screen.getByText('Game #1')).toBeInTheDocument()
   })
 })

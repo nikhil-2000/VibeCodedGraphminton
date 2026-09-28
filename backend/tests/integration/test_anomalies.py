@@ -75,7 +75,7 @@ def test_underplayed_head_to_head(client: TestClient, anomaly_seed):
 
 def test_partnership_focus_player(client: TestClient, anomaly_seed):
     a = anomaly_seed["a"]
-    response = client.get(f"/anomalies/partnerships/overplayed/{a}")
+    response = client.get(f"/anomalies/partnerships/{a}")
     assert response.status_code == 200
     data = response.json()
     assert len(data) > 0
@@ -85,7 +85,7 @@ def test_partnership_focus_player(client: TestClient, anomaly_seed):
 
 def test_partnership_focus_player_returns_all_rows(client: TestClient, anomaly_seed):
     a = anomaly_seed["a"]
-    response = client.get(f"/anomalies/partnerships/underplayed/{a}")
+    response = client.get(f"/anomalies/partnerships/{a}")
     assert response.status_code == 200
     data = response.json()
     for row in data:
@@ -94,7 +94,7 @@ def test_partnership_focus_player_returns_all_rows(client: TestClient, anomaly_s
 
 def test_head_to_head_focus_player(client: TestClient, anomaly_seed):
     a = anomaly_seed["a"]
-    response = client.get(f"/anomalies/head-to-head/overplayed/{a}")
+    response = client.get(f"/anomalies/head-to-head/{a}")
     assert response.status_code == 200
     data = response.json()
     assert len(data) > 0
@@ -104,7 +104,7 @@ def test_head_to_head_focus_player(client: TestClient, anomaly_seed):
 
 def test_head_to_head_focus_player_underplayed(client: TestClient, anomaly_seed):
     a = anomaly_seed["a"]
-    response = client.get(f"/anomalies/head-to-head/underplayed/{a}")
+    response = client.get(f"/anomalies/head-to-head/{a}")
     assert response.status_code == 200
     data = response.json()
     for row in data:
