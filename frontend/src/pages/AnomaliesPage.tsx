@@ -8,6 +8,7 @@ import {
 import { getSuggestedGames } from '../api/stats'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 import AnomalyTable from '../components/AnomalyTable'
+import SquadGuidePanel from '../components/SquadGuidePanel'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -139,6 +140,10 @@ export default function AnomaliesPage() {
           )}
         </div>
       )}
+
+      <div className="mt-8">
+        <SquadGuidePanel attendingPlayers={filteredPlayers} playerNames={playerNames} />
+      </div>
 
       <Card className="mt-6">
         <CardHeader>
