@@ -4,21 +4,33 @@ import {
   getHeadToHeadAnomalies,
   getPartnershipAnomaliesForPlayer,
   getHeadToHeadAnomaliesForPlayer,
+  getImbalanceTrend,
 } from '../api/anomalies'
 import { getSuggestedGames } from '../api/stats'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
+import { useSeasonFilter } from '../context/SeasonFilterContext'
 import AnomalyTable from '../components/AnomalyTable'
 import SquadGuidePanel from '../components/SquadGuidePanel'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { SuggestedGame } from '../types'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts'
+import type { SuggestedGame, ImbalanceTrendPoint } from '../types'
 
 type Tab = 'partnerships' | 'head-to-head'
 type Direction = 'overplayed' | 'underplayed'
 
 export default function AnomaliesPage() {
   const { selectedIds, allPlayers } = usePlayerFilter()
+  const { selectedSeasonId } = useSeasonFilter()
   const [tab, setTab] = useState<Tab>('partnerships')
   const [direction] = useState<Direction>('overplayed')
   const [entries, setEntries] = useState<import('../types').AnomalyEntry[]>([])
@@ -29,6 +41,8 @@ export default function AnomaliesPage() {
   const [focusedPlayerId, setFocusedPlayerId] = useState<number | null>(null)
   const [suggestedGames, setSuggestedGames] = useState<SuggestedGame[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(true)
+  const [trendData, setTrendData] = useState<ImbalanceTrendPoint[]>([])
+  const [trendLoading, setTrendLoading] = useState(true)
 
   const filteredPlayers = allPlayers.filter((p) => selectedIds.includes(p.id))
   const playerNames = Object.fromEntries(allPlayers.map((p) => [p.id, p.canonical_name]))
@@ -45,6 +59,13 @@ export default function AnomaliesPage() {
       .then(setSuggestedGames)
       .finally(() => setSuggestionsLoading(false))
   }, [focusedPlayerId])
+
+  useEffect(() => {
+    setTrendLoading(true)
+    getImbalanceTrend(10)
+      .then(setTrendData)
+      .finally(() => setTrendLoading(false))
+  }, [selectedSeasonId, selectedIds])
 
   useEffect(() => {
     setLoading(true)
@@ -176,6 +197,71 @@ export default function AnomaliesPage() {
           <SquadGuidePanel attendingPlayers={filteredPlayers} playerNames={playerNames} />
         </div>
       )}
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Fixture Imbalance Trend</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Cumulative Σdeviation² across all player pairs — lower means more uniform fixture distribution.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {trendLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {!trendLoading && trendData.length === 0 && (
+            <p className="text-sm text-muted-foreground">Not enough data yet.</p>
+          )}
+          {!trendLoading && trendData.length > 0 && (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={trendData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                <XAxis
+                  dataKey="played_on"
+                  tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                  tickFormatter={(v: string) => v.slice(5)}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={40}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: 'var(--card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 6,
+                    fontSize: 12,
+                  }}
+                  labelStyle={{ color: 'var(--foreground)', marginBottom: 4 }}
+                  itemStyle={{ color: 'var(--foreground)' }}
+                  formatter={(value: number) => value.toFixed(1)}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                  formatter={(value) => value === 'partnership_score' ? 'Partnerships' : 'Head-to-Head'}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="partnership_score"
+                  stroke="var(--chart-1)"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="head_to_head_score"
+                  stroke="var(--chart-2)"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

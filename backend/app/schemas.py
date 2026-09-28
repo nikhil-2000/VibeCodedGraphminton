@@ -204,6 +204,15 @@ class AnomalyEntry(BaseModel):
     deviation: float
 
 
+# ── Fixture Imbalance Trend ────────────────────────────────────────────────
+
+class ImbalanceTrendPoint(BaseModel):
+    session: int
+    played_on: str          # ISO date e.g. "2024-04-08"
+    partnership_score: float
+    head_to_head_score: float
+
+
 # ── Game Deletion ──────────────────────────────────────────────────────────
 
 class DeleteSessionResponse(BaseModel):
