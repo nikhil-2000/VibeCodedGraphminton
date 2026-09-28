@@ -235,7 +235,7 @@ export default function AnomaliesPage() {
                   }}
                   labelStyle={{ color: 'var(--foreground)', marginBottom: 4 }}
                   itemStyle={{ color: 'var(--foreground)' }}
-                  formatter={(value: number) => value.toFixed(1)}
+                  formatter={(value) => typeof value === 'number' ? value.toFixed(1) : value}
                 />
                 <Legend
                   wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
