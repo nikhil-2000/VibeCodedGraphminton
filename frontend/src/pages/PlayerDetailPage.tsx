@@ -70,38 +70,28 @@ export default function PlayerDetailPage() {
       getPlayerStats(playerId),
       getPlayerPartnerships(playerId),
       getHeadToHeadAll(playerId),
-      getPartnershipAnomaliesForPlayer(playerId, 'overplayed'),
-      getPartnershipAnomaliesForPlayer(playerId, 'underplayed'),
-      getHeadToHeadAnomaliesForPlayer(playerId, 'overplayed'),
-      getHeadToHeadAnomaliesForPlayer(playerId, 'underplayed'),
+      getPartnershipAnomaliesForPlayer(playerId),
+      getHeadToHeadAnomaliesForPlayer(playerId),
       getLeaderboard('avg_points'),
       getPairingsFaced(playerId),
     ])
-      .then(([p, s, partners, h2h, partnerOver, partnerUnder, oppOver, oppUnder, lb, faced]) => {
+      .then(([p, s, partners, h2h, partnerAnomalies, oppAnomalies, lb, faced]) => {
         setPlayer(p)
         setStats(s)
         setPartnerships(partners)
         setH2hRecords(h2h)
 
         const pMap: Record<number, 'over' | 'under'> = {}
-        for (const e of partnerUnder) {
+        for (const e of partnerAnomalies) {
           const id = e.player_a_id === playerId ? e.player_b_id : e.player_a_id
-          pMap[id] = 'under'
-        }
-        for (const e of partnerOver) {
-          const id = e.player_a_id === playerId ? e.player_b_id : e.player_a_id
-          pMap[id] = 'over'
+          pMap[id] = e.deviation > 0 ? 'over' : 'under'
         }
         setPartnerAnomalyMap(pMap)
 
         const oMap: Record<number, 'over' | 'under'> = {}
-        for (const e of oppUnder) {
+        for (const e of oppAnomalies) {
           const id = e.player_a_id === playerId ? e.player_b_id : e.player_a_id
-          oMap[id] = 'under'
-        }
-        for (const e of oppOver) {
-          const id = e.player_a_id === playerId ? e.player_b_id : e.player_a_id
-          oMap[id] = 'over'
+          oMap[id] = e.deviation > 0 ? 'over' : 'under'
         }
         setOpponentAnomalyMap(oMap)
 
