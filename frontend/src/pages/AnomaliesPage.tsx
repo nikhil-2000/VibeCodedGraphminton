@@ -136,10 +136,6 @@ export default function AnomaliesPage() {
         </div>
       )}
 
-      <div className="mt-8">
-        <SquadGuidePanel attendingPlayers={filteredPlayers} playerNames={playerNames} />
-      </div>
-
       <Card className="mt-6">
         <CardHeader>
           <CardTitle>Suggested Games</CardTitle>
@@ -174,6 +170,12 @@ export default function AnomaliesPage() {
           )}
         </CardContent>
       </Card>
+
+      {focusedPlayerId === null && (
+        <div className="mt-8">
+          <SquadGuidePanel attendingPlayers={filteredPlayers} playerNames={playerNames} />
+        </div>
+      )}
     </div>
   )
 }
