@@ -36,3 +36,15 @@ export const getVsPairingsLeaderboard = (pairPlayerIds: number[], sortBy: 'games
   pairPlayerIds.forEach((id) => params.append('pair_player_ids', String(id)))
   return apiFetch<VsPairingsLeaderboardEntry[]>(`/stats/vs-pairings-leaderboard?${params}`)
 }
+
+export interface UpsetLeaderboardEntry {
+  player_id: number
+  canonical_name: string
+  upset_wins: number
+  upset_losses: number
+  underdog_games: number
+  upset_win_rate: number | null
+}
+
+export const getUpsetLeaderboard = (sortBy: 'underdog_games' | 'upset_win_rate' = 'underdog_games') =>
+  apiFetch<UpsetLeaderboardEntry[]>(`/stats/upset-leaderboard?sort_by=${sortBy}`)

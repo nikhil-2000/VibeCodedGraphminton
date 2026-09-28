@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getPlayer, getPlayerStats, getPlayerPartnerships, deletePlayer, updatePlayer } from '../api/players'
-import { getHeadToHeadAll, getLeaderboard, getPairingsFaced, getVsPairingsLeaderboard } from '../api/stats'
+import { getPlayer, getPlayerStats, getPlayerPartnerships, getPlayerUpsetStats, deletePlayer, updatePlayer } from '../api/players'
+import type { PlayerUpsetStats } from '../api/players'
+import { getHeadToHeadAll, getLeaderboard, getPairingsFaced, getVsPairingsLeaderboard, getUpsetLeaderboard } from '../api/stats'
+import type { UpsetLeaderboardEntry } from '../api/stats'
 import { getPartnershipAnomaliesForPlayer, getHeadToHeadAnomaliesForPlayer } from '../api/anomalies'
 import GameCard from '../components/GameCard'
 import PairingsFacedCard from '../components/PairingsFacedCard'
@@ -27,6 +29,7 @@ export default function PlayerDetailPage() {
 
   const [player, setPlayer] = useState<Player | null>(null)
   const [stats, setStats] = useState<PlayerStats | null>(null)
+  const [upsetStats, setUpsetStats] = useState<PlayerUpsetStats | null>(null)
   const [partnerships, setPartnerships] = useState<PlayerPartnership[]>([])
   const [h2hRecords, setH2hRecords] = useState<HeadToHeadRecord[]>([])
   const [pairingsFaced, setPairingsFaced] = useState<PairingsFacedEntry[]>([])
@@ -39,7 +42,7 @@ export default function PlayerDetailPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [error, setError] = useState<string | null>(null)
 
-  type LeaderboardKind = 'games' | 'wins' | 'losses' | 'win_rate' | 'avg_points' | 'close' | 'normal' | 'blowout' | 'vs_top3' | 'vs_bottom3'
+  type LeaderboardKind = 'games' | 'wins' | 'losses' | 'win_rate' | 'avg_points' | 'close' | 'normal' | 'blowout' | 'vs_top3' | 'vs_bottom3' | 'upset_record'
   const [statsDialog, setStatsDialog] = useState<LeaderboardKind | null>(null)
   const [closenessLeaderboard, setClosenessLeaderboard] = useState<LeaderboardEntry[]>([])
   const [closenessLeaderboardError, setClosenessLeaderboardError] = useState<string | null>(null)
@@ -47,6 +50,9 @@ export default function PlayerDetailPage() {
   const [vsLeaderboardError, setVsLeaderboardError] = useState<string | null>(null)
   const [vsSort, setVsSort] = useState<'games_faced' | 'win_rate'>('games_faced')
   const [closenessSort, setClosenessSort] = useState<'win_rate' | 'avg_points'>('win_rate')
+  const [upsetLeaderboard, setUpsetLeaderboard] = useState<UpsetLeaderboardEntry[]>([])
+  const [upsetLeaderboardError, setUpsetLeaderboardError] = useState<string | null>(null)
+  const [upsetSort, setUpsetSort] = useState<'underdog_games' | 'upset_win_rate'>('underdog_games')
 
   const playerNames = Object.fromEntries(allPlayers.map((p) => [p.id, p.canonical_name]))
 
@@ -113,6 +119,10 @@ export default function PlayerDetailPage() {
         setPairingsFaced(faced)
       })
       .catch((e: Error) => setError(e.message))
+  }, [playerId])
+
+  useEffect(() => {
+    getPlayerUpsetStats(playerId).then(setUpsetStats).catch(() => {})
   }, [playerId])
 
   const openEdit = () => {
@@ -248,6 +258,20 @@ export default function PlayerDetailPage() {
     return sorted
   }, [statsDialog, leaderboard])
 
+  const fetchUpsetLeaderboard = (sort: 'underdog_games' | 'upset_win_rate') => {
+    setUpsetLeaderboardError(null)
+    setUpsetLeaderboard([])
+    getUpsetLeaderboard(sort)
+      .then(setUpsetLeaderboard)
+      .catch(() => setUpsetLeaderboardError('Failed to load leaderboard'))
+  }
+
+  const openUpsetDialog = () => {
+    setUpsetSort('underdog_games')
+    fetchUpsetLeaderboard('underdog_games')
+    setStatsDialog('upset_record')
+  }
+
   const dialogTitles: Record<string, string> = {
     games: 'Games played',
     wins: 'Wins',
@@ -259,6 +283,7 @@ export default function PlayerDetailPage() {
     blowout: 'Blowout games (7+)',
     vs_top3: 'vs Top 3 pairs — games faced',
     vs_bottom3: 'vs Bottom 3 pairs — games faced',
+    upset_record: 'Upset record — underdog games',
   }
 
   if (error) return <p className="text-destructive">{error}</p>
@@ -295,10 +320,10 @@ export default function PlayerDetailPage() {
 
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <StatCard label="Games" value={stats.games_played} onLeaderboardClick={() => setStatsDialog('games')} />
-        <StatCard label="Wins" value={stats.wins} onLeaderboardClick={() => setStatsDialog('wins')} />
-        <StatCard label="Losses" value={stats.losses} onLeaderboardClick={() => setStatsDialog('losses')} />
+        <StatCard label="Record" value={`${stats.wins}–${stats.losses}`} onLeaderboardClick={() => setStatsDialog('wins')} />
         <StatCard label="Win Rate" value={`${(stats.win_rate * 100).toFixed(1)}%`} onLeaderboardClick={() => setStatsDialog('win_rate')} />
         <StatCard label="Avg Pts" value={stats.avg_points.toFixed(2)} onLeaderboardClick={() => setStatsDialog('avg_points')} />
+        <StatCard label="Upset Record" value={upsetStats ? `${upsetStats.upset_wins}–${upsetStats.upset_losses}` : '—'} sub={upsetStats ? `${upsetStats.underdog_games} underdog games` : undefined} onLeaderboardClick={openUpsetDialog} />
         <StatCard label="Close (≤3)" value={`${gameCloseness.close.wins}–${gameCloseness.close.losses}`} sub={`${gameCloseness.close.wins + gameCloseness.close.losses} games`} onLeaderboardClick={() => openClosenessDialog('close')} />
         <StatCard label="Normal (4–6)" value={`${gameCloseness.normal.wins}–${gameCloseness.normal.losses}`} sub={`${gameCloseness.normal.wins + gameCloseness.normal.losses} games`} onLeaderboardClick={() => openClosenessDialog('normal')} />
         <StatCard label="Blowout (7+)" value={`${gameCloseness.blowout.wins}–${gameCloseness.blowout.losses}`} sub={`${gameCloseness.blowout.wins + gameCloseness.blowout.losses} games`} onLeaderboardClick={() => openClosenessDialog('blowout')} />
@@ -480,6 +505,58 @@ export default function PlayerDetailPage() {
                   </TableBody>
                 </Table>
               </div>
+              )}
+            </div>
+          ) : statsDialog === 'upset_record' ? (
+            <div>
+              <div className="mb-3 flex gap-2">
+                {(['underdog_games', 'upset_win_rate'] as const).map((s) => (
+                  <Button
+                    key={s}
+                    variant={upsetSort === s ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      setUpsetSort(s)
+                      fetchUpsetLeaderboard(s)
+                    }}
+                  >
+                    {s === 'underdog_games' ? 'Games played' : 'Win rate'}
+                  </Button>
+                ))}
+              </div>
+              {upsetLeaderboardError ? (
+                <p className="text-sm text-destructive">{upsetLeaderboardError}</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">#</TableHead>
+                        <TableHead>Player</TableHead>
+                        <TableHead className="text-right">Underdog</TableHead>
+                        <TableHead className="text-right">Win %</TableHead>
+                        <TableHead className="text-right">W</TableHead>
+                        <TableHead className="text-right">L</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {upsetLeaderboard.map((e, i) => (
+                        <TableRow key={e.player_id} className={e.player_id === playerId ? 'bg-muted/50' : ''}>
+                          <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                          <TableCell className="font-medium">
+                            <Link to={`/players/${e.player_id}`} className="hover:text-yellow-400">{e.canonical_name}</Link>
+                          </TableCell>
+                          <TableCell className="text-right">{e.underdog_games}</TableCell>
+                          <TableCell className="text-right">
+                            {e.upset_win_rate != null ? `${(e.upset_win_rate * 100).toFixed(1)}%` : '—'}
+                          </TableCell>
+                          <TableCell className="text-right text-green-400">{e.upset_wins}</TableCell>
+                          <TableCell className="text-right text-red-400">{e.upset_losses}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </div>
           ) : statsDialog && ['close', 'normal', 'blowout'].includes(statsDialog) ? (

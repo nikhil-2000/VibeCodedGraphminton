@@ -220,6 +220,22 @@ class GamePrediction(BaseModel):
     upset: bool
 
 
+class PlayerUpsetStats(BaseModel):
+    player_id: int
+    upset_wins: int
+    upset_losses: int
+    underdog_games: int
+
+
+class UpsetLeaderboardEntry(BaseModel):
+    player_id: int
+    canonical_name: str
+    upset_wins: int
+    upset_losses: int
+    underdog_games: int
+    upset_win_rate: float | None  # None when underdog_games == 0
+
+
 # ── Ingest Games ───────────────────────────────────────────────────────────
 
 class GameRowIn(BaseModel):

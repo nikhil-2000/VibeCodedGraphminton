@@ -16,6 +16,7 @@ from ..schemas import (
     MatchupResponse,
     HeadToHeadBulkEntry,
     SuggestedGame,
+    UpsetLeaderboardEntry,
     VsPairingsLeaderboardEntry,
 )
 
@@ -55,6 +56,16 @@ def leaderboard(
 ):
     player_ids, season_id = filters
     return stats_service.get_leaderboard(db, sort_by, player_ids, season_id, game_ids or None)
+
+
+@router.get("/upset-leaderboard", response_model=list[UpsetLeaderboardEntry])
+def upset_leaderboard(
+    sort_by: Literal["underdog_games", "upset_win_rate"] = "underdog_games",
+    filters: FilterContext = Depends(get_filter_context),
+    db: Session = Depends(get_db),
+):
+    player_ids, season_id = filters
+    return stats_service.get_upset_leaderboard(db, sort_by, player_ids, season_id)
 
 
 @router.get("/pairings-leaderboard", response_model=list[PairingsLeaderboardEntry])
