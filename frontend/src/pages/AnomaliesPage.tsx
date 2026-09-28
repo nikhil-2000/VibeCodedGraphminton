@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   getPartnershipAnomalies,
   getHeadToHeadAnomalies,
-  getPartnershipAnomaliesForPlayer,
-  getHeadToHeadAnomaliesForPlayer,
+  getPlayerAnomalies,
 } from '../api/anomalies'
 import { getSuggestedGames } from '../api/stats'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
@@ -50,14 +49,11 @@ export default function AnomaliesPage() {
     setLoading(true)
     setError(null)
     if (focusedPlayerId !== null) {
-      const fetcher = tab === 'partnerships'
-        ? getPartnershipAnomaliesForPlayer
-        : getHeadToHeadAnomaliesForPlayer
-      Promise.all([
-        fetcher(focusedPlayerId, 'overplayed'),
-        fetcher(focusedPlayerId, 'underplayed'),
-      ])
-        .then(([over, under]) => setEntries([...over, ...under].sort((a, b) => b.deviation - a.deviation)))
+      getPlayerAnomalies(focusedPlayerId)
+        .then((data) => {
+          const all = tab === 'partnerships' ? data.partnerships : data.head_to_head
+          setEntries([...all].sort((a, b) => b.deviation - a.deviation))
+        })
         .catch((e: Error) => setError(e.message))
         .finally(() => setLoading(false))
     } else {

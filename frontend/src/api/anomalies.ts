@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { AnomalyEntry } from '../types'
+import type { AnomalyEntry, PlayerAnomalies } from '../types'
 
 export const getPartnershipAnomalies = (type: 'overplayed' | 'underplayed', limit = 20) =>
   apiFetch<AnomalyEntry[]>(`/anomalies/partnerships/${type}?limit=${limit}`)
@@ -12,3 +12,6 @@ export const getPartnershipAnomaliesForPlayer = (playerId: number, type: 'overpl
 
 export const getHeadToHeadAnomaliesForPlayer = (playerId: number, type: 'overplayed' | 'underplayed') =>
   apiFetch<AnomalyEntry[]>(`/anomalies/head-to-head/${type}/${playerId}`)
+
+export const getPlayerAnomalies = (playerId: number) =>
+  apiFetch<PlayerAnomalies>(`/anomalies/player/${playerId}`)

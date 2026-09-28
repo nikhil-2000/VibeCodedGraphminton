@@ -563,6 +563,11 @@ export interface components {
             /** Deviation */
             deviation: number;
         };
+        /** PlayerAnomalies */
+        PlayerAnomalies: {
+            partnerships: components["schemas"]["AnomalyEntry"][];
+            head_to_head: components["schemas"]["AnomalyEntry"][];
+        };
         /** DeleteSessionResponse */
         DeleteSessionResponse: {
             /** Deleted */

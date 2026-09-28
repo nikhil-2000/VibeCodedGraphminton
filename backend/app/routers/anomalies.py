@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..deps import FilterContext, get_filter_context
 from ..services import anomalies as anomaly_service
-from ..schemas import AnomalyEntry
+from ..schemas import AnomalyEntry, PlayerAnomalies
 
 router = APIRouter()
 
@@ -102,4 +102,17 @@ def head_to_head_underplayed_for_player(
         db, overplayed=False, limit=None,
         player_ids=player_ids, season_id=season_id,
         focus_player_id=player_id,
+    )
+
+
+@router.get("/player/{player_id}", response_model=PlayerAnomalies)
+def player_anomalies(
+    player_id: int,
+    filters: FilterContext = Depends(get_filter_context),
+    db: Session = Depends(get_db),
+):
+    player_ids, season_id = filters
+    return anomaly_service.get_player_anomalies(
+        db, player_id=player_id,
+        player_ids=player_ids, season_id=season_id,
     )

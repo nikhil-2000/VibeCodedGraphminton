@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react'
-import {
-  getPartnershipAnomaliesForPlayer,
-  getHeadToHeadAnomaliesForPlayer,
-} from '../api/anomalies'
+import { getPlayerAnomalies } from '../api/anomalies'
 import type { AnomalyEntry, Player } from '../types'
 
 interface SlotProps {
@@ -32,32 +29,28 @@ interface PlayerCardProps {
 }
 
 function PlayerCard({ player, attendingIds, playerNames }: PlayerCardProps) {
-  const [partnerUnder, setPartnerUnder] = useState<AnomalyEntry[]>([])
-  const [partnerOver, setPartnerOver] = useState<AnomalyEntry[]>([])
-  const [h2hUnder, setH2hUnder] = useState<AnomalyEntry[]>([])
-  const [h2hOver, setH2hOver] = useState<AnomalyEntry[]>([])
+  const [partnerships, setPartnerships] = useState<AnomalyEntry[]>([])
+  const [headToHead, setHeadToHead] = useState<AnomalyEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
 
   useEffect(() => {
     setLoading(true)
     setFetchError(false)
-    Promise.all([
-      getPartnershipAnomaliesForPlayer(player.id, 'underplayed'),
-      getPartnershipAnomaliesForPlayer(player.id, 'overplayed'),
-      getHeadToHeadAnomaliesForPlayer(player.id, 'underplayed'),
-      getHeadToHeadAnomaliesForPlayer(player.id, 'overplayed'),
-    ]).then(([pu, po, hu, ho]) => {
-      setPartnerUnder(pu)
-      setPartnerOver(po)
-      setH2hUnder(hu)
-      setH2hOver(ho)
-    }).catch(() => setFetchError(true))
-    .finally(() => setLoading(false))
+    getPlayerAnomalies(player.id)
+      .then(({ partnerships: p, head_to_head: h }) => {
+        setPartnerships(p)
+        setHeadToHead(h)
+      })
+      .catch(() => setFetchError(true))
+      .finally(() => setLoading(false))
   }, [player.id])
 
-  const pick = (entries: AnomalyEntry[]) => {
-    for (const e of entries) {
+  const pick = (entries: AnomalyEntry[], seek: boolean) => {
+    const filtered = seek
+      ? entries.filter((e) => e.deviation < 0)
+      : entries.filter((e) => e.deviation > 0)
+    for (const e of filtered) {
       const otherId = e.player_a_id === player.id ? e.player_b_id : e.player_a_id
       if (attendingIds.includes(otherId)) return playerNames[otherId]
     }
@@ -71,10 +64,10 @@ function PlayerCard({ player, attendingIds, playerNames }: PlayerCardProps) {
         <p className="text-xs text-destructive">Failed to load recommendations.</p>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          <Slot label="Play with" playerName={pick(partnerUnder)} seek={true} />
-          <Slot label="Play against" playerName={pick(h2hUnder)} seek={true} />
-          <Slot label="Avoid with" playerName={pick(partnerOver)} seek={false} />
-          <Slot label="Avoid against" playerName={pick(h2hOver)} seek={false} />
+          <Slot label="Play with" playerName={pick(partnerships, true)} seek={true} />
+          <Slot label="Play against" playerName={pick(headToHead, true)} seek={true} />
+          <Slot label="Avoid with" playerName={pick(partnerships, false)} seek={false} />
+          <Slot label="Avoid against" playerName={pick(headToHead, false)} seek={false} />
         </div>
       )}
     </div>
