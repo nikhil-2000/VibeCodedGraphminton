@@ -15,7 +15,7 @@ import ImbalanceTrendCard from '../components/ImbalanceTrendCard'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { SuggestedGame } from '../types'
+import type { SuggestedGame, ImbalanceTrendPoint } from '../types'
 
 type Tab = 'partnerships' | 'head-to-head'
 type Direction = 'overplayed' | 'underplayed'
