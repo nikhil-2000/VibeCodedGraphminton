@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import require_admin
-from ..deps import get_filter_context
+from ..deps import FilterContext, get_filter_context
 from ..services import games as games_service
 from ..schemas import GameResponse, GameDetailResponse, DeleteSessionResponse, GamePrediction
 
@@ -16,7 +16,7 @@ def list_games(
     player_id: Optional[int] = None,
     team: Optional[str] = None,
     vs: Optional[str] = None,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -41,7 +41,7 @@ def list_games(
 @router.get("/{game_id}/prediction", response_model=GamePrediction)
 def get_game_prediction(
     game_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters

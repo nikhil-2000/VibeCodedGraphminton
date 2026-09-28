@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import require_admin
-from ..deps import get_filter_context
+from ..deps import FilterContext, get_filter_context
 from ..schemas import PlayerCreate, PlayerUpdate, PlayerResponse, PlayerStatsResponse
 from ..services import players as player_service
 from ..services import stats as stats_service
@@ -49,7 +49,7 @@ def update_player(player_id: int, data: PlayerUpdate, db: Session = Depends(get_
 @router.get("/{player_id}/stats", response_model=PlayerStatsResponse)
 def get_player_stats(
     player_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters

@@ -2,7 +2,7 @@ from typing import Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..deps import get_filter_context
+from ..deps import FilterContext, get_filter_context
 from ..services import stats as stats_service
 from ..schemas import (
     LeaderboardEntry,
@@ -25,7 +25,7 @@ router = APIRouter()
 @router.get("/player/{player_id}", response_model=PlayerStatsResponse)
 def player_stats(
     player_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -39,7 +39,7 @@ def player_stats(
 def suggested_games(
     top_n: int = Query(default=5, ge=1, le=20),
     focus_player_id: Optional[int] = Query(default=None),
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -50,7 +50,7 @@ def suggested_games(
 def leaderboard(
     sort_by: Literal["win_rate", "avg_points"] = "win_rate",
     game_ids: list[int] = Query(default=[]),
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -60,7 +60,7 @@ def leaderboard(
 @router.get("/pairings-leaderboard", response_model=list[PairingsLeaderboardEntry])
 def pairings_leaderboard(
     sort_by: Literal["win_rate", "avg_points"] = "win_rate",
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -71,7 +71,7 @@ def pairings_leaderboard(
 def vs_pairings_leaderboard(
     pair_player_ids: list[int] = Query(default=[]),
     sort_by: Literal["games_faced", "win_rate"] = "games_faced",
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -80,7 +80,7 @@ def vs_pairings_leaderboard(
 
 @router.get("/partnerships", response_model=list[PartnershipResponse])
 def all_partnerships(
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -90,7 +90,7 @@ def all_partnerships(
 @router.get("/partnerships/{player_id}", response_model=list[PlayerPartnershipResponse])
 def partnerships_for_player(
     player_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -104,7 +104,7 @@ def partnerships_for_player(
 def specific_partnership(
     player_a_id: int,
     player_b_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -114,7 +114,7 @@ def specific_partnership(
 @router.get("/head-to-head/{player_id}/all", response_model=list[HeadToHeadBulkEntry])
 def head_to_head_all(
     player_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -124,7 +124,7 @@ def head_to_head_all(
 @router.get("/pairings-faced/{player_id}", response_model=list[PairingsFacedEntry])
 def pairings_faced(
     player_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -135,7 +135,7 @@ def pairings_faced(
 def head_to_head(
     player_a_id: int,
     player_b_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -146,7 +146,7 @@ def head_to_head(
 def matchup(
     pair_a_ids: str,
     pair_b_ids: str,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -160,7 +160,7 @@ def matchup(
 
 @router.get("/matchup-quality", response_model=list[MatchupQualityEntry])
 def matchup_quality(
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters

@@ -2,7 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..deps import get_filter_context
+from ..deps import FilterContext, get_filter_context
 from ..services import anomalies as anomaly_service
 from ..schemas import AnomalyEntry
 
@@ -12,7 +12,7 @@ router = APIRouter()
 @router.get("/partnerships/overplayed", response_model=list[AnomalyEntry])
 def partnerships_overplayed(
     limit: int = 10,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -22,7 +22,7 @@ def partnerships_overplayed(
 @router.get("/partnerships/underplayed", response_model=list[AnomalyEntry])
 def partnerships_underplayed(
     limit: int = 10,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -32,7 +32,7 @@ def partnerships_underplayed(
 @router.get("/head-to-head/overplayed", response_model=list[AnomalyEntry])
 def head_to_head_overplayed(
     limit: int = 10,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -42,7 +42,7 @@ def head_to_head_overplayed(
 @router.get("/head-to-head/underplayed", response_model=list[AnomalyEntry])
 def head_to_head_underplayed(
     limit: int = 10,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -52,7 +52,7 @@ def head_to_head_underplayed(
 @router.get("/partnerships/overplayed/{player_id}", response_model=list[AnomalyEntry])
 def partnerships_overplayed_for_player(
     player_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -66,7 +66,7 @@ def partnerships_overplayed_for_player(
 @router.get("/partnerships/underplayed/{player_id}", response_model=list[AnomalyEntry])
 def partnerships_underplayed_for_player(
     player_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -80,7 +80,7 @@ def partnerships_underplayed_for_player(
 @router.get("/head-to-head/overplayed/{player_id}", response_model=list[AnomalyEntry])
 def head_to_head_overplayed_for_player(
     player_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
@@ -94,7 +94,7 @@ def head_to_head_overplayed_for_player(
 @router.get("/head-to-head/underplayed/{player_id}", response_model=list[AnomalyEntry])
 def head_to_head_underplayed_for_player(
     player_id: int,
-    filters: tuple = Depends(get_filter_context),
+    filters: FilterContext = Depends(get_filter_context),
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
