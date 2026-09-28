@@ -21,7 +21,7 @@ export default function ImbalanceTrendCard({ data, loading }: Props) {
       <CardHeader>
         <CardTitle>Fixture Imbalance Trend</CardTitle>
         <p className="text-xs text-muted-foreground">
-          Cumulative Σdeviation² across all player pairs — lower means more uniform fixture distribution.
+          Cumulative Σdeviation² / games across all player pairs — lower means more uniform fixture distribution.
         </p>
       </CardHeader>
       <CardContent>

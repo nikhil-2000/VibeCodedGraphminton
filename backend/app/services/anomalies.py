@@ -214,7 +214,7 @@ def _deviation_sq_sum(
     prob: float,
     game_ids: set[int],
 ) -> float:
-    """Sum of (actual − expected)² over all player pairs for the given game IDs."""
+    """Σ(actual − expected)² / total_games — normalised so the score is comparable across sessions."""
     actual_counts = _pair_counts(db, same_team, game_ids)
     player_counts = _get_player_game_counts(db, game_ids)
     total = len(game_ids)
@@ -225,7 +225,7 @@ def _deviation_sq_sum(
         actual = actual_counts.get((a, b), 0)
         expected = _expected_frequency(player_counts[a], player_counts[b], total, prob)
         total_sq += (actual - expected) ** 2
-    return round(total_sq, 4)
+    return round(total_sq / total, 4)
 
 
 def get_imbalance_trend(
