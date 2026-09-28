@@ -1,7 +1,7 @@
 from typing import Any
 from sqlalchemy.orm import Session, aliased
-from sqlalchemy import func
-from ..models import GamePlayer
+from sqlalchemy import func, select, distinct
+from ..models import Game, GamePlayer
 from ._common import normalize_pair, total_games_in_scope, valid_game_id_set
 
 
@@ -206,3 +206,80 @@ def get_head_to_head_anomalies_for_player(
     return _get_player_anomalies(db, same_team=False, prob_given_same_game=P_OPPONENT,
                                  player_id=player_id,
                                  player_ids=player_ids, season_id=season_id)
+
+
+def _deviation_sq_sum(
+    db: Session,
+    same_team: bool,
+    prob: float,
+    game_ids: set[int],
+) -> float:
+    """Σ(actual − expected)² / total_games — normalised so the score is comparable across sessions."""
+    actual_counts = _pair_counts(db, same_team, game_ids)
+    player_counts = _get_player_game_counts(db, game_ids)
+    total = len(game_ids)
+    if total == 0:
+        return 0.0
+    total_sq = 0.0
+    for a, b in _get_all_player_pairs(player_counts):
+        actual = actual_counts.get((a, b), 0)
+        expected = _expected_frequency(player_counts[a], player_counts[b], total, prob)
+        total_sq += (actual - expected) ** 2
+    return round(total_sq / total, 4)
+
+
+def get_imbalance_trend(
+    db: Session,
+    sessions: int = 10,
+    player_ids: list[int] | None = None,
+    season_id: int | None = None,
+) -> list[dict[str, Any]]:
+    """Cumulative fixture imbalance score for each of the last N sessions.
+
+    For each session (a distinct played_on date), computes the partnership and
+    head-to-head Σdeviation² using all games up to and including that session.
+    Returns the last `sessions` points in chronological order.
+    """
+    base_ids = valid_game_id_set(db, player_ids, season_id)
+
+    # Enumerate distinct played_on dates in scope, chronologically.
+    dates_q = db.execute(
+        select(distinct(Game.played_on))
+        .where(Game.id.in_(base_ids) if base_ids is not None else True)
+        .order_by(Game.played_on)
+    )
+    all_dates = [row[0] for row in dates_q.all()]
+
+    # Take the last N dates.
+    tail_dates = all_dates[-sessions:] if len(all_dates) > sessions else all_dates
+
+    # Build a lookup of date → game IDs for all games in scope.
+    if base_ids is not None:
+        games_q = db.execute(
+            select(Game.id, Game.played_on).where(Game.id.in_(base_ids))
+        )
+    else:
+        games_q = db.execute(select(Game.id, Game.played_on))
+    date_to_ids: dict = {}
+    for gid, gdate in games_q.all():
+        date_to_ids.setdefault(gdate, set()).add(gid)
+
+    # For each tail date, compute the cumulative game IDs (all sessions up to that date).
+    results = []
+    start_date = tail_dates[0] if tail_dates else None
+    cumulative: set[int] = set()
+    # First accumulate all games before the tail window.
+    for d in all_dates:
+        if d < start_date:
+            cumulative |= date_to_ids.get(d, set())
+
+    for session_num, d in enumerate(tail_dates, start=len(all_dates) - len(tail_dates) + 1):
+        cumulative |= date_to_ids.get(d, set())
+        results.append({
+            "session": session_num,
+            "played_on": d.isoformat(),
+            "partnership_score": _deviation_sq_sum(db, True, P_PARTNER, cumulative),
+            "head_to_head_score": _deviation_sq_sum(db, False, P_OPPONENT, cumulative),
+        })
+
+    return results

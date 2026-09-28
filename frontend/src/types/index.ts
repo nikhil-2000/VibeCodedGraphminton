@@ -18,7 +18,8 @@ export type HeadToHead = Schema["HeadToHeadResponse"];
 export type Matchup = Schema["MatchupResponse"];
 export type Game = Schema["GameDetailResponse"];
 export type GameDetail = Schema["GameDetailResponse"];
-export type AnomalyEntry = Schema["AnomalyEntry"];
+export type AnomalyEntry = Schema["AnomalyEntry"]
+export type ImbalanceTrendPoint = Schema["ImbalanceTrendPoint"];
 export type IngestRequest = Schema["IngestRequest"];
 export type IngestResult = Schema["IngestResponse"];
 

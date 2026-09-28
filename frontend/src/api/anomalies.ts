@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { AnomalyEntry } from '../types'
+import type { AnomalyEntry, ImbalanceTrendPoint } from '../types'
 
 export const getPartnershipAnomalies = (type: 'overplayed' | 'underplayed', limit = 20) =>
   apiFetch<AnomalyEntry[]>(`/anomalies/partnerships/${type}?limit=${limit}`)
@@ -12,3 +12,6 @@ export const getPartnershipAnomaliesForPlayer = (playerId: number) =>
 
 export const getHeadToHeadAnomaliesForPlayer = (playerId: number) =>
   apiFetch<AnomalyEntry[]>(`/anomalies/head-to-head/${playerId}`)
+
+export const getImbalanceTrend = (sessions = 10) =>
+  apiFetch<ImbalanceTrendPoint[]>(`/anomalies/imbalance-trend?sessions=${sessions}`)

@@ -4,21 +4,27 @@ import {
   getHeadToHeadAnomalies,
   getPartnershipAnomaliesForPlayer,
   getHeadToHeadAnomaliesForPlayer,
+  getImbalanceTrend,
 } from '../api/anomalies'
 import { getSuggestedGames } from '../api/stats'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
+import { useSeasonFilter } from '../context/SeasonFilterContext'
+import { useCurrentUser } from '../context/CurrentUserContext'
 import AnomalyTable from '../components/AnomalyTable'
 import SquadGuidePanel from '../components/SquadGuidePanel'
+import ImbalanceTrendCard from '../components/ImbalanceTrendCard'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { SuggestedGame } from '../types'
+import type { SuggestedGame, ImbalanceTrendPoint } from '../types'
 
 type Tab = 'partnerships' | 'head-to-head'
 type Direction = 'overplayed' | 'underplayed'
 
 export default function AnomaliesPage() {
   const { selectedIds, allPlayers } = usePlayerFilter()
+  const { selectedSeasonId } = useSeasonFilter()
+  const { isAdmin } = useCurrentUser()
   const [tab, setTab] = useState<Tab>('partnerships')
   const [direction] = useState<Direction>('overplayed')
   const [entries, setEntries] = useState<import('../types').AnomalyEntry[]>([])
@@ -29,6 +35,8 @@ export default function AnomaliesPage() {
   const [focusedPlayerId, setFocusedPlayerId] = useState<number | null>(null)
   const [suggestedGames, setSuggestedGames] = useState<SuggestedGame[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(true)
+  const [trendData, setTrendData] = useState<ImbalanceTrendPoint[]>([])
+  const [trendLoading, setTrendLoading] = useState(true)
 
   const filteredPlayers = allPlayers.filter((p) => selectedIds.includes(p.id))
   const playerNames = Object.fromEntries(allPlayers.map((p) => [p.id, p.canonical_name]))
@@ -45,6 +53,13 @@ export default function AnomaliesPage() {
       .then(setSuggestedGames)
       .finally(() => setSuggestionsLoading(false))
   }, [focusedPlayerId])
+
+  useEffect(() => {
+    setTrendLoading(true)
+    getImbalanceTrend(10)
+      .then(setTrendData)
+      .finally(() => setTrendLoading(false))
+  }, [selectedSeasonId, selectedIds])
 
   useEffect(() => {
     setLoading(true)
@@ -175,6 +190,27 @@ export default function AnomaliesPage() {
         <div className="mt-8">
           <SquadGuidePanel attendingPlayers={filteredPlayers} playerNames={playerNames} />
         </div>
+      )}
+
+      {isAdmin && (
+        <>
+          <ImbalanceTrendCard
+            data={trendData}
+            loading={trendLoading}
+            title="Partnership Imbalance Trend"
+            subtitle="Cumulative Σdeviation² / games for partnerships — lower means more uniform."
+            dataKey="partnership_score"
+            color="var(--chart-1)"
+          />
+          <ImbalanceTrendCard
+            data={trendData}
+            loading={trendLoading}
+            title="Head-to-Head Imbalance Trend"
+            subtitle="Cumulative Σdeviation² / games for head-to-head matchups — lower means more uniform."
+            dataKey="head_to_head_score"
+            color="var(--chart-2)"
+          />
+        </>
       )}
     </div>
   )

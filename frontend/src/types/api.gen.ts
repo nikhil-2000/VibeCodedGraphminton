@@ -52,7 +52,8 @@ export interface paths {
         get: operations["get_season_seasons__season_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Season */
+        delete: operations["delete_season_seasons__season_id__delete"];
         options?: never;
         head?: never;
         /** Update Season */
@@ -94,6 +95,23 @@ export interface paths {
         head?: never;
         /** Update Player */
         patch: operations["update_player_players__player_id__patch"];
+        trace?: never;
+    };
+    "/players/{player_id}/upset-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Player Upset Stats */
+        get: operations["get_player_upset_stats_players__player_id__upset_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/players/{player_id}/stats": {
@@ -215,6 +233,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/stats/upset-leaderboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Upset Leaderboard */
+        get: operations["upset_leaderboard_stats_upset_leaderboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stats/pairings-leaderboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pairings Leaderboard */
+        get: operations["pairings_leaderboard_stats_pairings_leaderboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stats/vs-pairings-leaderboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Vs Pairings Leaderboard */
+        get: operations["vs_pairings_leaderboard_stats_vs_pairings_leaderboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/stats/partnerships": {
         parameters: {
             query?: never;
@@ -275,6 +344,23 @@ export interface paths {
         };
         /** Head To Head All */
         get: operations["head_to_head_all_stats_head_to_head__player_id__all_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stats/pairings-faced/{player_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pairings Faced */
+        get: operations["pairings_faced_stats_pairings_faced__player_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -403,6 +489,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/anomalies/imbalance-trend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Imbalance Trend */
+        get: operations["imbalance_trend_anomalies_imbalance_trend_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/anomalies/partnerships/overplayed": {
         parameters: {
             query?: never;
@@ -471,15 +574,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/anomalies/partnerships/overplayed/{player_id}": {
+    "/anomalies/partnerships/{player_id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Partnerships Overplayed For Player */
-        get: operations["partnerships_overplayed_for_player_anomalies_partnerships_overplayed__player_id__get"];
+        /** Partnerships For Player */
+        get: operations["partnerships_for_player_anomalies_partnerships__player_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -488,49 +591,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/anomalies/partnerships/underplayed/{player_id}": {
+    "/anomalies/head-to-head/{player_id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Partnerships Underplayed For Player */
-        get: operations["partnerships_underplayed_for_player_anomalies_partnerships_underplayed__player_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/anomalies/head-to-head/overplayed/{player_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Head To Head Overplayed For Player */
-        get: operations["head_to_head_overplayed_for_player_anomalies_head_to_head_overplayed__player_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/anomalies/head-to-head/underplayed/{player_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Head To Head Underplayed For Player */
-        get: operations["head_to_head_underplayed_for_player_anomalies_head_to_head_underplayed__player_id__get"];
+        /** Head To Head For Player */
+        get: operations["head_to_head_for_player_anomalies_head_to_head__player_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -658,6 +727,17 @@ export interface components {
             /** Player B Wins */
             player_b_wins: number;
         };
+        /** ImbalanceTrendPoint */
+        ImbalanceTrendPoint: {
+            /** Session */
+            session: number;
+            /** Played On */
+            played_on: string;
+            /** Partnership Score */
+            partnership_score: number;
+            /** Head To Head Score */
+            head_to_head_score: number;
+        };
         /** IngestGamesRequest */
         IngestGamesRequest: {
             /** Played On */
@@ -734,6 +814,46 @@ export interface components {
             pair_a_wins: number;
             /** Pair B Wins */
             pair_b_wins: number;
+        };
+        /** PairingsFacedEntry */
+        PairingsFacedEntry: {
+            /** Pair Player A Id */
+            pair_player_a_id: number;
+            /** Pair Player A Name */
+            pair_player_a_name: string;
+            /** Pair Player B Id */
+            pair_player_b_id: number;
+            /** Pair Player B Name */
+            pair_player_b_name: string;
+            /** Games Faced */
+            games_faced: number;
+            /** Wins */
+            wins: number;
+            /** Losses */
+            losses: number;
+            /** Win Rate */
+            win_rate: number;
+        };
+        /** PairingsLeaderboardEntry */
+        PairingsLeaderboardEntry: {
+            /** Player A Id */
+            player_a_id: number;
+            /** Player A Name */
+            player_a_name: string;
+            /** Player B Id */
+            player_b_id: number;
+            /** Player B Name */
+            player_b_name: string;
+            /** Games Together */
+            games_together: number;
+            /** Wins */
+            wins: number;
+            /** Losses */
+            losses: number;
+            /** Win Rate */
+            win_rate: number;
+            /** Avg Points */
+            avg_points: number;
         };
         /** PartnershipResponse */
         PartnershipResponse: {
@@ -830,6 +950,17 @@ export interface components {
              */
             remove_aliases: string[];
         };
+        /** PlayerUpsetStats */
+        PlayerUpsetStats: {
+            /** Player Id */
+            player_id: number;
+            /** Upset Wins */
+            upset_wins: number;
+            /** Upset Losses */
+            upset_losses: number;
+            /** Underdog Games */
+            underdog_games: number;
+        };
         /** SeasonCreate */
         SeasonCreate: {
             /** Name */
@@ -855,7 +986,10 @@ export interface components {
             start_date: string;
             /** End Date */
             end_date: string | null;
-            /** Game Count */
+            /**
+             * Game Count
+             * @default 0
+             */
             game_count: number;
         };
         /** SeasonUpdate */
@@ -877,6 +1011,21 @@ export interface components {
             score: number;
             /** Fixes */
             fixes: string[];
+        };
+        /** UpsetLeaderboardEntry */
+        UpsetLeaderboardEntry: {
+            /** Player Id */
+            player_id: number;
+            /** Canonical Name */
+            canonical_name: string;
+            /** Upset Wins */
+            upset_wins: number;
+            /** Upset Losses */
+            upset_losses: number;
+            /** Underdog Games */
+            underdog_games: number;
+            /** Upset Win Rate */
+            upset_win_rate: number | null;
         };
         /** UserPreferencesCreate */
         UserPreferencesCreate: {
@@ -936,6 +1085,21 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** VsPairingsLeaderboardEntry */
+        VsPairingsLeaderboardEntry: {
+            /** Player Id */
+            player_id: number;
+            /** Canonical Name */
+            canonical_name: string;
+            /** Games Faced */
+            games_faced: number;
+            /** Wins */
+            wins: number;
+            /** Losses */
+            losses: number;
+            /** Win Rate */
+            win_rate: number;
         };
     };
     responses: never;
@@ -1131,6 +1295,37 @@ export interface operations {
             };
         };
     };
+    delete_season_seasons__season_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-admin-token"?: string;
+            };
+            path: {
+                season_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_season_seasons__season_id__patch: {
         parameters: {
             query?: never;
@@ -1168,7 +1363,9 @@ export interface operations {
     };
     list_players_players_get: {
         parameters: {
-            query?: never;
+            query?: {
+                is_sub?: boolean | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1182,6 +1379,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlayerResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1253,7 +1459,9 @@ export interface operations {
     delete_player_players__player_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "x-admin-token"?: string;
+            };
             path: {
                 player_id: number;
             };
@@ -1314,13 +1522,45 @@ export interface operations {
             };
         };
     };
+    get_player_upset_stats_players__player_id__upset_stats_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
+            };
+            path: {
+                player_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayerUpsetStats"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_player_stats_players__player_id__stats_get: {
         parameters: {
-            query?: {
-                player_ids?: number[];
-                season_id?: number | null;
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
             };
-            header?: never;
             path: {
                 player_id: number;
             };
@@ -1351,7 +1591,9 @@ export interface operations {
     ingest_scores_ingest_scores_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "x-admin-token"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1384,7 +1626,9 @@ export interface operations {
     ingest_games_endpoint_ingest_games_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "x-admin-token"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1449,11 +1693,10 @@ export interface operations {
     };
     player_stats_stats_player__player_id__get: {
         parameters: {
-            query?: {
-                player_ids?: number[];
-                season_id?: number | null;
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
             };
-            header?: never;
             path: {
                 player_id: number;
             };
@@ -1484,12 +1727,12 @@ export interface operations {
     suggested_games_stats_suggested_games_get: {
         parameters: {
             query?: {
-                player_ids?: number[];
-                season_id?: number | null;
                 top_n?: number;
                 focus_player_id?: number | null;
             };
-            header?: never;
+            header?: {
+                "x-user-id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1519,10 +1762,11 @@ export interface operations {
         parameters: {
             query?: {
                 sort_by?: "win_rate" | "avg_points";
-                player_ids?: number[];
-                season_id?: number | null;
+                game_ids?: number[];
             };
-            header?: never;
+            header?: {
+                "x-user-id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1548,13 +1792,112 @@ export interface operations {
             };
         };
     };
-    all_partnerships_stats_partnerships_get: {
+    upset_leaderboard_stats_upset_leaderboard_get: {
         parameters: {
             query?: {
-                player_ids?: number[];
-                season_id?: number | null;
+                sort_by?: "underdog_games" | "upset_win_rate";
             };
-            header?: never;
+            header?: {
+                "x-user-id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpsetLeaderboardEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pairings_leaderboard_stats_pairings_leaderboard_get: {
+        parameters: {
+            query?: {
+                sort_by?: "win_rate" | "avg_points";
+            };
+            header?: {
+                "x-user-id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingsLeaderboardEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    vs_pairings_leaderboard_stats_vs_pairings_leaderboard_get: {
+        parameters: {
+            query?: {
+                pair_player_ids?: number[];
+                sort_by?: "games_faced" | "win_rate";
+            };
+            header?: {
+                "x-user-id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VsPairingsLeaderboardEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    all_partnerships_stats_partnerships_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1582,11 +1925,10 @@ export interface operations {
     };
     partnerships_for_player_stats_partnerships__player_id__get: {
         parameters: {
-            query?: {
-                player_ids?: number[];
-                season_id?: number | null;
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
             };
-            header?: never;
             path: {
                 player_id: number;
             };
@@ -1616,11 +1958,10 @@ export interface operations {
     };
     specific_partnership_stats_partnerships__player_a_id___player_b_id__get: {
         parameters: {
-            query?: {
-                player_ids?: number[];
-                season_id?: number | null;
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
             };
-            header?: never;
             path: {
                 player_a_id: number;
                 player_b_id: number;
@@ -1651,11 +1992,10 @@ export interface operations {
     };
     head_to_head_all_stats_head_to_head__player_id__all_get: {
         parameters: {
-            query?: {
-                player_ids?: number[];
-                season_id?: number | null;
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
             };
-            header?: never;
             path: {
                 player_id: number;
             };
@@ -1683,13 +2023,45 @@ export interface operations {
             };
         };
     };
+    pairings_faced_stats_pairings_faced__player_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
+            };
+            path: {
+                player_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingsFacedEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     head_to_head_stats_head_to_head__player_a_id___player_b_id__get: {
         parameters: {
-            query?: {
-                player_ids?: number[];
-                season_id?: number | null;
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
             };
-            header?: never;
             path: {
                 player_a_id: number;
                 player_b_id: number;
@@ -1720,11 +2092,10 @@ export interface operations {
     };
     matchup_stats_matchup__pair_a_ids__vs__pair_b_ids__get: {
         parameters: {
-            query?: {
-                player_ids?: number[];
-                season_id?: number | null;
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
             };
-            header?: never;
             path: {
                 pair_a_ids: string;
                 pair_b_ids: string;
@@ -1755,11 +2126,10 @@ export interface operations {
     };
     matchup_quality_stats_matchup_quality_get: {
         parameters: {
-            query?: {
-                player_ids?: number[];
-                season_id?: number | null;
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
             };
-            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -1790,12 +2160,12 @@ export interface operations {
             query?: {
                 week?: number | null;
                 player_id?: number | null;
-                player_ids?: number[];
                 team?: string | null;
                 vs?: string | null;
-                season_id?: number | null;
             };
-            header?: never;
+            header?: {
+                "x-user-id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1824,7 +2194,9 @@ export interface operations {
     get_game_prediction_games__game_id__prediction_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "x-user-id"?: string | null;
+            };
             path: {
                 game_id: number;
             };
@@ -1886,7 +2258,9 @@ export interface operations {
     delete_game_games__game_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "x-admin-token"?: string;
+            };
             path: {
                 game_id: number;
             };
@@ -1915,7 +2289,9 @@ export interface operations {
     delete_session_games_session__played_on__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "x-admin-token"?: string;
+            };
             path: {
                 played_on: string;
             };
@@ -1943,14 +2319,47 @@ export interface operations {
             };
         };
     };
+    imbalance_trend_anomalies_imbalance_trend_get: {
+        parameters: {
+            query?: {
+                sessions?: number;
+            };
+            header?: {
+                "x-user-id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImbalanceTrendPoint"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     partnerships_overplayed_anomalies_partnerships_overplayed_get: {
         parameters: {
             query?: {
                 limit?: number;
-                player_ids?: number[];
-                season_id?: number | null;
             };
-            header?: never;
+            header?: {
+                "x-user-id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1980,10 +2389,10 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
-                player_ids?: number[];
-                season_id?: number | null;
             };
-            header?: never;
+            header?: {
+                "x-user-id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2013,10 +2422,10 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
-                player_ids?: number[];
-                season_id?: number | null;
             };
-            header?: never;
+            header?: {
+                "x-user-id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2046,10 +2455,10 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
-                player_ids?: number[];
-                season_id?: number | null;
             };
-            header?: never;
+            header?: {
+                "x-user-id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2075,13 +2484,12 @@ export interface operations {
             };
         };
     };
-    partnerships_overplayed_for_player_anomalies_partnerships_overplayed__player_id__get: {
+    partnerships_for_player_anomalies_partnerships__player_id__get: {
         parameters: {
-            query?: {
-                player_ids?: number[];
-                season_id?: number | null;
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
             };
-            header?: never;
             path: {
                 player_id: number;
             };
@@ -2109,81 +2517,12 @@ export interface operations {
             };
         };
     };
-    partnerships_underplayed_for_player_anomalies_partnerships_underplayed__player_id__get: {
+    head_to_head_for_player_anomalies_head_to_head__player_id__get: {
         parameters: {
-            query?: {
-                player_ids?: number[];
-                season_id?: number | null;
+            query?: never;
+            header?: {
+                "x-user-id"?: string | null;
             };
-            header?: never;
-            path: {
-                player_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnomalyEntry"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    head_to_head_overplayed_for_player_anomalies_head_to_head_overplayed__player_id__get: {
-        parameters: {
-            query?: {
-                player_ids?: number[];
-                season_id?: number | null;
-            };
-            header?: never;
-            path: {
-                player_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnomalyEntry"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    head_to_head_underplayed_for_player_anomalies_head_to_head_underplayed__player_id__get: {
-        parameters: {
-            query?: {
-                player_ids?: number[];
-                season_id?: number | null;
-            };
-            header?: never;
             path: {
                 player_id: number;
             };

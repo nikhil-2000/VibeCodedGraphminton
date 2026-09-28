@@ -1,11 +1,21 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..deps import FilterContext, get_filter_context
 from ..services import anomalies as anomaly_service
-from ..schemas import AnomalyEntry
+from ..schemas import AnomalyEntry, ImbalanceTrendPoint
 
 router = APIRouter()
+
+
+@router.get("/imbalance-trend", response_model=list[ImbalanceTrendPoint])
+def imbalance_trend(
+    sessions: int = Query(default=10, ge=1, le=52),
+    filters: FilterContext = Depends(get_filter_context),
+    db: Session = Depends(get_db),
+):
+    player_ids, season_id = filters
+    return anomaly_service.get_imbalance_trend(db, sessions=sessions, player_ids=player_ids, season_id=season_id)
 
 
 @router.get("/partnerships/overplayed", response_model=list[AnomalyEntry])
