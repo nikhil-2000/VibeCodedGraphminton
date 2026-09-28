@@ -173,49 +173,61 @@ def get_game_prediction(
 
     valid_ids = valid_game_ids(player_ids, season_id)
 
-    def _team_ids(team: str) -> list[int]:
-        return [
-            r.player_id
-            for r in db.query(GamePlayer.player_id)
-            .filter(GamePlayer.game_id == game_id, GamePlayer.team == team)
-            .all()
-        ]
+    # Single query: get both teams' player IDs
+    team_rows = db.query(GamePlayer.player_id, GamePlayer.team).filter(
+        GamePlayer.game_id == game_id
+    ).all()
+    a_ids = [r.player_id for r in team_rows if r.team == "A"]
+    b_ids = [r.player_id for r in team_rows if r.team == "B"]
 
-    a_ids = _team_ids("A")
-    b_ids = _team_ids("B")
+    all_ids = a_ids + b_ids
 
-    def _avg_points_with(pid: int, other_id: int, same_team: bool) -> float | None:
-        """pid's average score in games shared with other_id, as partner or opponent."""
-        gpa = aliased(GamePlayer)
-        gpo = aliased(GamePlayer)
-        team_predicate = (gpo.team == gpa.team) if same_team else (gpo.team != gpa.team)
-        q = (
-            db.query(func.avg(points_for_case(gpa)))
-            .join(gpa, (gpa.game_id == Game.id) & (gpa.player_id == pid))
-            .join(gpo, (gpo.game_id == Game.id) & (gpo.player_id == other_id) & team_predicate)
-        )
-        q = q.filter(Game.id.in_(valid_ids)) if valid_ids is not None else q
-        result = q.scalar()
-        return float(result) if result is not None else None
+    # Batch query: avg score when player plays with each specific partner (same team)
+    gpa = aliased(GamePlayer)
+    gpb = aliased(GamePlayer)
+    q_partner = (
+        db.query(gpa.player_id, gpb.player_id, func.avg(points_for_case(gpa)))
+        .join(gpa, (gpa.game_id == Game.id) & gpa.player_id.in_(all_ids))
+        .join(gpb, (gpb.game_id == Game.id) & (gpb.team == gpa.team) & gpb.player_id.in_(all_ids) & (gpb.player_id != gpa.player_id))
+        .group_by(gpa.player_id, gpb.player_id)
+    )
+    q_partner = q_partner.filter(Game.id.in_(valid_ids)) if valid_ids is not None else q_partner
+    partner_avg: dict[tuple[int, int], float] = {
+        (pid, partner): float(avg) for pid, partner, avg in q_partner.all() if avg is not None
+    }
 
-    def _overall_avg(pid: int) -> float:
-        q = (
-            db.query(func.avg(points_for_case()))
-            .select_from(GamePlayer)
-            .join(Game, GamePlayer.game_id == Game.id)
-            .filter(GamePlayer.player_id == pid)
-        )
-        q = q.filter(Game.id.in_(valid_ids)) if valid_ids is not None else q
-        return float(q.scalar() or 0)
+    # Batch query: avg score when player faces each specific opponent (different team)
+    gpc = aliased(GamePlayer)
+    gpd = aliased(GamePlayer)
+    q_opp = (
+        db.query(gpc.player_id, gpd.player_id, func.avg(points_for_case(gpc)))
+        .join(gpc, (gpc.game_id == Game.id) & gpc.player_id.in_(all_ids))
+        .join(gpd, (gpd.game_id == Game.id) & (gpd.team != gpc.team) & gpd.player_id.in_(all_ids))
+        .group_by(gpc.player_id, gpd.player_id)
+    )
+    q_opp = q_opp.filter(Game.id.in_(valid_ids)) if valid_ids is not None else q_opp
+    opp_avg: dict[tuple[int, int], float] = {
+        (pid, opp): float(avg) for pid, opp, avg in q_opp.all() if avg is not None
+    }
+
+    # Batch query: overall avg score per player (fallback)
+    q_overall = (
+        db.query(GamePlayer.player_id, func.avg(points_for_case()))
+        .join(Game, GamePlayer.game_id == Game.id)
+        .filter(GamePlayer.player_id.in_(all_ids))
+        .group_by(GamePlayer.player_id)
+    )
+    q_overall = q_overall.filter(Game.id.in_(valid_ids)) if valid_ids is not None else q_overall
+    overall_avg: dict[int, float] = {pid: float(avg or 0) for pid, avg in q_overall.all()}
 
     def _expected_for_player(pid: int, partner_id: int, opp1_id: int, opp2_id: int) -> float:
         scores = [
-            _avg_points_with(pid, partner_id, same_team=True),
-            _avg_points_with(pid, opp1_id, same_team=False),
-            _avg_points_with(pid, opp2_id, same_team=False),
+            partner_avg.get((pid, partner_id)),
+            opp_avg.get((pid, opp1_id)),
+            opp_avg.get((pid, opp2_id)),
         ]
         valid = [s for s in scores if s is not None]
-        return sum(valid) / len(valid) if valid else _overall_avg(pid)
+        return sum(valid) / len(valid) if valid else overall_avg.get(pid, 0.0)
 
     def _expected_for_team(team: list[int], opponents: list[int]) -> float:
         # Badminton is always 2-a-side; the ingest enforces this.  If somehow a
