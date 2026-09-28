@@ -190,7 +190,22 @@ export default function AnomaliesPage() {
         </div>
       )}
 
-      <ImbalanceTrendCard data={trendData} loading={trendLoading} />
+      <ImbalanceTrendCard
+        data={trendData}
+        loading={trendLoading}
+        title="Partnership Imbalance Trend"
+        subtitle="Cumulative Σdeviation² / games for partnerships — lower means more uniform."
+        dataKey="partnership_score"
+        color="var(--chart-1)"
+      />
+      <ImbalanceTrendCard
+        data={trendData}
+        loading={trendLoading}
+        title="Head-to-Head Imbalance Trend"
+        subtitle="Cumulative Σdeviation² / games for head-to-head matchups — lower means more uniform."
+        dataKey="head_to_head_score"
+        color="var(--chart-2)"
+      />
     </div>
   )
 }

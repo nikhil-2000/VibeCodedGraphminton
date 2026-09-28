@@ -5,7 +5,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts'
 import type { ImbalanceTrendPoint } from '../types'
@@ -13,16 +12,18 @@ import type { ImbalanceTrendPoint } from '../types'
 interface Props {
   data: ImbalanceTrendPoint[]
   loading: boolean
+  title: string
+  subtitle: string
+  dataKey: keyof Pick<ImbalanceTrendPoint, 'partnership_score' | 'head_to_head_score'>
+  color: string
 }
 
-export default function ImbalanceTrendCard({ data, loading }: Props) {
+export default function ImbalanceTrendCard({ data, loading, title, subtitle, dataKey, color }: Props) {
   return (
     <Card className="mt-6">
       <CardHeader>
-        <CardTitle>Fixture Imbalance Trend</CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Cumulative Σdeviation² / games across all player pairs — lower means more uniform fixture distribution.
-        </p>
+        <CardTitle>{title}</CardTitle>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
       </CardHeader>
       <CardContent>
         {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
@@ -30,7 +31,7 @@ export default function ImbalanceTrendCard({ data, loading }: Props) {
           <p className="text-sm text-muted-foreground">Not enough data yet.</p>
         )}
         {!loading && data.length > 0 && (
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={180}>
             <LineChart data={data} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
               <XAxis
                 dataKey="played_on"
@@ -54,24 +55,12 @@ export default function ImbalanceTrendCard({ data, loading }: Props) {
                 }}
                 labelStyle={{ color: 'var(--foreground)', marginBottom: 4 }}
                 itemStyle={{ color: 'var(--foreground)' }}
-                formatter={(value) => typeof value === 'number' ? value.toFixed(1) : value}
-              />
-              <Legend
-                wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-                formatter={(value) => value === 'partnership_score' ? 'Partnerships' : 'Head-to-Head'}
+                formatter={(value) => typeof value === 'number' ? value.toFixed(2) : value}
               />
               <Line
                 type="monotone"
-                dataKey="partnership_score"
-                stroke="var(--chart-1)"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="head_to_head_score"
-                stroke="var(--chart-2)"
+                dataKey={dataKey}
+                stroke={color}
                 strokeWidth={2}
                 dot={false}
                 activeDot={{ r: 4 }}
