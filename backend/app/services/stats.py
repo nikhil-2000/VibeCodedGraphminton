@@ -692,3 +692,70 @@ def get_player_upset_stats(
         "upset_losses": upset_losses,
         "underdog_games": upset_wins + upset_losses,
     }
+
+
+def get_upset_leaderboard(
+    db: Session,
+    sort_by: str = "underdog_games",
+    player_ids: list[int] | None = None,
+    season_id: int | None = None,
+) -> list[dict[str, Any]]:
+    valid_ids = valid_game_ids(player_ids, season_id)
+    avg_map = _avg_points_by_player(db, valid_ids)
+
+    # Fetch all (game_id, player_id, team, score_a, score_b) across all filtered games
+    gp_q = (
+        db.query(GamePlayer.game_id, GamePlayer.player_id, GamePlayer.team,
+                 Game.team_a_score, Game.team_b_score)
+        .join(Game, GamePlayer.game_id == Game.id)
+    )
+    if valid_ids is not None:
+        gp_q = gp_q.filter(Game.id.in_(valid_ids))
+
+    rows = gp_q.all()
+
+    # Build per-game team structures: game_id → {A: [avg_pts], B: [avg_pts], scores}
+    games_data: dict[int, dict] = defaultdict(lambda: {"A": [], "B": [], "score_a": 0, "score_b": 0})
+    # player_teams: player_id → {game_id: team}
+    player_teams: dict[int, dict[int, str]] = defaultdict(dict)
+    for row in rows:
+        g = games_data[row.game_id]
+        g[row.team].append(avg_map.get(row.player_id, 0.0))
+        g["score_a"] = row.team_a_score
+        g["score_b"] = row.team_b_score
+        player_teams[row.player_id][row.game_id] = row.team
+
+    # Precompute expected/actual winner per game
+    game_expected: dict[int, str] = {}
+    game_actual: dict[int, str] = {}
+    for gid, g in games_data.items():
+        exp_a = sum(g["A"]) / len(g["A"]) if g["A"] else 0.0
+        exp_b = sum(g["B"]) / len(g["B"]) if g["B"] else 0.0
+        game_expected[gid] = "A" if exp_a >= exp_b else "B"
+        game_actual[gid] = "A" if g["score_a"] > g["score_b"] else "B"
+
+    # Aggregate per player
+    player_names = {p.id: p.canonical_name for p in db.query(Player).all()}
+    results = []
+    for pid, game_team_map in player_teams.items():
+        upset_wins = upset_losses = 0
+        for gid, team in game_team_map.items():
+            if team == game_expected.get(gid):
+                continue  # favoured
+            if game_actual.get(gid) == team:
+                upset_wins += 1
+            else:
+                upset_losses += 1
+        underdog_games = upset_wins + upset_losses
+        results.append({
+            "player_id": pid,
+            "canonical_name": player_names.get(pid, f"#{pid}"),
+            "upset_wins": upset_wins,
+            "upset_losses": upset_losses,
+            "underdog_games": underdog_games,
+            "upset_win_rate": upset_wins / underdog_games if underdog_games else None,
+        })
+
+    if sort_by == "upset_win_rate":
+        return sorted(results, key=lambda r: r["upset_win_rate"] or -1, reverse=True)
+    return sorted(results, key=lambda r: r["underdog_games"], reverse=True)
