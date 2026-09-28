@@ -9,6 +9,7 @@ import {
 import { getSuggestedGames } from '../api/stats'
 import { usePlayerFilter } from '../context/PlayerFilterContext'
 import { useSeasonFilter } from '../context/SeasonFilterContext'
+import { useCurrentUser } from '../context/CurrentUserContext'
 import AnomalyTable from '../components/AnomalyTable'
 import SquadGuidePanel from '../components/SquadGuidePanel'
 import ImbalanceTrendCard from '../components/ImbalanceTrendCard'
@@ -23,6 +24,7 @@ type Direction = 'overplayed' | 'underplayed'
 export default function AnomaliesPage() {
   const { selectedIds, allPlayers } = usePlayerFilter()
   const { selectedSeasonId } = useSeasonFilter()
+  const { isAdmin } = useCurrentUser()
   const [tab, setTab] = useState<Tab>('partnerships')
   const [direction] = useState<Direction>('overplayed')
   const [entries, setEntries] = useState<import('../types').AnomalyEntry[]>([])
@@ -190,22 +192,26 @@ export default function AnomaliesPage() {
         </div>
       )}
 
-      <ImbalanceTrendCard
-        data={trendData}
-        loading={trendLoading}
-        title="Partnership Imbalance Trend"
-        subtitle="Cumulative Σdeviation² / games for partnerships — lower means more uniform."
-        dataKey="partnership_score"
-        color="var(--chart-1)"
-      />
-      <ImbalanceTrendCard
-        data={trendData}
-        loading={trendLoading}
-        title="Head-to-Head Imbalance Trend"
-        subtitle="Cumulative Σdeviation² / games for head-to-head matchups — lower means more uniform."
-        dataKey="head_to_head_score"
-        color="var(--chart-2)"
-      />
+      {isAdmin && (
+        <>
+          <ImbalanceTrendCard
+            data={trendData}
+            loading={trendLoading}
+            title="Partnership Imbalance Trend"
+            subtitle="Cumulative Σdeviation² / games for partnerships — lower means more uniform."
+            dataKey="partnership_score"
+            color="var(--chart-1)"
+          />
+          <ImbalanceTrendCard
+            data={trendData}
+            loading={trendLoading}
+            title="Head-to-Head Imbalance Trend"
+            subtitle="Cumulative Σdeviation² / games for head-to-head matchups — lower means more uniform."
+            dataKey="head_to_head_score"
+            color="var(--chart-2)"
+          />
+        </>
+      )}
     </div>
   )
 }
