@@ -2,6 +2,7 @@ from collections import defaultdict
 from itertools import combinations
 from typing import Any
 from sqlalchemy.orm import Session, aliased
+from sqlalchemy.engine import Row
 from sqlalchemy import func
 from ..models import Player, Game, GamePlayer
 from ._common import (
@@ -188,7 +189,7 @@ def get_specific_partnership(db: Session, player_a_id: int, player_b_id: int, pl
     return {"player_a_id": lo, "player_b_id": hi, **_partnership_record(row)}
 
 
-def _win_split(rows: list[tuple[Game, str]]) -> tuple[int, int]:
+def _win_split(rows: list[Row[tuple[Game, str]]]) -> tuple[int, int]:
     """Count wins for each side given (game, team-of-first-side) rows."""
     first_wins = second_wins = 0
     for game, team in rows:

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import date, datetime
+from ..schemas import GameRowError
 
 
 @dataclass
@@ -202,23 +203,23 @@ def validate_games(
     db: Session,
     played_on_str: str,
     games: list,
-) -> list[dict]:
-    """Validate date, season coverage, and game rows. Returns list of {row, errors} dicts."""
+) -> list[GameRowError]:
+    """Validate date, season coverage, and game rows."""
     try:
         played_on = date.fromisoformat(played_on_str)
     except ValueError:
-        return [{"row": 0, "errors": [f"Invalid date format: {played_on_str!r}, expected YYYY-MM-DD"]}]
+        return [GameRowError(row=0, errors=[f"Invalid date format: {played_on_str!r}, expected YYYY-MM-DD"])]
 
     if not resolve_season_for_date(db, played_on):
-        return [{"row": 0, "errors": [f"No season found covering date {played_on}. Create a season first."]}]
+        return [GameRowError(row=0, errors=[f"No season found covering date {played_on}. Create a season first."])]
 
     from ..models import Player as PlayerModel
     known_ids: set[int] = {row.id for row in db.query(PlayerModel.id).all()}
-    result = []
+    result: list[GameRowError] = []
     for i, game in enumerate(games, start=1):
         errs = validate_game_row_ids(i, game.team_a, game.score_a, game.team_b, game.score_b, known_ids)
         if errs:
-            result.append({"row": i, "errors": errs})
+            result.append(GameRowError(row=i, errors=errs))
     return result
 
 

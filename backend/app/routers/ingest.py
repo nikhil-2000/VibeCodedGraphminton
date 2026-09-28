@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import require_admin
 from ..services.ingest import resolve_aliases, ingest_csv_file, validate_games, ingest_games
-from ..schemas import IngestGamesRequest, IngestGamesResponse
+from ..schemas import IngestGamesRequest, IngestGamesResponse, GameRowError, ValidateGamesResponse
 
 router = APIRouter()
 
@@ -47,15 +47,6 @@ def ingest_games_endpoint(request: IngestGamesRequest, db: Session = Depends(get
         raise HTTPException(status_code=422, detail=errors)
     db.commit()
     return IngestGamesResponse(games_loaded=loaded)
-
-
-class GameRowError(BaseModel):
-    row: int
-    errors: list[str]
-
-
-class ValidateGamesResponse(BaseModel):
-    errors: list[GameRowError]
 
 
 @router.post("/validate", response_model=ValidateGamesResponse)

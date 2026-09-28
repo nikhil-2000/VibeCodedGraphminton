@@ -40,7 +40,7 @@ def get_games(
             .distinct()
             .subquery()
         )
-        ranked = ranked.filter(Game.id.notin_(excluded))
+        ranked = ranked.filter(Game.id.notin_(excluded.select()))
 
     if week is not None:
         ranked = ranked.filter(_session_rank.c.session == week)

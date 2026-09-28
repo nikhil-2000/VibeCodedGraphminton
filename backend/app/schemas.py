@@ -261,3 +261,12 @@ class UserPreferencesUpdate(BaseModel):
     season_id: Optional[int] = None
     preset: Optional[str] = None
     custom_player_ids: Optional[list[int]] = None
+
+
+class GameRowError(BaseModel):
+    row: int
+    errors: list[str]
+
+
+class ValidateGamesResponse(BaseModel):
+    errors: list[GameRowError]
