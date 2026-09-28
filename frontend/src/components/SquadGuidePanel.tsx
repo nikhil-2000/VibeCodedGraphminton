@@ -48,8 +48,11 @@ function PlayerCard({ player, attendingIds, playerNames }: PlayerCardProps) {
   }, [player.id])
 
   const pick = (entries: AnomalyEntry[], seek: boolean) => {
+    // API returns sorted descending (most positive first).
+    // seek=true wants most-negative (most underplayed) → reverse the filtered slice.
+    // seek=false wants most-positive (most overplayed) → already at front, no reverse needed.
     const filtered = seek
-      ? entries.filter((e) => e.deviation < 0)
+      ? [...entries.filter((e) => e.deviation < 0)].reverse()
       : entries.filter((e) => e.deviation > 0)
     for (const e of filtered) {
       const otherId = e.player_a_id === player.id ? e.player_b_id : e.player_a_id
