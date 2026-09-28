@@ -1,5 +1,4 @@
-from typing import Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..deps import FilterContext, get_filter_context
@@ -56,10 +55,9 @@ def partnerships_for_player(
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
-    return anomaly_service.get_partnership_anomalies(
-        db, overplayed=None, limit=None,
+    return anomaly_service.get_partnership_anomalies_for_player(
+        db, player_id=player_id,
         player_ids=player_ids, season_id=season_id,
-        focus_player_id=player_id,
     )
 
 
@@ -70,8 +68,7 @@ def head_to_head_for_player(
     db: Session = Depends(get_db),
 ):
     player_ids, season_id = filters
-    return anomaly_service.get_head_to_head_anomalies(
-        db, overplayed=None, limit=None,
+    return anomaly_service.get_head_to_head_anomalies_for_player(
+        db, player_id=player_id,
         player_ids=player_ids, season_id=season_id,
-        focus_player_id=player_id,
     )
