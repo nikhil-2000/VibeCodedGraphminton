@@ -165,11 +165,24 @@ export default function AnomaliesPage() {
             <div className="space-y-4">
               {suggestedGames.map((g, i) => (
                 <div key={i} className="rounded-lg border p-3">
-                  <p className="font-medium">
-                    {g.team_a.join(' & ')}
-                    <span className="mx-2 text-muted-foreground">vs</span>
-                    {g.team_b.join(' & ')}
-                  </p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium">
+                      {g.team_a.join(' & ')}
+                      <span className="mx-2 text-muted-foreground">vs</span>
+                      {g.team_b.join(' & ')}
+                    </p>
+                    <span
+                      className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${
+                        g.skill_gap < 0.15
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                          : g.skill_gap < 0.3
+                          ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400'
+                          : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                      }`}
+                    >
+                      {g.skill_gap < 0.15 ? 'balanced' : g.skill_gap < 0.3 ? 'slight gap' : 'large gap'}
+                    </span>
+                  </div>
                   {g.fixes.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {g.fixes.map((fix, j) => (
