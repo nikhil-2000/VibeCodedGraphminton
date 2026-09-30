@@ -524,6 +524,7 @@ def get_suggested_games(
 
     FAIRNESS_WEIGHT = 2.0
     FAIRNESS_THRESHOLD = 0.05
+    BALANCE_WEIGHT = 5.0
 
     active_players = sorted(avg_points_map.keys())
     player_names: dict[int, str] = {
@@ -587,7 +588,9 @@ def get_suggested_games(
                     if (imb > 0 and my_team_avg < opp_avg) or (imb < 0 and my_team_avg > opp_avg):
                         fairness_correction += abs(imb) * FAIRNESS_WEIGHT
 
-            total_score = underplay_debt + fairness_correction - overplay_penalty
+            skill_gap = abs(team_a_avg_pct - team_b_avg_pct)
+            balance_penalty = skill_gap * BALANCE_WEIGHT
+            total_score = underplay_debt + fairness_correction - overplay_penalty - balance_penalty
             if total_score <= 0:
                 continue
 
@@ -605,6 +608,7 @@ def get_suggested_games(
                 "team_a": [name(a1), name(a2)],
                 "team_b": [name(b1), name(b2)],
                 "score": round(total_score, 4),
+                "skill_gap": round(skill_gap, 4),
                 "fixes": fixes,
                 "_partnerships": {normalize_pair(a1, a2), normalize_pair(b1, b2)},
             })

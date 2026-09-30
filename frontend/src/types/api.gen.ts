@@ -1009,6 +1009,8 @@ export interface components {
             team_b: string[];
             /** Score */
             score: number;
+            /** Skill Gap */
+            skill_gap: number;
             /** Fixes */
             fixes: string[];
         };

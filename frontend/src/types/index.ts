@@ -40,6 +40,7 @@ export type SuggestedGame = {
   team_a: string[]
   team_b: string[]
   score: number
+  skill_gap: number
   fixes: string[]
 }
 
