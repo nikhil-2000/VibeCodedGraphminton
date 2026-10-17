@@ -1,0 +1,154 @@
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+jobs:
+  preview-deploy:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    environment: preview
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Create Neon branch
+        id: neon
+        run: |
+          # Delete existing branch with this name if it exists (idempotent re-runs)
+          EXISTING=$(curl -sf \
+            "https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches" \
+            -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" | \
+            python3 -c "
+          import sys, json
+          branches = json.load(sys.stdin)['branches']
+          match = next((b for b in branches if b['name'] == 'pr-${{ github.event.pull_request.number }}'), None)
+          print(match['id'] if match else '')
+          ")
+          if [ -n "$EXISTING" ]; then
+            curl -sf -X DELETE \
+              "https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches/${EXISTING}" \
+              -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}"
+            echo "Deleted existing branch pr-${{ github.event.pull_request.number }}"
+          fi
+
+          RESPONSE=$(curl -sf -X POST \
+            "https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches" \
+            -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"branch\": {\"name\": \"pr-${{ github.event.pull_request.number }}\"}, \"endpoints\": [{\"type\": \"read_write\"}]}")
+
+          BRANCH_ID=$(echo "$RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['branch']['id'])")
+          DB_HOST=$(echo "$RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['endpoints'][0]['host'])")
+          DATABASE_URL="postgresql://${{ secrets.NEON_ROLE }}:${{ secrets.NEON_PASSWORD }}@${DB_HOST}/${{ secrets.NEON_DB }}?sslmode=require"
+
+          echo "branch_id=$BRANCH_ID" >> "$GITHUB_OUTPUT"
+          echo "database_url=$DATABASE_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Update Render preview service DATABASE_URL
+        run: |
+          curl -sf -X PUT \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_PREVIEW_SERVICE_ID }}/env-vars" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "[{\"key\": \"DATABASE_URL\", \"value\": \"${{ steps.neon.outputs.database_url }}\"}]"
+
+      - name: Trigger Render redeploy
+        run: |
+          curl -sf -X POST \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_PREVIEW_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"clearCache\": \"do_not_clear\"}"
+
+      - name: Ensure VITE_API_URL set on Vercel for all previews
+        run: |
+          # Check if a project-level preview env var already exists
+          EXISTING=$(curl -sf \
+            "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env" \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
+            python3 -c "
+          import sys, json
+          envs = json.load(sys.stdin).get('envs', [])
+          match = next((e for e in envs if e.get('key') == 'VITE_API_URL' and 'preview' in e.get('target', []) and not e.get('gitBranch')), None)
+          print(match['id'] if match else '')
+          " 2>/dev/null || true)
+
+          if [ -z "$EXISTING" ]; then
+            curl -sf -X POST \
+              "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}/env" \
+              -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"key\": \"VITE_API_URL\",
+                \"value\": \"https://vibecodedgraphminton-preview.onrender.com\",
+                \"type\": \"plain\",
+                \"target\": [\"preview\"]
+              }"
+            echo "Created VITE_API_URL project-level preview env var"
+          else
+            echo "VITE_API_URL already set for previews (id: $EXISTING)"
+          fi
+
+      - name: Post PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Preview ready\n\n| | URL |\n|---|---|\n| **Frontend** | Vercel preview (see Deployments tab) |\n| **Backend** | https://vibecodedgraphminton-preview.onrender.com |\n| **Neon branch** | \`pr-${{ github.event.pull_request.number }}\` |\n\n> Backend redeploy takes ~2 min on Render free tier.`
+            })
+
+  preview-teardown:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    environment: preview
+    steps:
+      - name: Delete Neon branch
+        run: |
+          # Find branch by name
+          BRANCHES=$(curl -sf \
+            "https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches" \
+            -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}")
+
+          BRANCH_ID=$(echo "$BRANCHES" | python3 -c "
+          import sys, json
+          branches = json.load(sys.stdin)['branches']
+          match = next((b for b in branches if b['name'] == 'pr-${{ github.event.pull_request.number }}'), None)
+          print(match['id'] if match else '')
+          ")
+
+          if [ -n "$BRANCH_ID" ]; then
+            curl -sf -X DELETE \
+              "https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches/${BRANCH_ID}" \
+              -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}"
+            echo "Deleted Neon branch pr-${{ github.event.pull_request.number }} (${BRANCH_ID})"
+          else
+            echo "No Neon branch found for pr-${{ github.event.pull_request.number }}, skipping"
+          fi
+
+      - name: Delete Vercel preview deployments for this branch
+        run: |
+          DEPLOYMENTS=$(curl -sf \
+            "https://api.vercel.com/v6/deployments?projectId=${{ secrets.VERCEL_PROJECT_ID }}&target=preview&limit=50" \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
+            python3 -c "
+          import sys, json
+          deps = json.load(sys.stdin).get('deployments', [])
+          branch = '${{ github.head_ref }}'
+          ids = [d['uid'] for d in deps if d.get('meta', {}).get('githubCommitRef') == branch]
+          print('\n'.join(ids))
+          " 2>/dev/null || true)
+
+          if [ -n "$DEPLOYMENTS" ]; then
+            echo "$DEPLOYMENTS" | while read -r DEP_ID; do
+              curl -sf -X DELETE \
+                "https://api.vercel.com/v13/deployments/${DEP_ID}" \
+                -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" && \
+                echo "Deleted Vercel deployment ${DEP_ID}"
+            done
+          else
+            echo "No Vercel preview deployments found for branch ${{ github.head_ref }}, skipping"
+          fi
