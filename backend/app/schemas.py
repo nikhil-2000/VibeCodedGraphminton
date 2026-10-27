@@ -82,6 +82,7 @@ class SuggestedGame(BaseModel):
     team_a: list[str]
     team_b: list[str]
     score: float
+    skill_gap: float
     fixes: list[str]
 
 
