@@ -53,7 +53,7 @@ def build_league(
     """Grow the player set greedily, returning one step per addition (the first adds four players).
 
     `available` maps each matchup to the game IDs that played it, oldest first;
-    only the first of each is selected. A candidate joins when it covers at least
+    only the latest of each is selected. A candidate joins when it covers at least
     `min_coverage` of its new matchups; the best-covered candidate goes first, with
     ties broken by games played. Steps never revisit earlier picks.
     """
@@ -99,7 +99,7 @@ def _best_seed(pool: list[int], available: dict[Matchup, list[int]], games_playe
 def _step(players: list[int], covered: list[Matchup], required: list[Matchup], coverage: float, available: dict[Matchup, list[int]]) -> dict[str, Any]:
     return {
         "player_ids": players,
-        "game_ids": [available[m][0] for m in covered],
+        "game_ids": [available[m][-1] for m in covered],
         "covered": len(covered),
         "required": len(required),
         "coverage": round(coverage, 4),

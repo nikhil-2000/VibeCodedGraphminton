@@ -53,11 +53,11 @@ def test_seed_prefers_the_most_active_players():
     assert sorted(steps[0]["player_ids"]) == [1, 2, 3, 4]
 
 
-def test_picks_oldest_game_per_matchup_and_never_duplicates():
+def test_picks_latest_game_per_matchup_and_never_duplicates():
     m = splits((1, 2, 3, 4))
     available = {m[0]: [7, 9], m[1]: [8], m[2]: [10]}
     steps = build_league(available, {1: 1, 2: 1, 3: 1, 4: 1})
-    assert steps[0]["game_ids"] == [7, 8, 10]
+    assert steps[0]["game_ids"] == [9, 8, 10]
 
 
 def test_no_four_players_with_games_returns_no_steps():
