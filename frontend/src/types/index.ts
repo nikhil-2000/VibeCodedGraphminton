@@ -21,6 +21,8 @@ export type GameDetail = Schema["GameDetailResponse"];
 export type AnomalyEntry = Schema["AnomalyEntry"]
 export type ImbalanceTrendPoint = Schema["ImbalanceTrendPoint"];
 export type FixtureDifficultyEntry = Schema["FixtureDifficultyEntry"];
+export type BalancedLeague = Schema["BalancedLeagueResponse"];
+export type BalancedLeagueStep = Schema["BalancedLeagueStep"];
 export type IngestRequest = Schema["IngestRequest"];
 export type IngestResult = Schema["IngestResponse"];
 

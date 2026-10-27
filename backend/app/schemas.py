@@ -330,3 +330,20 @@ class GameRowError(BaseModel):
 
 class ValidateGamesResponse(BaseModel):
     errors: list[GameRowError]
+
+
+# ── Balanced League ────────────────────────────────────────────────────────
+
+class BalancedLeagueStep(BaseModel):
+    player_ids: list[int]  # the four seed players, then one per later step
+    game_ids: list[int]
+    covered: int
+    required: int
+    coverage: float
+
+
+class BalancedLeagueResponse(BaseModel):
+    min_coverage: float
+    player_ids: list[int]
+    steps: list[BalancedLeagueStep]
+    games: list[GameDetailResponse]

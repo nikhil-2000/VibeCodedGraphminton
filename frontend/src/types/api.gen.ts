@@ -626,6 +626,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/balanced-league": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Balanced League */
+        get: operations["balanced_league_balanced_league_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -649,6 +666,30 @@ export interface components {
             expected: number;
             /** Deviation */
             deviation: number;
+        };
+        /** BalancedLeagueResponse */
+        BalancedLeagueResponse: {
+            /** Min Coverage */
+            min_coverage: number;
+            /** Player Ids */
+            player_ids: number[];
+            /** Steps */
+            steps: components["schemas"]["BalancedLeagueStep"][];
+            /** Games */
+            games: components["schemas"]["GameDetailResponse"][];
+        };
+        /** BalancedLeagueStep */
+        BalancedLeagueStep: {
+            /** Player Ids */
+            player_ids: number[];
+            /** Game Ids */
+            game_ids: number[];
+            /** Covered */
+            covered: number;
+            /** Required */
+            required: number;
+            /** Coverage */
+            coverage: number;
         };
         /** DeleteSessionResponse */
         DeleteSessionResponse: {
@@ -2672,6 +2713,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FixtureDifficultyEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    balanced_league_balanced_league_get: {
+        parameters: {
+            query?: {
+                min_coverage?: number;
+                max_players?: number | null;
+            };
+            header?: {
+                "x-user-id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BalancedLeagueResponse"];
                 };
             };
             /** @description Validation Error */
