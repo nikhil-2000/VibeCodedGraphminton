@@ -20,6 +20,7 @@ export type Game = Schema["GameDetailResponse"];
 export type GameDetail = Schema["GameDetailResponse"];
 export type AnomalyEntry = Schema["AnomalyEntry"]
 export type ImbalanceTrendPoint = Schema["ImbalanceTrendPoint"];
+export type FixtureDifficultyEntry = Schema["FixtureDifficultyEntry"];
 export type IngestRequest = Schema["IngestRequest"];
 export type IngestResult = Schema["IngestResponse"];
 

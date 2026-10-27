@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useLocation, Link } from 'react-router-dom'
-import { Sun, Moon, Trophy, BarChart2, Swords, FileText, CalendarDays, Upload, MoreHorizontal, Settings } from 'lucide-react'
+import { Sun, Moon, Trophy, BarChart2, Swords, FileText, Scale, CalendarDays, Upload, MoreHorizontal, Settings } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 import PlayerFilterPopover from './PlayerFilterPopover'
 import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select'
@@ -13,6 +13,7 @@ import { useCurrentPlayer } from '../context/CurrentPlayerContext'
 const trailingLinks = [
   { to: '/games', label: 'Games', Icon: Swords },
   { to: '/anomalies', label: 'Fixtures', Icon: FileText },
+  { to: '/fixture-difficulty', label: 'Fixture Difficulty', Icon: Scale },
 ]
 
 const moreLinks = [
