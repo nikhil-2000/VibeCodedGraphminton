@@ -126,6 +126,9 @@ def test_update_session_date_reranks_session(client: TestClient, seeded_games):
 
 
 def test_update_session_date_updates_season(client: TestClient, seeded_games):
+    # The fixture season is open-ended; close it so the new season is unambiguous.
+    old_season = client.get("/games").json()[0]["season_id"]
+    client.patch(f"/seasons/{old_season}", json={"end_date": "2024-12-31"})
     new_season = client.post("/seasons", json={"name": "Later", "start_date": "2025-01-01"}).json()
     client.patch("/games/session/2024-04-08", json={"played_on": "2025-02-03"})
     assert client.get("/games").json()[0]["season_id"] == new_season["id"]
