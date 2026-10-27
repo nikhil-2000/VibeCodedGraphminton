@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 from datetime import date
 
@@ -211,6 +211,33 @@ class ImbalanceTrendPoint(BaseModel):
     played_on: str          # ISO date e.g. "2024-04-08"
     partnership_score: float
     head_to_head_score: float
+
+
+# ── Fixture Difficulty ─────────────────────────────────────────────────────
+
+class FixtureDifficultyRequest(BaseModel):
+    player_ids: list[int]  # ordered best -> worst
+
+    @field_validator("player_ids")
+    @classmethod
+    def _no_duplicates(cls, ids: list[int]) -> list[int]:
+        if len(set(ids)) != len(ids):
+            raise ValueError("player_ids must not contain duplicates")
+        return ids
+
+
+class FixtureDifficultyEntry(BaseModel):
+    player_id: int
+    rank: int
+    games_played: int
+    favourable: int
+    even: int
+    underdog: int
+    net_difficulty: Optional[float]
+    favourable_pct: Optional[float]
+    expected_net: Optional[float]
+    expected_favourable_pct: Optional[float]
+    vs_expected: Optional[float]
 
 
 # ── Game Deletion ──────────────────────────────────────────────────────────

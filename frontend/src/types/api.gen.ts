@@ -609,6 +609,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/fixture-difficulty": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fixture Difficulty */
+        post: operations["fixture_difficulty_fixture_difficulty_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -637,6 +654,36 @@ export interface components {
         DeleteSessionResponse: {
             /** Deleted */
             deleted: number;
+        };
+        /** FixtureDifficultyEntry */
+        FixtureDifficultyEntry: {
+            /** Player Id */
+            player_id: number;
+            /** Rank */
+            rank: number;
+            /** Games Played */
+            games_played: number;
+            /** Favourable */
+            favourable: number;
+            /** Even */
+            even: number;
+            /** Underdog */
+            underdog: number;
+            /** Net Difficulty */
+            net_difficulty: number | null;
+            /** Favourable Pct */
+            favourable_pct: number | null;
+            /** Expected Net */
+            expected_net: number | null;
+            /** Expected Favourable Pct */
+            expected_favourable_pct: number | null;
+            /** Vs Expected */
+            vs_expected: number | null;
+        };
+        /** FixtureDifficultyRequest */
+        FixtureDifficultyRequest: {
+            /** Player Ids */
+            player_ids: number[];
         };
         /** GameDetailResponse */
         GameDetailResponse: {
@@ -2588,6 +2635,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnomalyEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fixture_difficulty_fixture_difficulty_post: {
+        parameters: {
+            query?: {
+                even_threshold?: number;
+            };
+            header?: {
+                "x-user-id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FixtureDifficultyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FixtureDifficultyEntry"][];
                 };
             };
             /** @description Validation Error */

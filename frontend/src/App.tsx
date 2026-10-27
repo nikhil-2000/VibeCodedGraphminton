@@ -8,6 +8,7 @@ import GamesPage from './pages/GamesPage'
 import UploadPage from './pages/UploadPage'
 import GraphPage from './pages/GraphPage'
 import AnomaliesPage from './pages/AnomaliesPage'
+import FixtureDifficultyPage from './pages/FixtureDifficultyPage'
 import SeasonsPage from './pages/SeasonsPage'
 import { useCurrentUser } from './context/CurrentUserContext'
 
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/games" element={<GamesPage />} />
           <Route path="/graph" element={<GraphPage />} />
           <Route path="/anomalies" element={<AnomaliesPage />} />
+          <Route path="/fixture-difficulty" element={<FixtureDifficultyPage />} />
           <Route path="/upload" element={<AdminRoute><UploadPage /></AdminRoute>} />
           <Route path="/seasons" element={<AdminRoute><SeasonsPage /></AdminRoute>} />
         </Routes>

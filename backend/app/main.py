@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
 from . import models  # type: ignore # noqa: F401 — registers models with Base
-from .routers import players, ingest, stats, games, anomalies, seasons, preferences
+from .routers import players, ingest, stats, games, anomalies, fixture_difficulty, seasons, preferences
 
 
 @asynccontextmanager
@@ -32,3 +32,4 @@ app.include_router(ingest.router, prefix="/ingest", tags=["ingest"])
 app.include_router(stats.router, prefix="/stats", tags=["stats"])
 app.include_router(games.router, prefix="/games", tags=["games"])
 app.include_router(anomalies.router, prefix="/anomalies", tags=["anomalies"])
+app.include_router(fixture_difficulty.router, prefix="/fixture-difficulty", tags=["fixture-difficulty"])
