@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, aliased
 from sqlalchemy import func, select
 from ..models import Game, GamePlayer, Player
 from ._common import points_for_case, valid_game_ids
+from .seasons import resolve_season_for_date
 
 
 # Session rank subquery: ranks each distinct played_on date chronologically (1, 2, 3, …)
@@ -116,6 +117,34 @@ def delete_session(db: Session, played_on_str: str) -> int:
     deleted = db.query(Game).filter(Game.played_on == played_on).delete(synchronize_session=False)
     db.commit()
     return deleted
+
+
+class SessionDateConflict(Exception):
+    pass
+
+
+def update_session_date(db: Session, played_on_str: str, new_date_str: str) -> int:
+    from datetime import date
+    try:
+        played_on = date.fromisoformat(played_on_str)
+        new_date = date.fromisoformat(new_date_str)
+    except ValueError:
+        raise ValueError(f"Invalid date: {played_on_str!r} or {new_date_str!r}")
+    games = db.query(Game).filter(Game.played_on == played_on).all()
+    if not games:
+        raise KeyError(f"No games found on {played_on}")
+    if new_date == played_on:
+        return len(games)
+    if db.query(Game.id).filter(Game.played_on == new_date).first():
+        raise SessionDateConflict(f"A session already exists on {new_date}")
+    season = resolve_season_for_date(db, new_date)
+    if not season:
+        raise ValueError(f"No season found covering date {new_date}")
+    for g in games:
+        g.played_on = new_date
+        g.season_id = season.id
+    db.commit()
+    return len(games)
 
 
 def get_game_detail(db: Session, game_id: int) -> dict[str, Any]:

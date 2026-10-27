@@ -5,7 +5,7 @@ from ..database import get_db
 from ..dependencies import require_admin
 from ..deps import FilterContext, get_filter_context
 from ..services import games as games_service
-from ..schemas import GameResponse, GameDetailResponse, DeleteSessionResponse, GamePrediction
+from ..schemas import GameResponse, GameDetailResponse, DeleteSessionResponse, GamePrediction, UpdateSessionDateRequest, UpdateSessionDateResponse
 
 router = APIRouter()
 
@@ -66,6 +66,19 @@ def delete_session(played_on: str, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     return DeleteSessionResponse(deleted=deleted)
+
+
+@router.patch("/session/{played_on}", response_model=UpdateSessionDateResponse, dependencies=[Depends(require_admin)])
+def update_session_date(played_on: str, body: UpdateSessionDateRequest, db: Session = Depends(get_db)):
+    try:
+        updated = games_service.update_session_date(db, played_on, body.played_on.isoformat())
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except games_service.SessionDateConflict as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return UpdateSessionDateResponse(updated=updated)
 
 
 @router.delete("/{game_id}", status_code=204, dependencies=[Depends(require_admin)])

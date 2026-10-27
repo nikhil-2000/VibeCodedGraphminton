@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { deleteGame, deleteSession } from '../api/games'
+import { deleteGame, deleteSession, getGames, updateSessionDate } from '../api/games'
 import GameCard from '../components/GameCard'
 import SessionLeaderboard from '../components/SessionLeaderboard'
 import { Input } from '@/components/ui/input'
@@ -20,6 +20,18 @@ export default function GamesPage() {
   const handleDeleteSession = async (playedOn: string) => {
     await deleteSession(playedOn)
     setGames((prev) => prev.filter((g) => g.played_on !== playedOn))
+  }
+
+  const handleEditSessionDate = async (playedOn: string) => {
+    const newDate = prompt(`New date for session on ${playedOn} (YYYY-MM-DD):`, playedOn)
+    if (!newDate || newDate === playedOn) return
+    try {
+      await updateSessionDate(playedOn, newDate)
+      // Session numbers are derived from date order, so refetch rather than patch locally.
+      setGames(await getGames({ week: week ? Number(week) : undefined }))
+    } catch (e) {
+      alert((e as Error).message)
+    }
   }
 
   const bySession = games.reduce<Record<string, typeof games>>((acc, g) => {
@@ -58,6 +70,16 @@ export default function GamesPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               {sessionLabel} — {sessionGames[0].played_on}
             </h2>
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs text-muted-foreground/60"
+                onClick={() => handleEditSessionDate(sessionGames[0].played_on)}
+              >
+                Edit date
+              </Button>
+            )}
             {isAdmin && (
               <Button
                 variant="ghost"

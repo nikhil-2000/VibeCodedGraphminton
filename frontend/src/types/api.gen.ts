@@ -486,7 +486,8 @@ export interface paths {
         delete: operations["delete_session_games_session__played_on__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Session Date */
+        patch: operations["update_session_date_games_session__played_on__patch"];
         trace?: never;
     };
     "/anomalies/imbalance-trend": {
@@ -1011,6 +1012,19 @@ export interface components {
             score: number;
             /** Fixes */
             fixes: string[];
+        };
+        /** UpdateSessionDateRequest */
+        UpdateSessionDateRequest: {
+            /**
+             * Played On
+             * Format: date
+             */
+            played_on: string;
+        };
+        /** UpdateSessionDateResponse */
+        UpdateSessionDateResponse: {
+            /** Updated */
+            updated: number;
         };
         /** UpsetLeaderboardEntry */
         UpsetLeaderboardEntry: {
@@ -2306,6 +2320,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteSessionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_session_date_games_session__played_on__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-admin-token"?: string;
+            };
+            path: {
+                played_on: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSessionDateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateSessionDateResponse"];
                 };
             };
             /** @description Validation Error */

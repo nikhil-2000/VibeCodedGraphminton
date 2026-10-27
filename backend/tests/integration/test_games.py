@@ -105,6 +105,60 @@ def test_delete_session_invalid_date(client: TestClient):
     assert resp.status_code == 422
 
 
+def test_update_session_date(client: TestClient, seeded_games):
+    resp = client.patch("/games/session/2024-04-08", json={"played_on": "2024-04-15"})
+    assert resp.status_code == 200
+    assert resp.json()["updated"] == 2
+    games = client.get("/games").json()
+    assert {g["played_on"] for g in games} == {"2024-04-15"}
+
+
+def test_update_session_date_reranks_session(client: TestClient, seeded_games):
+    client.post("/ingest/scores", json={"files": [
+        "Date,GameNo,A,B,PtsAB,X,Y,PtsXY\n"
+        "15-04-2024,1,GA,GB,21,GX,GY,9\n"
+    ]})
+    sessions = {g["played_on"]: g["session"] for g in client.get("/games").json()}
+    assert sessions == {"2024-04-08": 1, "2024-04-15": 2}
+    client.patch("/games/session/2024-04-08", json={"played_on": "2024-04-22"})
+    sessions = {g["played_on"]: g["session"] for g in client.get("/games").json()}
+    assert sessions == {"2024-04-15": 1, "2024-04-22": 2}
+
+
+def test_update_session_date_updates_season(client: TestClient, seeded_games):
+    new_season = client.post("/seasons", json={"name": "Later", "start_date": "2025-01-01"}).json()
+    client.patch("/games/session/2024-04-08", json={"played_on": "2025-02-03"})
+    assert client.get("/games").json()[0]["season_id"] == new_season["id"]
+
+
+def test_update_session_date_conflict(client: TestClient, seeded_games):
+    client.post("/ingest/scores", json={"files": [
+        "Date,GameNo,A,B,PtsAB,X,Y,PtsXY\n"
+        "15-04-2024,1,GA,GB,21,GX,GY,9\n"
+    ]})
+    resp = client.patch("/games/session/2024-04-08", json={"played_on": "2024-04-15"})
+    assert resp.status_code == 409
+
+
+def test_update_session_date_not_found(client: TestClient):
+    resp = client.patch("/games/session/2000-01-01", json={"played_on": "2000-01-08"})
+    assert resp.status_code == 404
+
+
+def test_update_session_date_invalid_date(client: TestClient, seeded_games):
+    resp = client.patch("/games/session/not-a-date", json={"played_on": "2024-04-15"})
+    assert resp.status_code == 422
+
+
+def test_update_session_date_requires_admin(client: TestClient, seeded_games):
+    resp = client.patch(
+        "/games/session/2024-04-08",
+        json={"played_on": "2024-04-15"},
+        headers={"X-Admin-Token": "wrong"},
+    )
+    assert resp.status_code in (401, 403)
+
+
 # ── Prediction tests ────────────────────────────────────────────────────────
 
 def test_game_prediction_expected_fields(client: TestClient, seeded_games):

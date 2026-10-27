@@ -219,6 +219,14 @@ class DeleteSessionResponse(BaseModel):
     deleted: int
 
 
+class UpdateSessionDateRequest(BaseModel):
+    played_on: date
+
+
+class UpdateSessionDateResponse(BaseModel):
+    updated: int
+
+
 # ── Game Prediction ────────────────────────────────────────────────────────
 
 class GamePrediction(BaseModel):
