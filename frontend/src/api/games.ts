@@ -27,6 +27,13 @@ export const deleteGame = (id: number) =>
 export const deleteSession = (playedOn: string) =>
   apiFetch<{ deleted: number }>(`/games/session/${playedOn}`, { method: 'DELETE' })
 
+export const updateSessionDate = (playedOn: string, newDate: string) =>
+  apiFetch<{ updated: number }>(`/games/session/${playedOn}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ played_on: newDate }),
+  })
+
 export interface GamePrediction {
   expected_score_a: number
   expected_score_b: number
